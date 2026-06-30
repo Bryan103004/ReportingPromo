@@ -123,6 +123,8 @@ return [
 
     'cipher' => 'AES-256-CBC',
 
+    'admin_name' => env('ADMIN_NAME'),
+
     /*
     |--------------------------------------------------------------------------
     | Autoloaded Service Providers
@@ -234,7 +236,6 @@ return [
         'View' => Illuminate\Support\Facades\View::class,
         'Carbon' => Carbon\Carbon::class,
         'Activity' => Spatie\Activitylog\Models\Activity::class,
-
     ],
 
 ];

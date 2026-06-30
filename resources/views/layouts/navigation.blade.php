@@ -11,7 +11,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                {{-- <div class="hidden space-x-4 sm:-my-px sm:ms-10 sm:flex items-center">
+                <div class="hidden space-x-4 sm:-my-px sm:ms-10 sm:flex items-center">
           
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         <i class="fa-solid fa-gauge-high mr-2 opacity-70"></i> {{ __('Dashboard') }}
@@ -94,23 +94,19 @@
                                         x-transition:enter-end="opacity-100 translate-y-0"
                                         class="mt-0.5 mb-0.5 ml-2">
 
-                                        @can('view_users')
+
                                             <x-dropdown-link :href="route('user.index')" class="text-sm {{ request()->routeIs('user.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                 <span>👤</span> Users
                                             </x-dropdown-link>
-                                        @endcan
 
-                                        @can('view_roles')
                                             <x-dropdown-link :href="route('role.index')" class="text-sm {{ request()->routeIs('role.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                 <span>🔑</span> Roles
                                              </x-dropdown-link>
-                                        @endcan
 
-                                        @can('view_permissions')
+
                                             <x-dropdown-link :href="route('permission.index')" class="text-sm {{ request()->routeIs('permission.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                 <span>🛡️</span> Permissions 
                                             </x-dropdown-link>
-                                        @endcan
                                     </div>
                                 </div>
                             </div>
@@ -179,8 +175,7 @@
                                 <div class="border-t border-gray-100 my-1.5 mx-1"></div>
                             </div>
                         </div>
-                    @endcan
-                    
+                    @endcan     
 
                     @can('view_data_izin_oss')
                         <x-nav-link :href="route('data_izin_oss.index')" :active="request()->routeIs('data_izin_oss.index')">
@@ -194,7 +189,8 @@
                         </x-nav-link>
                     @endcan
                     
-                    @can('view_activity_log')
+
+                    @if(strtolower(auth()->user()->name) ==  strtolower(config('app.admin_name'))) 
                     <div class="h-full flex items-center">
                         <x-dropdown align="left" width="48">
                             <x-slot name="trigger">
@@ -210,8 +206,8 @@
                             </x-slot>
                         </x-dropdown>
                     </div>
-                    @endcan
-                </div> --}}
+                    @endif
+                </div>
             </div>
 
             <!-- Settings Dropdown -->
