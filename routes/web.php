@@ -50,4 +50,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 });
 
+use App\Http\Controllers\ReportController;
+
+Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+Route::post('/reports/upload', [ReportController::class, 'store'])->name('reports.upload');
+Route::get('/reports/export', [ReportController::class, 'exportExcel'])->name('reports.export');
+Route::get('/api/reports/weekly-matrix', [App\Http\Controllers\ReportController::class, 'getWeeklyMatrix'])->name('api.reports.matrix');
+
 require __DIR__.'/auth.php';

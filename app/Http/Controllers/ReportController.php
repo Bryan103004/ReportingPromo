@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\SalesReport;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Exports\SalesReportExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
@@ -19,123 +21,144 @@ class ReportController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'report_file' => 'required|file|mimes:txt'
+            'report_file'   => 'required|array',
+            'report_file.*' => 'file|mimes:txt|max:5120',
         ]);
-
-        $path = $request->file('report_file')->getRealPath();
-        $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 
         $outletCode = '';
         $outletName = '';
-        $buffer = null; // Menyimpan baris pertama (SKU) sementara
+        $bufferLine = ''; // Menyimpan string gabungan
         $dataToInsert = [];
 
-        foreach ($lines as $line) {
-            $text = trim($line);
+        // Fungsi bantuan (Closure) agar kodenya rapi saat mengekstrak data
+        $processBuffer = function($lineStr) use (&$dataToInsert, &$outletCode, &$outletName) {
+            $cols = explode('|', $lineStr);
+            
+            // Jika kolom kurang dari 15, berarti baris ini masih cacat/bukan transaksi
+            if (count($cols) < 15) return; 
 
-            // 1. Ambil Data Outlet dari Header TXT
-            if (strpos($text, 'Outlet Code :') !== false) {
-                // Contoh text: "Outlet Code :    9903 GRANDLUCKY - PIK"
-                $parts = explode(' ', trim(str_replace('Outlet Code :', '', $text)));
-                $outletCode = $parts[0]; // 9903
-                $outletName = implode(' ', array_slice($parts, 1)); // GRANDLUCKY - PIK
-                continue;
+            $cleanDecimal = function($val) {
+                return (float) str_replace([' ', ','], '', trim($val));
+            };
+
+            // Handling tanggal agar tidak error jika format mendadak aneh
+            try {
+                $trxDate = \Carbon\Carbon::createFromFormat('d/m/Y', trim($cols[4]))->format('Y-m-d');
+            } catch (\Exception $e) {
+                $trxDate = now()->format('Y-m-d');
             }
 
-            // 2. Lewati baris pembatas, header, subtotal, dan grandtotal
-            if (strpos($text, '---') !== false || 
-                strpos($text, 'SKU#') !== false || 
-                strpos($text, 'Sub Total') !== false || 
-                strpos($text, 'GrandTotal') !== false ||
-                strpos($text, 'Quantity|') !== false) {
-                continue;
+            $dataToInsert[] = [
+                'outlet_code'      => $outletCode,
+                'outlet_name'      => $outletName,
+                'sku#'              => trim($cols[0]),
+                'product_name'     => trim($cols[1] ?? ''),
+                'size'             => trim($cols[2] ?? ''),
+                'uom'              => trim($cols[3] ?? ''),
+                'transaction_date' => $trxDate,
+                
+                // Karena baris 1 & 2 sudah kita gabung, indeksnya tinggal dilanjutkan
+                'quantity'         => $cleanDecimal($cols[5] ?? 0),
+                'gross_sales'      => $cleanDecimal($cols[6] ?? 0),
+                'sls_discount'     => $cleanDecimal($cols[7] ?? 0),
+                'sales_return'     => $cleanDecimal($cols[8] ?? 0),
+                'sales_incl_tax'   => $cleanDecimal($cols[9] ?? 0),
+                'pct_sales'        => trim($cols[10] ?? ''),
+                'sales_tax'        => $cleanDecimal($cols[11] ?? 0),
+                'sales_excl_tax'   => $cleanDecimal($cols[12] ?? 0),
+                'cogs'             => $cleanDecimal($cols[13] ?? 0),
+                'gp_amount'        => $cleanDecimal($cols[14] ?? 0),
+                'pct_gp'           => trim($cols[15] ?? ''),
+                'contribu'         => trim($cols[16] ?? ''),
+                'soh'              => $cleanDecimal($cols[17] ?? 0),
+                'md1'              => trim($cols[18] ?? ''),
+                'desc_m1'          => trim($cols[19] ?? ''),
+                'md2'              => trim($cols[20] ?? ''),
+                'desc_m2'          => trim($cols[21] ?? ''),
+                'md3'              => trim($cols[22] ?? ''),
+                'desc_m3'          => trim($cols[23] ?? ''),
+                'md4'              => trim($cols[24] ?? ''),
+                'desc_m4'          => trim($cols[25] ?? ''),
+                'sku'            => trim($cols[26] ?? ''),
+                'supl#'          => trim($cols[27] ?? ''),
+                'supplier_name'    => trim($cols[28] ?? ''),
+                
+                'created_at'       => now(),
+                'updated_at'       => now(),
+            ];
+        };
+
+        // LOOP 1: Eksekusi setiap file TXT yang di-upload
+        $files = $request->file('report_file');
+        
+        foreach ($files as $file) {
+            $path = $file->getRealPath();
+            ini_set('auto_detect_line_endings', true);
+            $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+            // Reset buffer & outlet info untuk setiap dokumen baru
+            $outletCode = '';
+            $outletName = '';
+            $bufferLine = ''; 
+
+            // LOOP 2: Eksekusi per baris dalam satu dokumen
+            foreach ($lines as $line) {
+                $text = trim($line);
+
+                if (strpos($text, 'Outlet Code :') !== false) {
+                    $parts = explode(' ', trim(str_replace('Outlet Code :', '', $text)));
+                    $outletCode = $parts[0]; 
+                    $outletName = implode(' ', array_slice($parts, 1));
+                    continue;
+                }
+
+                // Skip tulisan sampah
+                if (strpos($text, '---') !== false || 
+                    strpos($text, 'SKU#') !== false || 
+                    strpos($text, 'Sub Total') !== false || 
+                    strpos($text, 'GrandTotal') !== false ||
+                    strpos($text, 'Quantity|') !== false ||
+                    empty($text)) {
+                    continue;
+                }
+
+                // KUNCI UTAMA: Regex ini mendeteksi angka 10-15 digit yang diakhiri garis '|' (PASTI SKU)
+                if (preg_match('/^\d{10,15}\|/', $text)) {
+                    if ($bufferLine !== '') {
+                        $processBuffer($bufferLine);
+                    }
+                    $bufferLine = $text;
+                } 
+                else if ($bufferLine !== '') {
+                    $bufferLine .= $text;
+                }
             }
-
-            $cols = explode('|', $text);
-
-            // 3. Deteksi Baris 1 (Berisi SKU, Nama, Size, UOM, Date)
-            // Memastikan kolom 0 adalah angka SKU 11 digit [cite: 5]
-            if (preg_match('/^[0-9]{11}/', $cols[0])) {
-                $buffer = [
-                    'sku'              => trim($cols[0]),
-                    'product_name'     => trim($cols[1] ?? ''),
-                    'size'             => trim($cols[2] ?? ''),
-                    'uom'              => trim($cols[3] ?? ''),
-                    'transaction_date' => \Carbon\Carbon::createFromFormat('d/m/Y', trim($cols[4]))->format('Y-m-d'),
-                ];
-            } 
-            // 4. Deteksi Baris 2 (Berisi Quantity, Gross Sales, dll)
-            // Cek apakah buffer terisi dan array baris kedua panjang (biasanya lebih dari 10 indeks)
-            else if ($buffer !== null && count($cols) > 10) {
-                
-                // Helper untuk membersihkan nilai kosong dari TXT agar aman masuk ke database
-                $cleanDecimal = function($val) {
-                    return (float) str_replace([' ', ','], '', trim($val));
-                };
-
-                $dataToInsert[] = [
-                    // Data Outlet
-                    'outlet_code'      => $outletCode,
-                    'outlet_name'      => $outletName,
-                    
-                    // Dari Baris 1 (Buffer)
-                    'sku'              => $buffer['sku'],
-                    'product_name'     => $buffer['product_name'],
-                    'size'             => $buffer['size'],
-                    'uom'              => $buffer['uom'],
-                    'transaction_date' => $buffer['transaction_date'],
-                    
-                    // Dari Baris 2 (Membaca indeks array secara berurutan) [cite: 6]
-                    'quantity'         => $cleanDecimal($cols[0] ?? 0),
-                    'gross_sales'      => $cleanDecimal($cols[1] ?? 0),
-                    'sls_discount'     => $cleanDecimal($cols[2] ?? 0),
-                    'sales_return'     => $cleanDecimal($cols[3] ?? 0),
-                    'sales_incl_tax'   => $cleanDecimal($cols[4] ?? 0),
-                    'pct_sales'        => trim($cols[5] ?? ''),
-                    'sales_tax'        => $cleanDecimal($cols[6] ?? 0),
-                    'sales_excl_tax'   => $cleanDecimal($cols[7] ?? 0),
-                    'cogs'             => $cleanDecimal($cols[8] ?? 0),
-                    'gp_amount'        => $cleanDecimal($cols[9] ?? 0),
-                    'pct_gp'           => trim($cols[10] ?? ''),
-                    'contribu'         => trim($cols[11] ?? ''),
-                    'soh'              => $cleanDecimal($cols[12] ?? 0),
-                    'md1'              => trim($cols[13] ?? ''),
-                    'desc_m1'          => trim($cols[14] ?? ''),
-                    'md2'              => trim($cols[15] ?? ''),
-                    'desc_m2'          => trim($cols[16] ?? ''),
-                    'md3'              => trim($cols[17] ?? ''),
-                    'desc_m3'          => trim($cols[18] ?? ''),
-                    'md4'              => trim($cols[19] ?? ''),
-                    'desc_m4'          => trim($cols[20] ?? ''),
-                    'sku_2'            => trim($cols[21] ?? ''),
-                    'supl_no'          => trim($cols[22] ?? ''),
-                    'supplier_name'    => trim($cols[23] ?? ''),
-                    
-                    'created_at'       => now(),
-                    'updated_at'       => now(),
-                ];
-                
-                // Kosongkan buffer
-                $buffer = null; 
+            
+            // Proses produk terakhir di file ini
+            if ($bufferLine !== '') {
+                $processBuffer($bufferLine);
             }
         }
 
         // Insert massal agar lebih cepat
         if (!empty($dataToInsert)) {
-            // Chunk insert untuk mencegah memory limit jika file terlalu besar
             $chunks = array_chunk($dataToInsert, 500);
             foreach ($chunks as $chunk) {
                 SalesReport::insert($chunk);
             }
         }
 
-        return redirect()->back()->with('success', 'Data berhasil di-upload dan dibersihkan.');
+        return redirect()->back()->with('success', count($files) . ' dokumen TXT berhasil di-upload dan dibersihkan.');
     }
 
-public function getWeeklyReport()
+    public function getWeeklyReport()
     {
-        // Set ke hari Minggu ini (akhir minggu)
-        $endDate = Carbon::now()->endOfWeek(); 
+        // Cari tanggal transaksi paling terakhir (paling baru) yang ada di database
+        $latestDate = SalesReport::max('transaction_date');
+
+        // Jika database belum ada datanya, fallback ke hari ini. Jika ada, gunakan tanggal tersebut.
+        $endDate = $latestDate ? Carbon::parse($latestDate)->endOfWeek() : Carbon::now()->endOfWeek(); 
+        
         // Tarik mundur 4 minggu ke hari Senin
         $startDate = $endDate->copy()->subWeeks(4)->startOfWeek(); 
 
@@ -154,5 +177,61 @@ public function getWeeklyReport()
 
         // Data siap dikirim ke view/JSON untuk dirender oleh tabel
         return response()->json($reports);
+    }
+
+    public function getWeeklyMatrix()
+    {
+            // Tentukan batas waktu: 4 minggu ke belakang dari hari ini
+        // Cari tanggal transaksi terakhir di database
+        $latestDate = SalesReport::max('transaction_date');
+
+        // Jika database kosong, gunakan hari ini sebagai fallback
+        $now = $latestDate ? Carbon::parse($latestDate) : Carbon::now();
+        
+        // Minggu ke-1 (Minggu ini)
+        $w1_end = $now->copy()->endOfWeek();
+        $w1_start = $now->copy()->startOfWeek();
+        
+        // Minggu ke-2
+        $w2_end = $w1_start->copy()->subDay()->endOfDay();
+        $w2_start = $w2_end->copy()->startOfWeek();
+        
+        // Minggu ke-3
+        $w3_end = $w2_start->copy()->subDay()->endOfDay();
+        $w3_start = $w3_end->copy()->startOfWeek();
+        
+        // Minggu ke-4 (Paling lama)
+        $w4_end = $w3_start->copy()->subDay()->endOfDay();
+        $w4_start = $w4_end->copy()->startOfWeek();
+
+        // Query dengan Conditional Aggregation
+        $reports = SalesReport::select(
+            'outlet_code',
+            'outlet_name',
+            // Pivot Minggu 1
+            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w1_start->toDateString()}' AND '{$w1_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_1_sales"),
+            // Pivot Minggu 2
+            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w2_start->toDateString()}' AND '{$w2_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_2_sales"),
+            // Pivot Minggu 3
+            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w3_start->toDateString()}' AND '{$w3_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_3_sales"),
+            // Pivot Minggu 4
+            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w4_start->toDateString()}' AND '{$w4_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_4_sales"),
+            // Total 4 Minggu
+            DB::raw("SUM(gross_sales) as total_sales")
+        )
+        ->whereBetween('transaction_date', [$w4_start, $w1_end])
+        ->whereRaw('DAYOFWEEK(transaction_date) IN (1, 6, 7)') // 1=Minggu, 6=Jumat, 7=Sabtu
+        ->groupBy('outlet_code', 'outlet_name')
+        ->get();
+
+        return response()->json([
+            'data' => $reports
+        ]);
+    }
+
+    public function exportExcel()
+    {
+        // Men-generate dan men-download file Excel
+        return Excel::download(new SalesReportExport, 'Sales_Report_'.date('Ymd').'.xlsx');
     }
 }
