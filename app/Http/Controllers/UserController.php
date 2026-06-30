@@ -11,13 +11,24 @@ use App\Services\ActivityLogger;
 
 class UserController extends Controller
 {
-    use ManagesPublicFiles;
 
     public function index(Request $request)
     {
         $query = User::orderBy('username','asc');
         $number_paginate = [10, 25, 50, 100, 300, 999999999];
         $number = $request->input('number', 10);
+
+        // 2. Filter Lanjutan: Nama User
+        // Ini menangani input dari id="name" di form filter lanjutan
+        if ($request->filled('name')) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        }
+
+        // 3. Filter Lanjutan: Username
+        // Ini menangani input dari id="username" di form filter lanjutan
+        if ($request->filled('username')) {
+            $query->where('username', 'like', '%' . $request->username . '%');
+        }
 
         $users = $query->paginate($number);
 
@@ -29,6 +40,7 @@ class UserController extends Controller
         $users->appends($request->all());
         return view('user.index', compact('users', 'number_paginate', 'number'));
     }
+
 
     public function create()
     {
