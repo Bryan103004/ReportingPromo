@@ -17,8 +17,8 @@ class CreateJsmTable extends Migration
             $table->id();
             $table->string('supplier_code', 50)->index();
             $table->string('supplier_name', 150);
-            $table->date('periode_awal');
-            $table->date('periode_akhir');
+            $table->date('periode_awal')->index();
+            $table->date('periode_akhir')->index();
             $table->string('no_raf')->index();
             $table->text('store')->index();
             $table->decimal('nominal', 15, 2)->default(0);
