@@ -113,6 +113,81 @@
                         </div>
                     </div>
 
+                    <!-- Dropdown Rafaksi -->
+                    @canany(['view_jsm', 'view_rafaksi'])
+                    <div class="h-full flex items-center" x-data="{ menuRafaksiOpen: false, subRafaksiOpen: false }" @click.outside="menuRafaksiOpen = false; subRafaksiOpen = false">
+                        <div class="relative">
+                            <button
+                                @click="menuRafaksiOpen = !menuRafaksiOpen; subRafaksiOpen = false"
+                                class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-500 bg-white hover:text-indigo-600 hover:bg-indigo-50 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs(['jsm*','rafaksi*','supplier_rafaksi*']) ? 'text-indigo-700 font-bold bg-indigo-50' : '' }}">
+                                <span>Data Rafaksi</span>
+                                <svg class="ms-1.5 h-4 w-4 opacity-50 transition-transform duration-150" :class="{ 'rotate-180': menuRafaksiOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
+
+                            <!-- Dropdown panel utama --> <!-- buat di komputer -->
+                            <div
+                                x-show="menuRafaksiOpen"
+                                x-transition:enter="transition ease-out duration-100"
+                                x-transition:enter-start="opacity-0 scale-95"
+                                x-transition:enter-end="opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="opacity-100 scale-100"
+                                x-transition:leave-end="opacity-0 scale-95"
+                                class="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 z-50"
+                                style="top: 100%;">
+
+                                <!-- Manajemen Rafaksi -->
+                                <div>
+                                    <button
+                                        @click="subRafaksiOpen = !subRafaksiOpen"
+                                        class="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs(['user.*', 'role.*']) ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                        <div class="flex items-center gap-2.5">
+                                            <span class="text-base">👥</span>
+                                            <span>Manajemen Rafaksi</span>
+                                        </div>
+                                            <svg class="ms-1.5 h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                    </button>
+
+                                    <!-- Sub-items expand ke bawah -->
+                                    <div
+                                        x-show="subRafaksiOpen"
+                                        x-transition:enter="transition ease-out duration-100"
+                                        x-transition:enter-start="opacity-0 -translate-y-1"
+                                        x-transition:enter-end="opacity-100 translate-y-0"
+                                        class="mt-0.5 mb-0.5 ml-2">
+                                            @can('view_jsm')
+                                            <x-dropdown-link :href="route('jsm.index')" class="text-sm {{ request()->routeIs('jsm.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                                {{ __('Rafaksi JSM') }}
+                                            </x-dropdown-link>
+                                            @endcan
+                            
+                                            @can('view_rafaksi')
+                                            <x-dropdown-link :href="route('rafaksi.index')" class="text-sm {{ request()->routeIs('rafaksi.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                                {{ __('Rafaksi') }}
+                                            </x-dropdown-link>
+                                            @endcan
+
+                                            @canany(['view_jsm', 'view_rafaksi'])
+                                            <x-dropdown-link :href="route('supplier_rafaksi.index')" class="text-sm {{ request()->routeIs('supplier_rafaksi.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                                {{ __('Supplier Rafaksi') }}
+                                            </x-dropdown-link>
+                                            @endcanany
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    @endcanany
+
+                    @can('view_reports_promo_weekend')
+                    <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.index')">
+                        {{ __('Reports Promo Weekend') }}
+                    </x-nav-link>
+                    @endcan
+
                     @can('view_data_kendaraan')
                         <x-nav-link :href="route('data_kendaraan.index')" :active="request()->routeIs('data_kendaraan.index')">
                             {{ __('Data Kendaraan') }}

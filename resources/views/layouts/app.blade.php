@@ -18,6 +18,27 @@
 
         <!-- Load JS -->
         <script type="module" src="http://localhost:5173/resources/js/app.js"></script>
+
+        <script src="https://cdn.tailwindcss.com"></script>
+        
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+        
+        <style>
+            /* Sedikit penyesuaian agar DataTables menyatu dengan Tailwind */
+            .dataTables_wrapper .dataTables_filter input {
+                border: 1px solid #d1d5db;
+                border-radius: 0.375rem;
+                padding: 0.25rem 0.5rem;
+                margin-left: 0.5rem;
+                outline: none;
+            }
+            .dataTables_wrapper .dataTables_length select {
+                border: 1px solid #d1d5db;
+                border-radius: 0.375rem;
+                padding: 0.25rem 2rem 0.25rem 0.5rem;
+                outline: none;
+            }
+        </style>
     </head>
     <body class="font-sans antialiased">
         <div class="flex min-h-screen flex-col bg-gray-100">
@@ -35,6 +56,13 @@
             <!-- Page Content -->
             <main class="flex-1">
                 @hasSection('content')
+                    {{-- Alert Sukses (Jika ada redirect dengan pesan 'success') --}}
+                    @if(session('success'))
+                        <div class="py-3 mb-6 rounded-lg bg-green-50 p-4 border border-green-200 flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                            <span class="text-sm font-medium text-green-800">{{ session('success') }}</span>
+                        </div>
+                    @endif
                     @yield('content')
                 @elseif (isset($slot))
                     {{ $slot }}

@@ -51,7 +51,7 @@ class ReportController extends Controller
             $dataToInsert[] = [
                 'outlet_code'      => $outletCode,
                 'outlet_name'      => $outletName,
-                'sku#'              => trim($cols[0]),
+                'sku'              => trim($cols[0]),
                 'product_name'     => trim($cols[1] ?? ''),
                 'size'             => trim($cols[2] ?? ''),
                 'uom'              => trim($cols[3] ?? ''),
@@ -79,8 +79,8 @@ class ReportController extends Controller
                 'desc_m3'          => trim($cols[23] ?? ''),
                 'md4'              => trim($cols[24] ?? ''),
                 'desc_m4'          => trim($cols[25] ?? ''),
-                'sku'            => trim($cols[26] ?? ''),
-                'supl#'          => trim($cols[27] ?? ''),
+                'sku_2'            => trim($cols[26] ?? ''),
+                'supl'          => trim($cols[27] ?? ''),
                 'supplier_name'    => trim($cols[28] ?? ''),
                 
                 'created_at'       => now(),
@@ -181,47 +181,54 @@ class ReportController extends Controller
 
     public function getWeeklyMatrix()
     {
-            // Tentukan batas waktu: 4 minggu ke belakang dari hari ini
-        // Cari tanggal transaksi terakhir di database
+        // 1. Cari tanggal transaksi paling terakhir (paling baru) di database
         $latestDate = SalesReport::max('transaction_date');
 
-        // Jika database kosong, gunakan hari ini sebagai fallback
-        $now = $latestDate ? Carbon::parse($latestDate) : Carbon::now();
+        // Jika DB kosong, fallback ke hari ini. Jika ada, gunakan tanggal terbaru sebagai D-Day.
+        $dDayEnd = $latestDate ? Carbon::parse($latestDate)->endOfWeek() : Carbon::now()->endOfWeek();
+        $dDayStart = $dDayEnd->copy()->startOfWeek();
         
-        // Minggu ke-1 (Minggu ini)
-        $w1_end = $now->copy()->endOfWeek();
-        $w1_start = $now->copy()->startOfWeek();
+        // 2. Tarik mundur per minggu menggunakan Carbon (Otomatis tembus pergantian bulan & tahun)
+        $w1_end = $dDayEnd->copy()->subWeeks(1);
+        $w1_start = $w1_end->copy()->startOfWeek();
         
-        // Minggu ke-2
-        $w2_end = $w1_start->copy()->subDay()->endOfDay();
+        $w2_end = $dDayEnd->copy()->subWeeks(2);
         $w2_start = $w2_end->copy()->startOfWeek();
         
-        // Minggu ke-3
-        $w3_end = $w2_start->copy()->subDay()->endOfDay();
+        $w3_end = $dDayEnd->copy()->subWeeks(3);
         $w3_start = $w3_end->copy()->startOfWeek();
         
-        // Minggu ke-4 (Paling lama)
-        $w4_end = $w3_start->copy()->subDay()->endOfDay();
+        $w4_end = $dDayEnd->copy()->subWeeks(4);
         $w4_start = $w4_end->copy()->startOfWeek();
 
-        // Query dengan Conditional Aggregation
+        // 3. Buat String Periode menggunakan PHP Carbon agar formatnya lebih rapi
+        // Hasilnya misalnya: "15 May 2026 to 14 Jun 2026"
+        $periodeString = $w4_start->format('d M Y') . ' - ' . $dDayEnd->format('d M Y');
+
+        // 4. Query dengan Conditional Aggregation (Pivot)
         $reports = SalesReport::select(
             'outlet_code',
-            'outlet_name',
-            // Pivot Minggu 1
-            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w1_start->toDateString()}' AND '{$w1_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_1_sales"),
-            // Pivot Minggu 2
-            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w2_start->toDateString()}' AND '{$w2_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_2_sales"),
-            // Pivot Minggu 3
-            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w3_start->toDateString()}' AND '{$w3_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_3_sales"),
+            'outlet_name',            
+            
+            // Masukkan variabel string langsung ke dalam raw query
+            DB::raw("'$periodeString' as periode"),
+            
             // Pivot Minggu 4
             DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w4_start->toDateString()}' AND '{$w4_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_4_sales"),
-            // Total 4 Minggu
+            // Pivot Minggu 3 
+            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w3_start->toDateString()}' AND '{$w3_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_3_sales"),
+            // Pivot Minggu 2 
+            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w2_start->toDateString()}' AND '{$w2_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_2_sales"),
+            // Pivot Minggu 1 
+            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$w1_start->toDateString()}' AND '{$w1_end->toDateString()}' THEN gross_sales ELSE 0 END) as week_1_sales"),
+            // Pivot D-Day
+            DB::raw("SUM(CASE WHEN transaction_date BETWEEN '{$dDayStart->toDateString()}' AND '{$dDayEnd->toDateString()}' THEN gross_sales ELSE 0 END) as d_day_sales"),
+            // Total Semua (5 Minggu)
             DB::raw("SUM(gross_sales) as total_sales")
         )
-        ->whereBetween('transaction_date', [$w4_start, $w1_end])
+        ->whereBetween('transaction_date', [$w4_start, $dDayEnd]) // Rentang ditarik dari Mgg 4 sampai D-Day
         ->whereRaw('DAYOFWEEK(transaction_date) IN (1, 6, 7)') // 1=Minggu, 6=Jumat, 7=Sabtu
-        ->groupBy('outlet_code', 'outlet_name')
+        ->groupBy('outlet_code', 'outlet_name', 'periode')
         ->get();
 
         return response()->json([
@@ -229,9 +236,39 @@ class ReportController extends Controller
         ]);
     }
 
-    public function exportExcel()
+    public function exportExcel(Request $request)
     {
-        // Men-generate dan men-download file Excel
-        return Excel::download(new SalesReportExport, 'Sales_Report_'.date('Ymd').'.xlsx');
+        $kode_outlet = $request->kode_outlet;
+        $year = $request->year;
+        $month = $request->month;
+        
+
+        // 1. Siapkan Query Pengecekan
+        $checkQuery = SalesReport::query();
+
+        if($year){
+            $checkQuery->whereYear('transaction_date', $year);
+        }
+
+        if($month){
+            $checkQuery->whereMonth('transaction_date', $month);
+        }
+
+        if($kode_outlet){
+            $checkQuery->where('outlet_code', $kode_outlet);
+        }
+
+        if (!$checkQuery->exists()) {
+            // Kembali ke halaman sebelumnya dengan membawa pesan error
+            return redirect()->back()->withErrors([
+                'export' => "Gagal mengunduh! Tidak ada data transaksi untuk Outlet {$kode_outlet} pada periode {$month}-{$year}."
+            ]);
+        }
+
+        // Kirim variabel ke dalam Class Export
+        return Excel::download(
+            new SalesReportExport($year, $month, $kode_outlet), 
+            'Sales_Report_' . ($kode_outlet ?: 'ALL') . '_' . $year . '-' . $month . '.xlsx'
+        );
     }
 }

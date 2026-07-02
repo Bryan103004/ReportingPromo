@@ -96,35 +96,37 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
             @forelse ($users as $user)
-                <tr>
-                    <td class="px-4 py-3">
-                        {{ ($users->currentPage() - 1) * $users->perPage() + $loop->iteration }}
-                    </td>
-                    <td class="px-4 py-3">{{ $user->name }}</td>
-                    <td class="px-4 py-3">{{ $user->username }}</td>
-                    <td class="px-4 py-3">{{ $user->email }}</td>
-                    <td class="px-4 py-3">
-                        <span class="mb-1 mr-1 inline-flex users-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                            @forelse ($user->roles as $role)
-                                <span class="mb-1 mr-1 inline-flex users-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                                    {{ $role->name }}
-                                </span>
-                            @empty
-                                <p class="text-xs text-gray-500">Belum ada role.</p>
-                            @endforelse
-                        </span>
-                    </td>
-                    <td class="px-4 py-3">
-                        <div class="flex flex-wrap users-center gap-2">
-                            <a class="inline-flex users-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium hover:bg-gray-100" href="{{ route('user.edit', $user->id) }}">Edit</a>
-                                <form action="{{route('user.destroy', $user->id)}}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="inline-flex users-center rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Hapus</button>
-                                </form>
-                        </div>
-                    </td>
-                </tr>
+                @if ($user->name != config('app.admin_name'))
+                    <tr>
+                        <td class="px-4 py-3">
+                            {{ ($users->currentPage() - 1) * $users->perPage() + $loop->iteration }}
+                        </td>
+                        <td class="px-4 py-3">{{ $user->name }}</td>
+                        <td class="px-4 py-3">{{ $user->username }}</td>
+                        <td class="px-4 py-3">{{ $user->email }}</td>
+                        <td class="px-4 py-3">
+                            <span class="mb-1 mr-1 inline-flex users-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                @forelse ($user->roles as $role)
+                                    <span class="mb-1 mr-1 inline-flex users-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                        {{ $role->name }}
+                                    </span>
+                                @empty
+                                    <p class="text-xs text-gray-500">Belum ada role.</p>
+                                @endforelse
+                            </span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="flex flex-wrap users-center gap-2">
+                                <a class="inline-flex users-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium hover:bg-gray-100" href="{{ route('user.edit', $user->id) }}">Edit</a>
+                                    <form action="{{route('user.destroy', $user->id)}}" method="POST">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex users-center rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Hapus</button>
+                                    </form>
+                            </div>
+                        </td>
+                    </tr>            
+                @endif
             @empty
                 <tr>
                     <td colspan="8" class="px-4 py-4 text-center text-gray-500">Belum ada data user.</td>

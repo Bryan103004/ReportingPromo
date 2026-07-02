@@ -1,9 +1,13 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\JsmController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RafaksiController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\SupplierRafaksiController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,11 +54,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 });
 
-use App\Http\Controllers\ReportController;
+
 
 Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 Route::post('/reports/upload', [ReportController::class, 'store'])->name('reports.upload');
 Route::get('/reports/export', [ReportController::class, 'exportExcel'])->name('reports.export');
-Route::get('/api/reports/weekly-matrix', [App\Http\Controllers\ReportController::class, 'getWeeklyMatrix'])->name('api.reports.matrix');
+Route::get('/api/reports/weekly-matrix', [ReportController::class, 'getWeeklyMatrix'])->name('api.reports.matrix');
+
+
+Route::get('/jsm/{year}/{month}', [JsmController::class, 'showMonth'])->name('jsm.show_month');
+Route::get('/jsm/export_excel', [JsmController::class, 'exportExcel'])->name('jsm.export.excel');
+Route::get('/jsm/export_csv', [JsmController::class, 'exportCSV'])->name('jsm.export');
+
+Route::resource('jsm', JsmController::class);
+
+
+Route::get('/rafaksi/{year}/{month}', [RafaksiController::class, 'showMonth'])->name('rafaksi.show_month');
+Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->name('rafaksi.export.excel');
+Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');
+Route::resource('rafaksi', RafaksiController::class);
+
+
+
+Route::resource('supplier_rafaksi', SupplierRafaksiController::class);
 
 require __DIR__.'/auth.php';

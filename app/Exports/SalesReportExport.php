@@ -12,18 +12,49 @@ use Carbon\Carbon;
 
 class SalesReportExport implements FromView, ShouldAutoSize, WithStyles
 {
+    // Tambahkan properti untuk menampung filter
+    protected $year;
+    protected $month;
+    protected $kode_outlet;
+
+    // Tangkap data dari Controller
+    public function __construct($year, $month, $kode_outlet)
+    {
+        $this->year = $year;
+        $this->month = $month;
+        $this->kode_outlet = $kode_outlet;
+    }
+
     public function view(): View
     {
-        // 1. Cari Tanggal Terakhir di Database (D-Day Sunday)
-        $lastDateStr = SalesReport::max('transaction_date');
-        $dDayEnd = $lastDateStr ? Carbon::parse($lastDateStr) : Carbon::now();
+        // 1. Buat Base Query untuk mencari D-Day sesuai Filter
+        $baseQuery = SalesReport::query();
+
+        if ($this->year) {
+            $baseQuery->whereYear('transaction_date', $this->year);
+        }
+        if ($this->month) {
+            $baseQuery->whereMonth('transaction_date', $this->month);
+        }
+        if ($this->kode_outlet) {
+            $baseQuery->where('outlet_code', $this->kode_outlet);
+        }
+
+        // Cari Tanggal Terakhir di Database (D-Day Sunday) berdasarkan filter
+        $lastDateStr = $baseQuery->max('transaction_date');
         
-        // Pastikan ujungnya adalah hari Minggu (7)
+        // Jika data ketemu, pakai tanggal tersebut. Jika kosong, set ke akhir bulan yang dipilih form.
+        if ($lastDateStr) {
+            $dDayEnd = Carbon::parse($lastDateStr);
+        } else {
+            $dDayEnd = Carbon::createFromDate($this->year, $this->month, 1)->endOfMonth();
+        }
+        
         if ($dDayEnd->dayOfWeek !== Carbon::SUNDAY) {
             $dDayEnd->next(Carbon::SUNDAY);
         }
 
-        // 2. Fungsi untuk membuat label dinamis (Contoh: "8-10 MEI" atau "29 APR - 1 MEI")
+        // 2. Fungsi Label Dinamis (Tetap sama)
         $generateLabel = function($sunday) {
             $friday = $sunday->copy()->subDays(2);
             $monthEnd = strtoupper($sunday->translatedFormat('F'));
@@ -36,7 +67,7 @@ class SalesReportExport implements FromView, ShouldAutoSize, WithStyles
             }
         };
 
-        // 3. Tentukan Rentang Waktu
+        // 3. Tentukan Rentang Waktu (Tetap sama)
         $weeks = [
             'd_day' => ['end' => $dDayEnd->copy(), 'label' => $generateLabel($dDayEnd)],
             'w1'    => ['end' => $dDayEnd->copy()->subWeeks(1), 'label' => $generateLabel($dDayEnd->copy()->subWeeks(1))],
@@ -45,26 +76,30 @@ class SalesReportExport implements FromView, ShouldAutoSize, WithStyles
             'w4'    => ['end' => $dDayEnd->copy()->subWeeks(4), 'label' => $generateLabel($dDayEnd->copy()->subWeeks(4))],
         ];
 
-        // Batas penarikan data SQL (Dari Jumat 4 Minggu lalu sampai Minggu D-Day)
         $startDate = $weeks['w4']['end']->copy()->subDays(2)->format('Y-m-d');
         $endDate   = $weeks['d_day']['end']->format('Y-m-d');
 
-        // 4. Query Data Transaksi
-        $rawSales = SalesReport::whereBetween('transaction_date', [$startDate, $endDate])
-            ->whereRaw('DAYOFWEEK(transaction_date) IN (1, 6, 7)') // 1=Minggu, 6=Jumat, 7=Sabtu
-            ->get();
+        // 4. Query Data Transaksi Final
+        $salesQuery = SalesReport::whereBetween('transaction_date', [$startDate, $endDate])
+            ->whereRaw('DAYOFWEEK(transaction_date) IN (1, 6, 7)');
+            
+        // JANGAN LUPA filter berdasarkan outlet juga di query utamanya (jika user mengisi kode outlet)
+        if ($this->kode_outlet) {
+            $salesQuery->where('outlet_code', $this->kode_outlet);
+        }
 
-        // 5. Susun Data Dinamis (Grouping per SKU)
+        $rawSales = $salesQuery->get();
+
+        // 5. Susun Data Dinamis (Tetap sama)
         $products = [];
         $no = 1;
 
         foreach ($rawSales as $sale) {
             $sku = $sale->sku;
             
-            // Inisialisasi struktur array jika SKU baru
             if (!isset($products[$sku])) {
                 $products[$sku] = [
-                    'category'    => '', // Sesuaikan jika ada master kategori
+                    'category'    => 'GENERAL', 
                     'no'          => $no++,
                     'sku'         => $sku,
                     'description' => $sale->product_name,
@@ -81,7 +116,6 @@ class SalesReportExport implements FromView, ShouldAutoSize, WithStyles
                 ];
             }
 
-            // Tentukan data ini masuk ke minggu mana
             $saleDate = Carbon::parse($sale->transaction_date);
             $targetWeek = null;
 
@@ -94,41 +128,34 @@ class SalesReportExport implements FromView, ShouldAutoSize, WithStyles
             }
 
             if ($targetWeek) {
-                // Tentukan Hari
                 $dayKey = '';
                 if ($saleDate->dayOfWeek === Carbon::FRIDAY) $dayKey = 'jumat';
                 elseif ($saleDate->dayOfWeek === Carbon::SATURDAY) $dayKey = 'sabtu';
                 elseif ($saleDate->dayOfWeek === Carbon::SUNDAY) $dayKey = 'minggu';
 
-                // Tambahkan Qty & Value
                 if ($dayKey) {
                     $products[$sku]['weeks'][$targetWeek][$dayKey]['qty'] += $sale->quantity;
                     $products[$sku]['weeks'][$targetWeek][$dayKey]['val'] += $sale->gross_sales;
                     
-                    // Sum per Minggu
                     $products[$sku]['weeks'][$targetWeek]['sum']['qty'] += $sale->quantity;
                     $products[$sku]['weeks'][$targetWeek]['sum']['val'] += $sale->gross_sales;
                 }
             }
         }
 
-        // 6. Kalkulasi Average 4 Minggu & Selisih (D-Day vs Avg)
+        // 6. Kalkulasi Average & Selisih (Tetap sama)
         foreach ($products as $sku => &$data) {
             foreach (['jumat', 'sabtu', 'minggu', 'sum'] as $day) {
-                // Total 4 minggu masa lalu
                 $qty4Weeks = $data['weeks']['w4'][$day]['qty'] + $data['weeks']['w3'][$day]['qty'] + $data['weeks']['w2'][$day]['qty'] + $data['weeks']['w1'][$day]['qty'];
                 $val4Weeks = $data['weeks']['w4'][$day]['val'] + $data['weeks']['w3'][$day]['val'] + $data['weeks']['w2'][$day]['val'] + $data['weeks']['w1'][$day]['val'];
                 
-                // Average
                 $data['avg'][$day]['qty'] = $qty4Weeks / 4;
                 $data['avg'][$day]['val'] = $val4Weeks / 4;
 
-                // Selisih = D-Day - Average
                 $data['selisih'][$day]['qty'] = $data['weeks']['d_day'][$day]['qty'] - $data['avg'][$day]['qty'];
                 $data['selisih'][$day]['val'] = $data['weeks']['d_day'][$day]['val'] - $data['avg'][$day]['val'];
             }
             
-            // Persentase Selisih (Selisih SUM / Avg SUM * 100)
             if ($data['avg']['sum']['qty'] > 0) {
                 $data['selisih_pct']['qty'] = ($data['selisih']['sum']['qty'] / $data['avg']['sum']['qty']) * 100;
             }
@@ -136,8 +163,6 @@ class SalesReportExport implements FromView, ShouldAutoSize, WithStyles
                 $data['selisih_pct']['val'] = ($data['selisih']['sum']['val'] / $data['avg']['sum']['val']) * 100;
             }
         }
-
-        dd($products);
 
         return view('report.export_excel', [
             'headers'  => $weeks,

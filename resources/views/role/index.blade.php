@@ -88,6 +88,7 @@
             </thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse ($roles as $item)
+                @if ($item->name != config('app.admin_role'))
                     <tr>
                         <td class="px-4 py-3">
                             {{ ($roles->currentPage() - 1) * $roles->perPage() + $loop->iteration }}
@@ -125,7 +126,8 @@
                                 </form>
                             </div>
                         </td>
-                    </tr>
+                    </tr>                
+                @endif
                 @empty
                     <tr>
                         <td colspan="6" class="px-4 py-4 text-center text-gray-500">Belum ada data roles.</td>

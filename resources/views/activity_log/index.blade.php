@@ -1,10 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container py-4">
-    {{-- Form Paginate & Search Bar Atas --}}
-    <div class="d-flex justify-content-between align-items-center flex-wrap mb-4 shadow-sm p-3 bg-white rounded" style="gap: 15px;">
-        <form method="GET" action="{{ route('activity-log.index') }}" id="paginateForm" class="form-inline">
+<div class="container mx-auto px-4 py-6 max-w-7xl">
+    
+    {{-- Form Paginate & Search Bar Atas (Card Putih) --}}
+    <div class="flex flex-wrap justify-between items-center mb-6 shadow-sm p-4 bg-white rounded-lg gap-4">
+        <form method="GET" action="{{ route('activity-log.index') }}" id="paginateForm" class="flex items-center gap-2">
             @foreach(request()->except('number') as $key => $val)
                 @if(is_array($val))
                     @foreach($val as $v) <input type="hidden" name="{{ $key }}[]" value="{{ $v }}"> @endforeach
@@ -12,8 +13,8 @@
                     <input type="hidden" name="{{ $key }}" value="{{ $val }}">
                 @endif
             @endforeach
-            <label for="number" class="mr-2 small font-weight-bold text-muted">Tampilkan:</label>
-            <select id="number" name="number" class="form-control form-control-sm font-weight-bold text-secondary" style="border-radius: 6px;">
+            <label for="number" class="text-sm font-bold text-gray-500">Tampilkan:</label>
+            <select id="number" name="number" class="border border-gray-300 rounded-md text-sm font-bold text-gray-600 px-3 py-1.5 focus:ring-blue-500 focus:border-blue-500">
                 @foreach($number_paginate as $num)
                     <option value="{{ $num }}" {{ $number == $num ? 'selected' : '' }}>
                         {{ $num == 999999999 ? 'All' : $num }}
@@ -23,8 +24,7 @@
         </form>
 
         {{-- ===== SEARCH BAR ===== --}}
-        {{-- Tetap mempertahankan Blade Component bawaan kamu --}}
-        <div class="flex-grow-1 mx-md-3" style="max-width: 400px;">
+        <div class="flex-grow md:max-w-md w-full">
             <x-search-bar 
                 placeholder="Masukkan user atau aksi..." 
                 tableId="logsTable" 
@@ -32,102 +32,79 @@
         </div>
     </div>
 
-    {{-- Header Section --}}
-    <div class="d-flex justify-content-between align-items-center flex-wrap mb-4 pb-2 border-bottom">
-        
-        <form action="{{ route('activity-log.destroy') }}" method="POST" class="d-inline">
+    {{-- Header Section (Clear Log, Judul, Total) --}}
+    <div class="mb-6 pb-4 border-b border-gray-200">
+        <form action="{{ route('activity-log.destroy') }}" method="POST" class="inline-block mb-1">
             @csrf @method('DELETE')
-            <button type="submit" class="btn btn-sm btn-danger text-nowrap"
-                    onclick="return confirm('Yakin clear semua log?')">Clear Log</button>
+            <button type="submit" class="text-gray-800 hover:text-red-600 font-medium text-sm transition-colors" onclick="return confirm('Yakin clear semua log?')">
+                Clear Log
+            </button>
         </form>
-        <div>
-            <h2 class="font-weight-bold text-dark mb-1" style="letter-spacing: 0.5px;">Activity Log</h2>
-            <p class="text-muted small mb-0">Pantau seluruh aktivitas perubahan data di dalam sistem.</p>
-        </div>
-        <div>
-            <span class="badge badge-primary px-3 py-2 font-weight-bold shadow-sm" style="font-size: 0.85rem; border-radius: 20px;">
-                Total: {{ $logs->total() }} Log
-            </span>
-        </div>
+        <h2 class="text-2xl font-bold text-gray-900 tracking-wide mb-1">Activity Log</h2>
+        <p class="text-sm text-gray-600 mb-3">Pantau seluruh aktivitas perubahan data di dalam sistem.</p>
+        <span class="inline-block bg-gray-100 text-gray-800 border border-gray-200 text-xs font-bold px-4 py-1.5 rounded-full shadow-sm">
+            Total: {{ $logs->total() }} Log
+        </span>
     </div>
 
     {{-- Log Table Card --}}
-    <div class="card shadow-sm border-0 mb-4" style="border-radius: 12px; overflow: hidden;">
-        <div class="table-responsive">
-            <table class="table table-hover table-striped text-left mb-0" id="logsTable" style="text-transform: uppercase; font-size: 0.85rem;">
-                <thead class="bg-light text-secondary font-weight-bold" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+    <div class="bg-white shadow-sm rounded-xl overflow-hidden mb-6 border border-gray-200">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left uppercase text-sm" id="logsTable">
+                <thead class="bg-gray-50 text-gray-700 text-xs font-bold tracking-wider border-b border-gray-200">
                     <tr>
-                        <th class="py-3 px-4">Waktu</th>
-                        <th class="py-3 px-4">User</th>
-                        <th class="py-3 px-4">Aksi</th>
-                        <th class="py-3 px-4">Modul / Subjek</th>
-                        <th class="py-3 px-4">Detail Perubahan</th>
+                        <th class="py-4 px-6">Waktu</th>
+                        <th class="py-4 px-6">User</th>
+                        <th class="py-4 px-6">Aksi</th>
+                        <th class="py-4 px-6">Modul / Subjek</th>
+                        <th class="py-4 px-6">Detail Perubahan</th>
                     </tr>
                 </thead>
-                <tbody class="text-dark">
+                <tbody class="divide-y divide-gray-100 text-gray-900">
                     @forelse($logs as $log)
-                        <tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
                             {{-- Waktu --}}
-                            <td class="align-middle px-4 text-nowrap">
-                                <div class="font-weight-bold text-dark">{{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}</div>
-                                <small class="text-muted font-mono" style="font-size: 11px;">{{ $log->created_at ? $log->created_at->format('H:i:s') : '-' }} WIB</small>
+                            <td class="py-4 px-6 whitespace-nowrap align-top">
+                                <div class="font-bold">{{ $log->created_at ? $log->created_at->format('d M Y') : '-' }}</div>
+                                <div class="text-xs text-gray-500 font-mono mt-1">{{ $log->created_at ? $log->created_at->format('H:i:s') : '-' }} WIB</div>
                             </td>
 
                             {{-- User --}}
-                            <td class="align-middle px-4">
-                                <div class="font-weight-bold text-dark">{{ $log->causer ? $log->causer->name : 'System' }}</div>
-                                <small class="text-muted" style="font-size: 10px; letter-spacing: -0.3px;">ID: {{ $log->causer_id ?? '-' }}</small>
+                            <td class="py-4 px-6 align-top">
+                                <div class="font-bold">{{ $log->causer ? $log->causer->name : 'System' }}</div>
+                                <div class="text-[11px] text-gray-500 tracking-tight mt-1">ID: {{ $log->causer_id ?? '-' }}</div>
                             </td>
 
-                            {{-- Aksi --}}
-                            <td class="align-middle px-4">
-                                @php
-                                    $desc = strtolower($log->description);
-                                    $badgeColor = 'badge-secondary'; // Fallback
-
-                                    if ($desc === 'created') {
-                                        $badgeColor = 'badge-success';
-                                    } elseif ($desc === 'updated') {
-                                        $badgeColor = 'badge-warning text-dark';
-                                    } elseif ($desc === 'deleted') {
-                                        $badgeColor = 'badge-danger';
-                                    }
-                                @endphp
-                                <span class="badge {{ $badgeColor }} px-3 py-1.5 font-weight-bold" style="font-size: 0.7rem; letter-spacing: 0.5px; min-width: 85px; text-align: center; border-radius: 4px;">
-                                    {{ $log->description }}
-                                </span>
+                            {{-- Aksi (Tanpa Badge, Seperti Screenshot) --}}
+                            <td class="py-4 px-6 align-top">
+                                <span class="font-medium text-xs">{{ $log->description }}</span>
                             </td>
 
                             {{-- Modul / Subjek --}}
-                            <td class="align-middle px-4">
-                                <div class="text-dark font-weight-bold">
-                                    {{ class_basename($log->subject_type) }}
-                                </div>
-                                <small class="text-primary font-weight-bold" style="font-size: 11px;">
-                                    ID: {{ $log->subject_id }}
-                                </small>
+                            <td class="py-4 px-6 align-top">
+                                <div class="font-bold">{{ class_basename($log->subject_type) }}</div>
+                                <div class="text-[11px] font-bold text-gray-500 mt-1">ID: {{ $log->subject_id }}</div>
                             </td>
 
                             {{-- Properties (JSON) --}}
-                            <td class="align-middle px-4">
-                                <button type="button" 
-                                    onclick="toggleProperties('prop-{{ $log->id }}')"
-                                    class="btn btn-link btn-sm text-primary p-0 font-weight-bold d-inline-flex align-items-center" style="gap: 5px; text-decoration: none;">
-                                    <i class="fas fa-eye small"></i> Lihat Data
+                            <td class="py-4 px-6 align-top">
+                                <button type="button" onclick="toggleProperties('prop-{{ $log->id }}')" class="text-gray-900 hover:text-blue-600 font-bold text-xs flex items-center gap-1 transition-colors">
+                                    <svg class="w-4 h-4 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    Lihat Data
                                 </button>
-                                <div id="prop-{{ $log->id }}" class="d-none mt-2">
-                                    <div class="rounded p-3 custom-scrollbar" style="max-height: 160px; overflow-y: auto; font-size: 11px; font-family: monospace; background-color: #212529;">
-                                        <pre class="mb-0 text-light" style="white-space: pre-wrap; word-break: break-all;"><code>{{ json_encode($log->properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                                <div id="prop-{{ $log->id }}" class="hidden mt-3">
+                                    <div class="bg-[#212529] rounded p-3 overflow-y-auto custom-scrollbar max-h-40 text-[11px] font-mono text-gray-200 break-all whitespace-pre-wrap shadow-inner">
+                                        {{ json_encode($log->properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}
                                     </div>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <div class="text-muted py-3">
-                                    <i class="fas fa-history fa-3x mb-3 text-muted" style="opacity: 0.4;"></i>
-                                    <p class="mb-0 font-weight-bold">Tidak ada aktivitas yang tercatat.</p>
+                            <td colspan="5" class="px-6 py-10 text-center">
+                                <div class="text-gray-400 py-3">
+                                    <svg class="mx-auto h-12 w-12 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    <p class="mb-0 font-bold">Tidak ada aktivitas yang tercatat.</p>
                                 </div>
                             </td>
                         </tr>
@@ -137,24 +114,22 @@
         </div>
     </div>
 
-    {{-- Pagination (Bawaan Bootstrap 4) --}}
-    <div class="d-flex justify-content-center my-4">
+    {{-- Pagination --}}
+    <div class="flex justify-center my-6">
         {{ $logs->links() }}
     </div>
 
     {{-- Form Paginate Bawah --}}
-    <form method="GET" action="{{ route('activity-log.index') }}" id="paginateFormBottom" class="form-inline mb-4">
+    <form method="GET" action="{{ route('activity-log.index') }}" id="paginateFormBottom" class="flex items-center gap-2 mb-6">
         @foreach(request()->except('number') as $key => $val)
             @if(is_array($val))
-                @foreach($val as $v)
-                    <input type="hidden" name="{{ $key }}[]" value="{{ $v }}">
-                @endforeach
+                @foreach($val as $v) <input type="hidden" name="{{ $key }}[]" value="{{ $v }}"> @endforeach
             @else
                 <input type="hidden" name="{{ $key }}" value="{{ $val }}">
             @endif
         @endforeach
-        <label for="number-bottom" class="mr-2 small font-weight-bold text-muted">Tampilkan:</label>
-        <select id="number-bottom" name="number" class="form-control form-control-sm text-secondary font-weight-bold" style="border-radius: 6px;" onchange="document.getElementById('paginateFormBottom').submit()">
+        <label for="number-bottom" class="text-sm font-bold text-gray-500">Tampilkan:</label>
+        <select id="number-bottom" name="number" class="border border-gray-300 rounded-md text-sm font-bold text-gray-600 px-3 py-1.5 focus:ring-blue-500 focus:border-blue-500" onchange="document.getElementById('paginateFormBottom').submit()">
             @foreach($number_paginate as $num)
                 <option value="{{ $num }}" {{ $number == $num ? 'selected' : '' }}>
                     {{ $num == 999999999 ? 'All' : $num }}
@@ -164,18 +139,19 @@
     </form>
 </div>
 
+<style>
+    /* Styling scrollbar untuk JSON preview agar tetap estetik */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #212529; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+</style>
+
 <script>
-    // JS Logic Toggle Properties (Menggantikan utility class toggle Tailwind)
     function toggleProperties(id) {
-        const el = document.getElementById(id);
-        if (el.classList.contains('d-none')) {
-            el.classList.remove('d-none');
-        } else {
-            el.classList.add('d-none');
-        }
+        document.getElementById(id).classList.toggle('hidden');
     }
 
-    // Sinkronkan select jumlah data per halaman atas & bawah
+    // JS Pagination bawaan kamu tetap sama
     const selectTop = document.getElementById('number');
     const selectBottom = document.getElementById('number-bottom');
     const formTop = document.getElementById('paginateForm');
@@ -188,14 +164,11 @@
         });
         selectBottom.addEventListener('change', function(e) {
             selectTop.value = selectBottom.value;
-            setTimeout(function() {
-                formBottom.submit();
-            }, 10);
+            setTimeout(() => { formBottom.submit(); }, 10);
         });
     }
 
     const perPageSelect = document.querySelector('select[name="number"]');
-
     if (perPageSelect) {
         perPageSelect.addEventListener('change', function() {
             const url = new URL(window.location.href);
@@ -205,26 +178,4 @@
         });
     }
 </script>
-
-<style>
-    /* Styling scrollbar untuk JSON preview agar lebih estetik */
-    .custom-scrollbar::-webkit-scrollbar {
-        width: 5px;
-        height: 5px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-        background: #212529;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #6c757d;
-        border-radius: 4px;
-    }
-    .text-nowrap {
-        white-space: nowrap;
-    }
-    .py-1\.5 {
-        padding-top: 0.375rem !important;
-        padding-bottom: 0.375rem !important;
-    }
-</style>
 @endsection

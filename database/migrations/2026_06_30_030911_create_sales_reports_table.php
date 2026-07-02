@@ -15,7 +15,7 @@ class CreateSalesReportsTable extends Migration
             $table->string('outlet_name', 100);         
 
             // Data Baris 1 (SKU, Product, dsb)
-            $table->string('sku#', 50)->index();
+            $table->string('sku', 50)->index();
             $table->string('product_name', 150);
             $table->string('size', 50)->nullable();
             $table->string('uom', 20)->nullable();
@@ -45,8 +45,8 @@ class CreateSalesReportsTable extends Migration
             $table->string('desc_m3', 150)->nullable();
             $table->string('md4', 50)->nullable();
             $table->string('desc_m4', 150)->nullable();
-            $table->string('sku', 50)->nullable(); // Dari kolom SKU yang ada di belakang
-            $table->string('supl#', 50)->nullable();
+            $table->string('sku_2', 50)->nullable(); // Dari kolom SKU yang ada di belakang
+            $table->string('supl', 50)->nullable();
             $table->string('supplier_name', 150)->nullable();
 
             $table->timestamps();
