@@ -150,6 +150,10 @@
                     "emptyTable": "Belum ada data. Silakan upload file TXT terlebih dahulu."
                 },
                 "pageLength": 10,
+                "lengthMenu": [
+                    [10, 25, 50, 100, 300, -1],          // Nilai logika untuk sistem '-1'='All'
+                    [10, 25, 50, 100, 300, "All"]      // Teks yang muncul di menu drop-down
+                ],
                 "ajax": {
                     "url": "{{ route('api.reports.matrix') }}",
                     "type": "GET",
