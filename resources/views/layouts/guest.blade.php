@@ -10,14 +10,8 @@
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
 
-        <!-- Load Vite Client -->
-        <script type="module" src="http://localhost:5173/@vite/client"></script>
-
-        <!-- Load CSS Tailwind -->
-        <link rel="stylesheet" href="http://localhost:5173/resources/css/app.css">
-
-        <!-- Load JS -->
-        <script type="module" src="http://localhost:5173/resources/js/app.js"></script>
+        <link rel="stylesheet" href="{{ asset('build/assets/app-DSyx7Avh.css') }}">
+        <script src="{{ asset('build/assets/assets/app-DXU0SP3V.js') }}" type="module"></script>
     </head>
     <body>
         <div class="font-sans text-gray-900 antialiased">
