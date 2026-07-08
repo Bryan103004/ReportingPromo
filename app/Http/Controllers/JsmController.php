@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\DetailJsmReport;
 use App\Models\Jsm;
+use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
@@ -17,12 +18,14 @@ class JsmController extends Controller
     {
         $jsmGroups = Jsm::selectRaw('
                 store,  
-                YEAR(periode_akhir) as year, 
-                MONTH(periode_akhir) as month, 
+                MAX(YEAR(periode_akhir)) as year, -- Mengambil tahun terbaru dalam grup
+                MAX(MONTH(periode_akhir)) as month, -- Mengambil bulan terbaru dalam grup
+                YEAR(periode_bulan) as year_kerja, 
+                MONTH(periode_bulan) as month_kerja, 
                 COUNT(*) as total_data, 
                 SUM(nominal) as total_nominal
             ')
-            ->groupBy('store', 'year', 'month')
+            ->groupBy('store', 'year_kerja', 'month_kerja')
             ->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
             ->get();
@@ -32,8 +35,9 @@ class JsmController extends Controller
 
     public function showMonth($year, $month)
     {
-        $jsms = Jsm::whereYear('periode_akhir', $year)
-            ->whereMonth('periode_akhir', $month)
+        $jsms = Jsm::with(['tokos'])
+            ->whereYear('periode_bulan', $year)
+            ->whereMonth('periode_bulan', $month)
             ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
             ->get(); 
 
@@ -44,7 +48,8 @@ class JsmController extends Controller
 
     public function create(){
         $supplierRafaksi = SupplierRafaksi::all();
-        return view('jsm.create', compact('supplierRafaksi'));
+        $regions = Region::all();
+        return view('jsm.create', compact('supplierRafaksi','regions'));
     }
 
     public function store(Request $request){
@@ -54,12 +59,17 @@ class JsmController extends Controller
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required',
             'no_raf' => 'string|required',
+            'periode_bulan' => 'string|required',
             'store' => 'string|required',
             'nominal' => 'numeric|min:0|required',
+            'remarks' => 'string|nullable',
+            // 'toko_id' => 'array|required',
+            'toko_id' => 'exists:tokos,id',
         ]);
 
         $jsm = Jsm::create($request->all());
-
+        $jsm->tokos()->sync($request->toko_id);
+       
         ActivityLogger::logCreate(
             $jsm,
             $jsm->id,
@@ -81,11 +91,16 @@ class JsmController extends Controller
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required',
             'no_raf' => 'string|required',
+            'periode_bulan' => 'string|required',
             'store' => 'string|required',
             'nominal' => 'numeric|min:0|required',
+            'remarks' => 'string|nullable',
+            // 'toko_id' => 'array|required',
+            'toko_id' => 'exists:tokos,id',
         ]);
 
         $jsm->update($request->all());
+        $jsm->tokos()->sync($request->toko_id);
 
         ActivityLogger::logUpdate(
             $jsm,
@@ -130,11 +145,11 @@ class JsmController extends Controller
             $month = $request->month;
             $fileName = "detail_jsm_{$year}_{$month}.csv";
             
-            $columns = ['No', 'No. RAF', 'Kode Supplier', 'Nama Supplier', 'Store', 'Periode Awal', 'Periode Akhir', 'Nominal'];
+            $columns = ['No', 'No. RAF', 'Kode Supplier', 'Nama Supplier', 'Region', 'Store', 'Periode Awal', 'Periode Akhir', 'Nominal'];
             
-            $jsms = Jsm::whereYear('periode_awal', $year)
-                ->whereMonth('periode_awal', $month)
-                ->orderBy('periode_awal', 'desc')
+            $jsms = Jsm::whereYear('periode_bulan', $year)
+                ->whereMonth('periode_bulan', $month)
+                ->orderBy('periode_akhir', 'desc')
                 ->get();
 
             foreach ($jsms as $index => $row) {
@@ -144,6 +159,7 @@ class JsmController extends Controller
                     $row->supplier_code,
                     $row->supplier_name,
                     $row->store,
+                    $row->daftar_toko_formatted,
                     $row->periode_awal,
                     $row->periode_akhir,
                     $row->nominal
@@ -156,7 +172,7 @@ class JsmController extends Controller
             $columns = ['Tahun', 'Bulan', 'Total Transaksi', 'Total Nominal'];
 
             $jsmGroups = Jsm::selectRaw('
-                    YEAR(periode_awal) as year, 
+                    YEAR(periode_bulan) as year, 
                     MONTH(periode_awal) as month, 
                     COUNT(*) as total_data, 
                     SUM(nominal) as total_nominal
@@ -169,7 +185,7 @@ class JsmController extends Controller
             foreach ($jsmGroups as $group) {
                 $data[] = [
                     $group->year,
-                    $group->month,
+                    Carbon::create()->month($group->month)->locale('id')->format('F'),
                     $group->total_data,
                     $group->total_nominal
                 ];

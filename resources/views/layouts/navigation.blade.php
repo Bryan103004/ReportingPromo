@@ -49,12 +49,6 @@
                                     </a>
                                 @endcan
 
-                                @can('view_toko')
-                                    <a href="{{ route('toko.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs('toko.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
-                                        <span class="text-base">🏪</span> Toko
-                                    </a>
-                                @endcan
-
                                 @can('email_tambahan')
                                     <x-dropdown-link :href="route('notification-recipients.index')" class="text-sm {{ request()->routeIs('notification-recipients.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                         <span>📧</span> Email Tambahan
@@ -78,7 +72,7 @@
                                 <div>
                                     <button
                                         @click="mgmtOpen = !mgmtOpen"
-                                        class="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs(['user.*', 'role.*']) ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                        class="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs(['user.*', 'role.*', 'toko.*', 'region.*', 'permission.*']) ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                         <div class="flex items-center gap-2.5">
                                             <span class="text-base">👥</span>
                                             <span>Manajemen Pengguna</span>
@@ -94,19 +88,35 @@
                                         x-transition:enter-end="opacity-100 translate-y-0"
                                         class="mt-0.5 mb-0.5 ml-2">
 
-
+                                            @can('view_users')
                                             <x-dropdown-link :href="route('user.index')" class="text-sm {{ request()->routeIs('user.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                 <span>👤</span> Users
                                             </x-dropdown-link>
+                                            @endcan
 
+                                            @can('view_roles')
                                             <x-dropdown-link :href="route('role.index')" class="text-sm {{ request()->routeIs('role.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                 <span>🔑</span> Roles
                                              </x-dropdown-link>
+                                             @endcan
 
-
+                                             @can('view_permissions')
                                             <x-dropdown-link :href="route('permission.index')" class="text-sm {{ request()->routeIs('permission.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                 <span>🛡️</span> Permissions 
                                             </x-dropdown-link>
+                                            @endcan
+
+                                            @can('view_toko')
+                                            <x-dropdown-link :href="route('toko.index')" class="text-sm {{  request()->routeIs('toko.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : ''  }}">
+                                                <span class="text-base">🏪</span> Master Toko
+                                            </x-dropdown-link>
+                                            @endcan
+
+                                            @can('view_region')
+                                            <x-dropdown-link :href="route('region.index')" class="text-sm {{ request()->routeIs('region.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : ''  }}" >
+                                                <span class="text-base">📍</span> Master Region
+                                            </x-dropdown-link>
+                                            @endcan
                                     </div>
                                 </div>
                             </div>
@@ -142,7 +152,7 @@
                                 <div>
                                     <button
                                         @click="subRafaksiOpen = !subRafaksiOpen"
-                                        class="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs(['user.*', 'role.*']) ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                        class="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs(['jsm.*', 'rafaksi.*', 'supplier_rafaksi.*']) ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                         <div class="flex items-center gap-2.5">
                                             <span class="text-base">👥</span>
                                             <span>Manajemen Rafaksi</span>
@@ -186,18 +196,6 @@
                     <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.index')">
                         {{ __('Reports Promo Weekend') }}
                     </x-nav-link>
-                    @endcan
-
-                    @can('view_data_kendaraan')
-                        <x-nav-link :href="route('data_kendaraan.index')" :active="request()->routeIs('data_kendaraan.index')">
-                            {{ __('Data Kendaraan') }}
-                        </x-nav-link>
-                    @endcan
-
-                    @can('view_data_perizinan')
-                        <x-nav-link :href="route('perizinan.index')" :active="request()->routeIs('perizinan.index')">
-                            {{ __('Data Perizinan') }}
-                        </x-nav-link>
                     @endcan
 
                     @can('can_see_partner_and_oss')

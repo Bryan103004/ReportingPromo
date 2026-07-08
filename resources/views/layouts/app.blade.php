@@ -10,8 +10,8 @@
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
 
-        <link rel="stylesheet" href="{{ asset('build/assets/app-DSyx7Avh.css') }}">
-        <script src="{{ asset('build/assets/assets/app-DXU0SP3V.js') }}" type="module"></script>
+        <link rel="stylesheet" href="{{ asset('build/assets/app-DpeE0s5i.css') }}">
+        <script src="{{ asset('build/assets/app-DXU0SP3V.js') }}" type="module"></script>
 
         <!-- <script src="https://cdn.tailwindcss.com"></script> -->
         

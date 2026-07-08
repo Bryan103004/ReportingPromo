@@ -40,6 +40,7 @@
                 <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500 tracking-wider">
                     <tr>
                         <th class="px-6 py-4 w-16 text-center">No</th>
+                        <th class="hidden px-6 py-4">Periode Rafaksi</th>
                         <th class="px-6 py-4">Periode Bulan</th>
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-center">Total Transaksi</th>
@@ -55,10 +56,14 @@
                             <td class="px-6 py-4 text-center font-medium text-gray-500">
                                 {{ $loop->iteration }}
                             </td>
-                            <td class="px-6 py-4 font-bold text-gray-800">
+                            <td class="hidden px-6 py-4 font-bold text-gray-800">
                                 {{-- Mengubah angka bulan & tahun menjadi teks (Contoh: "Mei 2026") --}}
                                 {{ \Carbon\Carbon::createFromDate($group->year, $group->month, 1)->translatedFormat('F Y') }}
                             </td>
+                            <td class="px-6 py-4 font-bold text-gray-800">
+                                {{-- Mengubah angka bulan & tahun menjadi teks (Contoh: "Mei 2026") --}}
+                                {{ \Carbon\Carbon::createFromDate($group->year_kerja, $group->month_kerja, 1)->translatedFormat('F Y') }}
+                            </td>                           
                             <td class="px-6 py-4">
                                 {{ $group->store }}
                             </td>
@@ -72,7 +77,7 @@
                             </td>
                             <td class="px-6 py-4 text-center">
                                 {{-- Tombol menuju halaman detail per bulan --}}
-                                <a href="{{ route('jsm.show_month', ['year' => $group->year, 'month' => $group->month]) }}" 
+                                <a href="{{ route('jsm.show_month', ['year' => $group->year_kerja, 'month' => $group->month_kerja]) }}" 
                                    class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:text-blue-600 transition-colors">
                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                    Lihat Detail

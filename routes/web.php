@@ -5,9 +5,11 @@ use App\Http\Controllers\JsmController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RafaksiController;
+use App\Http\Controllers\RegionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierRafaksiController;
+use App\Http\Controllers\TokoController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -74,7 +76,10 @@ Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->
 Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');
 Route::resource('rafaksi', RafaksiController::class);
 
+Route::resource('region', RegionController::class);
 
+Route::get('/get-tokos/{region_id}',[TokoController::class, 'getByRegion']);
+Route::resource('toko', TokoController::class);
 
 Route::resource('supplier_rafaksi', SupplierRafaksiController::class);
 

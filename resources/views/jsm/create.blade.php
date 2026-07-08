@@ -43,13 +43,13 @@
                 
                 {{-- Periode Awal --}}
                 <div>
-                    <label for="periode_awal" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Awal <span class="text-red-500">*</span></label>
+                    <label for="periode_awal" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Awal Rafaksi<span class="text-red-500">*</span></label>
                     <input type="date" name="periode_awal" id="periode_awal" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div>
 
                 {{-- Periode Akhir --}}
                 <div>
-                    <label for="periode_akhir" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Akhir <span class="text-red-500">*</span></label>
+                    <label for="periode_akhir" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Akhir Rafaksi<span class="text-red-500">*</span></label>
                     <input type="date" name="periode_akhir" id="periode_akhir" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div> 
 
@@ -59,11 +59,41 @@
                     <input type="text" name="no_raf" id="no_raf" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="Contoh: RAF/2026/001" required>
                 </div>
 
-                {{-- Store --}}
+                {{-- Periode Bulan --}}
                 <div>
+                    <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Pengerjaan<span class="text-red-500">*</span></label>
+                    <input type="date" name="periode_bulan" id="periode_bulan" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
+                </div>
+
+                {{-- Store --}}
+                <!-- <div>
                     <label for="store" class="block text-sm font-semibold text-gray-700 mb-1.5">Store <span class="text-red-500">*</span></label>
                     <input type="text" name="store" id="store" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="Masukkan Store.." required>
-                </div> 
+                </div>  -->
+
+                <div class="md:col-span-2 text-lg font-semibold text-gray-700 border-b pb-2 mt-4">Pemilihan Toko (Store)</div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter Berdasarkan Region</label>
+                    <select id="region_filter" onchange="fetchTokos(this.value)" class="block w-full md:w-1/2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                        <option value="">-- Pilih Region untuk memunculkan Toko --</option>
+                        @foreach($regions as $region)
+                            <option value="{{ $region->id }}">{{ $region->nama_region }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pilih Toko <span class="text-red-500">*</span></label>
+                    
+                    <div id="toko_container" class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-md bg-gray-50 min-h-[100px]">
+                        <div class="col-span-full text-center text-gray-400 text-sm py-4">
+                            Silakan pilih region terlebih dahulu.
+                        </div>
+                    </div>
+                </div>
+                
+                <input type="hidden" name="store" id="hidden_store_name" value="-">
             </div>
 
             {{-- Nominal (Full Width di bawah) --}}
@@ -75,6 +105,12 @@
                     </div>
                     <input type="number" name="nominal" id="nominal" class="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="0" required>
                 </div>
+            </div> 
+
+            <!-- Remark -->
+            <div class="mb-8 mx-6">
+                <label for="remarks" class="block text-sm font-semibold text-gray-700 mb-1.5">Remarks</label>  
+                <textarea name="remarks" id="remarks"  rows="3" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('remarks') border-red-500 focus:ring-red-500 focus:border-red-500 @enderror" placeholder="Masukkan catatan di sini..."></textarea>
             </div> 
 
             {{-- Action Buttons --}}
@@ -240,6 +276,56 @@
             btn.innerHTML = 'Simpan';
             btn.disabled = false;
         });
+    }
+
+    function fetchTokos(regionId) {
+        const container = document.getElementById('toko_container');
+        const hiddenStore = document.getElementById('hidden_store_name');
+        const selectRegion = document.getElementById('region_filter');
+        
+        // Set input hidden 'store' sesuai nama region (opsional, jika controllermu masih meminta validasi 'store')
+        hiddenStore.value = regionId ? selectRegion.options[selectRegion.selectedIndex].text : '-';
+
+        // Jika region di-reset
+        if (!regionId) {
+            container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Silakan pilih region terlebih dahulu.</div>';
+            return;
+        }
+
+        // Tampilkan loading state
+        container.innerHTML = '<div class="col-span-full text-center text-blue-500 text-sm py-4">Memuat data toko...</div>';
+
+        // Fetch data dari endpoint yang sudah kita buat
+        fetch(`/get-tokos/${regionId}`)
+            .then(response => response.json())
+            .then(data => {
+                container.innerHTML = ''; // Bersihkan container
+
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="col-span-full text-center text-red-500 text-sm py-4">Tidak ada toko di region ini.</div>';
+                    return;
+                }
+
+                // Loop data dan buat elemen checkbox
+                data.forEach(toko => {
+                    const div = document.createElement('div');
+                    div.className = 'flex items-center';
+                    
+                    // Radio di-set 'checked' secara default (sesuai permintaanmu)
+                    div.innerHTML = `
+                        <input type="radio" id="toko_${toko.id}" name="toko_id" value="${toko.id}" checked 
+                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="toko_${toko.id}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
+                            ${toko.nama_toko}
+                        </label>
+                    `;
+                    container.appendChild(div);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching tokos:', error);
+                container.innerHTML = '<div class="col-span-full text-center text-red-500 text-sm py-4">Gagal memuat data.</div>';
+            });
     }
 </script>
 @endsection

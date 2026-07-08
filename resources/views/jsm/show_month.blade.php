@@ -38,6 +38,7 @@
                         <th class="px-6 py-4">Supplier Name</th>
                         <th class="px-6 py-4">Periode Promo</th>
                         <th class="px-6 py-4">No. RAF</th>
+                        <th class="px-6 py-4">Region</th>
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-right">Nominal</th>
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
@@ -77,11 +78,16 @@
                                 {{ $jsm->no_raf ?? '-' }}
                             </td>
 
-                            {{-- Store --}}
+                            {{-- Region --}}
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $jsm->store }}
-                                </span>
+                                {{ $jsm->store }}                                </span>
+                            </td>
+
+                            {{-- Toko --}}
+                            <td class="px-6 py-4">
+                                <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                {{ optional($jsm->tokos->first())->nama_toko ?? '-' }}                                </span>
                             </td>
                             
                             {{-- Nominal --}}
@@ -101,7 +107,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="7" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                                     <span class="font-medium text-gray-500">Tidak ada data transaksi di bulan ini.</span>
@@ -113,7 +119,7 @@
                 @if($jsms->count() > 0)
                 <tfoot class="bg-gray-50 border-t border-gray-200">
                     <tr>
-                        <td colspan="6" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
+                        <td colspan="7" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
                             Grand Total:
                         </td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 text-base">
