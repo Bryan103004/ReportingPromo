@@ -16,6 +16,11 @@
         </a>
     </div>
 
+    <x-search-bar 
+        placeholder="Masukkan user atau aksi..." 
+        tableId="supplier-rafaksi-table" 
+    />
+    
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">

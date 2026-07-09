@@ -33,6 +33,9 @@
                 outline: none;
             }
         </style>
+
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
+        <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     </head>
     <body class="font-sans antialiased">
         <div class="flex min-h-screen flex-col bg-gray-100">
@@ -71,4 +74,22 @@
             </footer>
         </div>
     </body>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Cek apakah elemen dengan id 'choices-supplier' ada di halaman ini
+            const supplierElement = document.getElementById('choices-supplier');
+            
+            if (supplierElement) {
+                const supplierSelect = new Choices(supplierElement, {
+                    searchEnabled: true,
+                    itemSelectText: 'Klik untuk pilih',
+                    noResultsText: 'Supplier tidak ditemukan',
+                    shouldSort: false,
+                });
+
+                // Simpan instance ke window agar bisa diakses dari file lain (seperti create.blade.php)
+                window.supplierChoices = supplierSelect;
+            }
+        });
+    </script>
 </html>

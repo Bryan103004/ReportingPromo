@@ -26,8 +26,8 @@ class RafaksiController extends Controller
                 SUM(nominal) as total_nominal
             ')
             ->groupBy('store', 'year_kerja', 'month_kerja')
-            ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
+            ->orderBy('year_kerja', 'asc')
+            ->orderBy('month_kerja', 'asc')
             ->get();
 
         return view('rafaksi.index', compact('rafaksiGroups'));
@@ -154,7 +154,8 @@ class RafaksiController extends Controller
             $rafaksis = Rafaksi::with(['tokos'])
                 ->whereYear('periode_bulan', $year)
                 ->whereMonth('periode_bulan', $month)
-                ->orderBy('periode_akhir', 'desc')
+                ->orderBy('periode_awal', 'asc')
+                ->orderBy('periode_akhir', 'asc')
                 ->get();
 
             foreach ($rafaksis as $index => $row) {
@@ -183,8 +184,8 @@ class RafaksiController extends Controller
                     SUM(nominal) as total_nominal
                 ')
                 ->groupBy('year', 'month')
-                ->orderBy('year', 'desc')
-                ->orderBy('month', 'desc')
+                ->orderBy('year', 'asc')
+                ->orderBy('month', 'asc')
                 ->get();
 
             foreach ($rafaksiGroups as $group) {

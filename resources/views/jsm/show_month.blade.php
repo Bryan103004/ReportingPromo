@@ -25,10 +25,15 @@
         </a>
     </div>
 
+    <x-search-bar 
+        placeholder="Masukkan user atau aksi..." 
+        tableId="jsmDetail" 
+    />
+
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-gray-600">
+            <table id="jsmDetail" class="w-full text-left text-sm text-gray-600">
                 
                 {{-- Head Tabel --}}
                 <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500 tracking-wider">
@@ -41,6 +46,7 @@
                         <th class="px-6 py-4">Region</th>
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-right">Nominal</th>
+                        <th class="px-6 py-4 text-right">Remarks</th>
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
                     </tr>
                 </thead>
@@ -93,6 +99,13 @@
                             {{-- Nominal --}}
                             <td class="px-6 py-4 text-right font-bold text-green-600">
                                 Rp {{ number_format($jsm->nominal, 0, ',', '.') }}
+                            </td>
+
+                            {{-- Remarks --}}
+                            <td class="px-6 py-4">
+                                <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                    {{ $jsm->remarks }}
+                                </span>
                             </td>
 
                             {{-- Aksi (Opsional) --}}

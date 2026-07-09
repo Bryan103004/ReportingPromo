@@ -17,20 +17,36 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 
                 {{-- Kode Supplier --}}
-                <div>
-                    <label for="supplier_code" class="block text-sm font-semibold text-gray-700 mb-1.5">Kode Supplier <span class="text-red-500">*</span></label>
-                    <div class="flex gap-x-2">
-                        <select name="supplier_code" id="supplier_code" class="w-4/5 rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
-                            <option value="">Pilih Kode Supplier</option>
-                            @foreach ($supplierRafaksi as $supplier)
-                                <option value="{{ $supplier->kode_supplier }}">{{ $supplier->kode_supplier }}</option>
-                            @endforeach
-                        </select>
+                <div class="space-y-2">
+                    <!-- Label dengan layout yang lebih bersih -->
+                    <label for="choices-supplier" class="block text-sm font-medium text-gray-700 tracking-wide">
+                        Kode Supplier <span class="text-rose-500 font-bold" title="Wajib diisi">*</span>
+                    </label>
+                    
+                    <!-- Container Flex menggunakan grid-like ratio yang konsisten -->
+                    <div class="flex items-center gap-3 ">
+                        <!-- Select Dropdown dengan shadow subtle dan ring focus yang lebih smooth -->
+                        <div class="relative flex-1">
+                            <select name="supplier_code" id="choices-supplier" 
+                                class="w-full rounded-lg border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition-all placeholder:text-gray-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500" 
+                                required>
+                                <option value="" disabled selected class="text-gray-400">Pilih atau cari supplier...</option>
+                                @foreach ($supplierRafaksi as $supplier)
+                                    <option value="{{ $supplier->kode_supplier }}" class="text-gray-900">
+                                        {{ $supplier->kode_supplier }} - {{ $supplier->nama_supplier }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
                         
-                        {{-- Tombol Trigger Modal --}}
-                        <button type="button" onclick="openModal()" class="w-1/5 shrink-0 bg-blue-50 text-blue-600 border border-blue-200 px-3 py-2 rounded-md hover:bg-blue-100 hover:text-blue-700 font-semibold text-sm transition-colors flex items-center gap-1" title="Tambah Supplier Baru">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                            Baru
+                        <!-- Tombol Trigger Modal dengan desain solid & micro-interaction yang bagus -->
+                        <button type="button" onclick="openModal()" 
+                            class="inline-flex h-[42px] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:bg-blue-800" 
+                            title="Tambah Supplier Baru">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://w3.org">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            <span>Baru</span>
                         </button>
                     </div>
                 </div>
@@ -61,7 +77,7 @@
 
                 {{-- Periode Bulan --}}
                 <div>
-                    <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Pengerjaan<span class="text-red-500">*</span></label>
+                    <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Rekap<span class="text-red-500">*</span></label>
                     <input type="date" name="periode_bulan" id="periode_bulan" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div>
 
@@ -162,7 +178,7 @@
 <script>
     let supplierList = @json($supplierRafaksi);
 
-    document.getElementById('supplier_code').addEventListener('change', function() {
+    document.getElementById('choices-supplier').addEventListener('change', function() {
         var selectedSupplierCode = this.value;
         var supplierNameInput = document.getElementById('supplier_name');
 
@@ -252,16 +268,17 @@
             // A. Masukkan data baru ke dalam Array JavaScript
             supplierList.push({ kode_supplier: kodeSupplier, nama_supplier: namaSupplier });
 
-            // B. Buat elemen <option> baru dan tambahkan ke dalam <select>
-            let select = document.getElementById('supplier_code');
-            let newOption = new Option(kodeSupplier, kodeSupplier);
-            select.add(newOption);
+            // B & C. Tambahkan ke Choices.js dan langsung pilih
+            supplierSelect.setChoices([
+                {
+                    value: kodeSupplier,
+                    label: kodeSupplier,
+                    selected: true,
+                },
+            ], 'value', 'label', false);
 
-            // C. Pilih opsi yang baru ditambahkan secara otomatis
-            select.value = kodeSupplier;
-            
-            // D. Trigger event 'change' agar nama supplier otomatis terisi
-            select.dispatchEvent(new Event('change'));
+            // D. Trigger update input nama supplier
+            document.getElementById('supplier_name').value = namaSupplier;
 
             // Tutup modal & kembalikan tombol
             closeModal();

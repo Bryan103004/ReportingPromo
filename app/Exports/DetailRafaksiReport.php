@@ -28,7 +28,8 @@ class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles
             $data = Rafaksi::with('tokos')
                 ->whereYear('periode_bulan', $this->year)
                 ->whereMonth('periode_bulan', $this->month)
-                ->orderBy('periode_akhir', 'desc')
+                ->orderBy('periode_awal', 'asc')
+                ->orderBy('periode_akhir', 'asc')
                 ->get();
                 
             $isDetail = true;
@@ -42,8 +43,8 @@ class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles
                     SUM(nominal) as total_nominal
                 ')
                 ->groupBy('year', 'month')
-                ->orderBy('year', 'desc')
-                ->orderBy('month', 'desc')
+                ->orderBy('year', 'asc')
+                ->orderBy('month', 'asc')
                 ->get();
                 
             $isDetail = false;

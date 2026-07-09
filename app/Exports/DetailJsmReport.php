@@ -27,7 +27,8 @@ class DetailJsmReport implements FromView, ShouldAutoSize, WithStyles
             $data = Jsm::with('tokos')
                 ->whereYear('periode_bulan', $this->year)
                 ->whereMonth('periode_bulan', $this->month)
-                ->orderBy('periode_bulan', 'desc')
+                ->orderBy('periode_awal', 'asc')
+                ->orderBy('periode_akhir','asc')
                 ->get();
                 
             $isDetail = true;
@@ -41,8 +42,8 @@ class DetailJsmReport implements FromView, ShouldAutoSize, WithStyles
                     SUM(nominal) as total_nominal
                 ')
                 ->groupBy('year', 'month')
-                ->orderBy('year', 'desc')
-                ->orderBy('month', 'desc')
+                ->orderBy('year', 'asc')
+                ->orderBy('month', 'asc')
                 ->get();
                 
             $isDetail = false;

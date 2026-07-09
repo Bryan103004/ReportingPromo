@@ -25,8 +25,8 @@
                 <td>{{ $row->store }}</td>
                 <td>{{ $row->daftar_toko_formatted }}</td>
                 
-                <td>{{ $row->periode_awal }}</td>
-                <td>{{ $row->periode_akhir }}</td>
+                <td>{{ Carbon\Carbon::parse($row->periode_awal)->format('d M Y') }}</td>
+                <td>{{ Carbon\Carbon::parse($row->periode_akhir)->format('d M Y') }}</td>
                 <td>{{ $row->nominal }}</td>
             </tr>
         @endforeach
