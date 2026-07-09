@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\DetailJmsReport;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 class JsmController extends Controller
 {
     //
@@ -228,5 +230,33 @@ class JsmController extends Controller
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
         return Excel::download(new DetailJsmReport($year, $month), $fileName);
+    }
+
+    public function printPdf(Request $request){
+        $year = $request->year;
+        $month = $request->month;
+
+        if($year && $month){
+            $data = Jsm::with(['tokos'])
+                    ->whereYear('periode_bulan', $year)
+                    ->whereMonth('periode_bulan', $month)
+                    ->orderBy('periode_awal', 'asc')
+                    ->orderBy('periode_akhir', 'asc')
+                    ->get();
+                    $isDetail = true;
+        }else{
+            $data = Jsm::selectRaw('YEAR(periode_bulan) as year, MONTH(periode_bulan) as month, COUNT(*) as total_data, SUM(nominal) as total_nominal')
+            ->groupBy('year', 'month')->get();
+            $isDetail = false;
+        }
+
+        // Load view
+        $pdf = Pdf::loadView('jsm.exports_excel', compact('data', 'isDetail', 'year', 'month'));
+
+        if($year && $month){
+            return $pdf->setPaper('A4', 'landscape')->stream('jsm-report' . $year . '-' . $month .'.pdf');
+        } else{
+            return $pdf->setPaper('A4', 'landscape')->stream('jsm-report-all.pdf');
+        }
     }
 }

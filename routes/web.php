@@ -63,14 +63,14 @@ Route::post('/reports/upload', [ReportController::class, 'store'])->name('report
 Route::get('/reports/export', [ReportController::class, 'exportExcel'])->name('reports.export');
 Route::get('/api/reports/weekly-matrix', [ReportController::class, 'getWeeklyMatrix'])->name('api.reports.matrix');
 
-
+Route::get('/jsm/print', [JsmController::class, 'printPdf'])->name('jsm.print');
 Route::get('/jsm/{year}/{month}', [JsmController::class, 'showMonth'])->name('jsm.show_month');
 Route::get('/jsm/export_excel', [JsmController::class, 'exportExcel'])->name('jsm.export.excel');
 Route::get('/jsm/export_csv', [JsmController::class, 'exportCSV'])->name('jsm.export');
 
 Route::resource('jsm', JsmController::class);
 
-
+Route::get('/rafaksi/print', [JsmController::class, 'printPdf'])->name('rafaksi.print');
 Route::get('/rafaksi/{year}/{month}', [RafaksiController::class, 'showMonth'])->name('rafaksi.show_month');
 Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->name('rafaksi.export.excel');
 Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');

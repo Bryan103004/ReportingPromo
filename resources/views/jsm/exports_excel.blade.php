@@ -1,3 +1,4 @@
+<html>
 <table>
     @if($isDetail)
         {{-- ================= TABEL DETAIL ================= --}}
@@ -61,3 +62,26 @@
         </tbody>
     @endif
 </table>
+
+<style>
+    /* Pastikan tabel menggunakan border-collapse agar border menyatu */
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        font-family: sans-serif; 
+    }
+    
+    /* Wajib definisikan border pada TH dan TD */
+    th, td { 
+        border: 1px solid #000; /* Gunakan warna hitam solid agar pasti muncul */
+        padding: 8px; 
+        font-size: 11px;
+    }
+
+    th { 
+        background-color: #f3f4f6; 
+        text-align: center; 
+        font-weight: bold;
+    }
+</style>
+</html>

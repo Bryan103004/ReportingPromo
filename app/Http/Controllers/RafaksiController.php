@@ -7,6 +7,7 @@ use App\Models\Rafaksi;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Services\ActivityLogger;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -233,5 +234,33 @@ class RafaksiController extends Controller
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
         return Excel::download(new DetailRafaksiReport($year, $month), $fileName);
+    }
+
+    public function printPdf(Request $request){
+        $year = $request->year;
+        $month = $request->month;
+
+        if($year && $month){
+            $data = Rafaksi::with(['tokos'])
+                    ->whereYear('periode_bulan', $year)
+                    ->whereMonth('periode_bulan', $month)
+                    ->orderBy('periode_awal', 'asc')
+                    ->orderBy('periode_akhir', 'asc')
+                    ->get();
+                    $isDetail = true;
+        }else{
+            $data = Rafaksi::selectRaw('YEAR(periode_bulan) as year, MONTH(periode_bulan) as month, COUNT(*) as total_data, SUM(nominal) as total_nominal')
+            ->groupBy('year', 'month')->get();
+            $isDetail = false;
+        }
+
+        // Load view
+        $pdf = Pdf::loadView('rafaksi.exports_excel', compact('data', 'isDetail', 'year', 'month'));
+
+        if($year && $month){
+            return $pdf->setPaper('A4', 'landscape')->stream('rafaksi-report' . $year . '-' . $month .'.pdf');
+        } else{
+            return $pdf->setPaper('A4', 'landscape')->stream('rafaksi-report-all.pdf');
+        }
     }
 }
