@@ -43,4 +43,8 @@ class Rafaksi extends Model
         // Jika hanya sebagian (tidak lengkap), kembalikan daftar nama toko pakai koma
         return $this->tokos->pluck('nama_toko')->implode(', ');
     }
+
+    public function categories(){
+        return $this->belongsTo(Category::class, 'category_id', 'id');
+    }
 }

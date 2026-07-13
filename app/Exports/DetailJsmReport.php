@@ -24,9 +24,10 @@ class DetailJsmReport implements FromView, ShouldAutoSize, WithStyles
     {
         // MODE 1: Jika tahun dan bulan diisi (Export Detail)
         if ($this->year && $this->month) {
-            $data = Jsm::with('tokos')
+            $data = Jsm::with(['tokos', 'categories'])
                 ->whereYear('periode_bulan', $this->year)
                 ->whereMonth('periode_bulan', $this->month)
+                ->orderBy('category_id')
                 ->orderBy('periode_awal', 'asc')
                 ->orderBy('periode_akhir','asc')
                 ->get();

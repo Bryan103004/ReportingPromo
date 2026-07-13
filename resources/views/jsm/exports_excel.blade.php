@@ -5,6 +5,7 @@
         <thead>
             <tr>
                 <th>No</th>
+                <th>Category</th>
                 <th>No. RAF</th>
                 <th>Kode Supplier</th>
                 <th>Nama Supplier</th>
@@ -19,23 +20,24 @@
             @foreach($data as $index => $row)
                 <tr>
                     <td>{{ $index + 1 }}</td>
+                    <td>{{ $row->categories->nama_kategori ?? 'Tanpa Kategori' }}</td>
                     <td>{{ $row->no_raf }}</td>
                     <td>{{ $row->supplier_code }}</td>
                     <td>{{ $row->supplier_name }}</td>
                     <td>{{ $row->store }}</td>
                     <td>{{ $row->daftar_toko_formatted }}</td>
-                    <td>{{ Carbon\Carbon::parse($row->periode_awal)->format('d M Y') }}</td>
-                    <td>{{ Carbon\Carbon::parse($row->periode_akhir)->format('d M Y') }}</td>
-                    <td>{{ $row->nominal }}</td>
+
+                    <td>{{ $row->periode_awal ? \Carbon\Carbon::parse($row->periode_awal)->format('d M Y') : '-' }}</td>
+                    <td>{{ $row->periode_akhir ? \Carbon\Carbon::parse($row->periode_akhir)->format('d M Y') : '-' }}</td>
+                    <td align="right">{{ $row->nominal }}</td>
                 </tr>
             @endforeach
         </tbody>
         @if($data->count() > 0)
         <tfoot>
             <tr>
-                {{-- Gunakan colspan="7" dan align="right" untuk rata kanan bawaan HTML --}}
-                <td colspan="8" align="right"><b>Grand Total:</b></td>
-                {{-- Biarkan nominal mentah agar terbaca sebagai Number di Excel --}}
+                {{-- FIX: Ubah colspan ke 9 agar Grand Total sejajar dengan kolom Nominal --}}
+                <td colspan="9" align="right"><b>Grand Total:</b></td>
                 <td align="right"><b>{{ $data->sum('nominal') }}</b></td>
             </tr>
         </tfoot>
@@ -54,9 +56,10 @@
             @foreach($data as $row)
                 <tr>
                     <td>{{ $row->year }}</td>
+                    {{-- FIX: Ditambahkan backslash \ sebelum Carbon --}}
                     <td>{{ \Carbon\Carbon::create()->month($row->month)->locale('id')->format('F') }}</td>
                     <td>{{ $row->total_data }}</td>
-                    <td>{{ $row->total_nominal }}</td>
+                    <td align="right">{{ $row->total_nominal }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -64,20 +67,16 @@
 </table>
 
 <style>
-    /* Pastikan tabel menggunakan border-collapse agar border menyatu */
     table { 
         width: 100%; 
         border-collapse: collapse; 
         font-family: sans-serif; 
     }
-    
-    /* Wajib definisikan border pada TH dan TD */
     th, td { 
-        border: 1px solid #000; /* Gunakan warna hitam solid agar pasti muncul */
+        border: 1px solid #000; 
         padding: 8px; 
         font-size: 11px;
     }
-
     th { 
         background-color: #f3f4f6; 
         text-align: center; 
