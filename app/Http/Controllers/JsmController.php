@@ -3,12 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Exports\DetailJsmReport;
+use App\Models\Category;
 use App\Models\Jsm;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
+use App\Models\Toko;
 use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\DetailJmsReport;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -244,14 +247,99 @@ class JsmController extends Controller
                     ->orderBy('periode_akhir', 'asc')
                     ->get();
                     $isDetail = true;
-        }else{
-            $data = Jsm::selectRaw('YEAR(periode_bulan) as year, MONTH(periode_bulan) as month, COUNT(*) as total_data, SUM(nominal) as total_nominal')
-            ->groupBy('year', 'month')->get();
+        }
+        else {
+            $year = $this->year ?? date('Y');
             $isDetail = false;
+            $allStores = Toko::all();
+            $allCategories = Category::all();
+
+            // 1. Bangun Subquery Bulan Statis
+            $bulanSubquery = "(SELECT 1 AS id_bulan, 'JANUARI' AS nama_bulan 
+                                UNION ALL SELECT 2, 'FEBRUARI' UNION ALL SELECT 3, 'MARET' 
+                                UNION ALL SELECT 4, 'APRIL' UNION ALL SELECT 5, 'MEI' 
+                                UNION ALL SELECT 6, 'JUNI' UNION ALL SELECT 7, 'JULI' 
+                                UNION ALL SELECT 8, 'AGUSTUS' UNION ALL SELECT 9, 'SEPTEMBER' 
+                                UNION ALL SELECT 10, 'OKTOBER' UNION ALL SELECT 11, 'NOVEMBER' 
+                                UNION ALL SELECT 12, 'DESEMBER') AS m_bulan";
+
+            $finalData = collect();
+
+            // 2. Loop per Kategori
+            foreach ($allCategories as $category) {
+            // 1. Bangun SELECT Fields
+            $selectFields = [
+                "'{$category->nama_kategori}' AS Kategori",
+                "m_bulan.id_bulan AS urutan_bulan",
+                "m_tahun.tahun AS Tahun",
+                "m_bulan.nama_bulan AS Periode"
+            ];
+
+            foreach ($allStores as $store) {
+                $aliasToko = str_replace('GL ', '', $store->nama_toko);
+                // Tambahkan filter category_id langsung di dalam CASE
+                $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' AND r.category_id = {$category->id} THEN r.nominal ELSE 0 END) AS `{$aliasToko}`";
+            }
+            // Filter total juga harus spesifik kategori
+            $selectFields[] = "SUM(CASE WHEN r.category_id = {$category->id} THEN IFNULL(r.nominal, 0) ELSE 0 END) AS TOTAL";
+
+            // 2. Query Utama
+            $categoryData = DB::table(DB::raw($bulanSubquery))
+                ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM rafaksis WHERE periode_bulan IS NOT NULL) AS m_tahun"))
+                // Join r (rafaksis) dengan kondisi semua bulan/tahun yang ada
+                ->leftJoin('rafaksis as r', function($join) {
+                    $join->on(DB::raw('MONTH(r.periode_bulan)'), '=', 'm_bulan.id_bulan')
+                        ->on(DB::raw('YEAR(r.periode_bulan)'), '=', 'm_tahun.tahun');
+                })
+                ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')
+                ->leftJoin('tokos as tk', 'rt.toko_id', '=', 'tk.id')
+                ->selectRaw(implode(', ', $selectFields))
+                ->where('m_tahun.tahun', $year) 
+                ->groupBy('m_tahun.tahun', 'm_bulan.id_bulan', 'm_bulan.nama_bulan')
+                ->orderBy('m_bulan.id_bulan', 'ASC')
+                ->get();
+
+            $finalData = $finalData->concat($categoryData);
+
+                // Baris Pembatas (Sekat 99)
+                $pembatasArray = [
+                    'Kategori'     => $category->nama_kategori,
+                    'urutan_bulan' => 99,
+                    'Tahun'        => null,
+                    'Periode'      => "--- AKHIR REKAP {$category->nama_kategori} ---",
+                    'TOTAL'        => 0
+                ];
+                
+                foreach ($allStores as $store) {
+                    $aliasToko = str_replace('GL ', '', $store->nama_toko);
+                    $pembatasArray[$aliasToko] = 0;
+                }
+                $finalData->push((object) $pembatasArray);
+            }
+
+            // 3. Menghitung GRAND TOTAL
+            $grandTotalArray = [
+                'Kategori'     => 'GRAND TOTAL',
+                'urutan_bulan' => 100,
+                'Tahun'        => null,
+                'Periode'      => 'TOTAL KESELURUHAN'
+            ];
+
+            foreach ($allStores as $store) {
+                $aliasToko = str_replace('GL ', '', $store->nama_toko);
+                // Menjumlahkan kolom toko dari data yang bukan baris sekat (urutan_bulan < 99)
+                $grandTotalArray[$aliasToko] = $finalData->where('urutan_bulan', '<', 99)->sum($aliasToko);
+            }
+            $grandTotalArray['TOTAL'] = $finalData->where('urutan_bulan', '<', 99)->sum('TOTAL');
+
+            $finalData->push((object) $grandTotalArray);
+
+            $stores = $allStores;
+            $data = $finalData;
         }
 
         // Load view
-        $pdf = Pdf::loadView('jsm.exports_excel', compact('data', 'isDetail', 'year', 'month'));
+        $pdf = Pdf::loadView('jsm.exports_excel', compact('data', 'isDetail', 'year', 'month', 'stores'));
 
         if($year && $month){
             return $pdf->setPaper('A4', 'landscape')->stream('jsm-report' . $year . '-' . $month .'.pdf');

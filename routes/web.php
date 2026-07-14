@@ -70,7 +70,7 @@ Route::get('/jsm/export_csv', [JsmController::class, 'exportCSV'])->name('jsm.ex
 
 Route::resource('jsm', JsmController::class);
 
-Route::get('/rafaksi/print', [JsmController::class, 'printPdf'])->name('rafaksi.print');
+Route::get('/rafaksi/print', [RafaksiController::class, 'printPdf'])->name('rafaksi.print');
 Route::get('/rafaksi/{year}/{month}', [RafaksiController::class, 'showMonth'])->name('rafaksi.show_month');
 Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->name('rafaksi.export.excel');
 Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');

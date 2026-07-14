@@ -43,23 +43,34 @@
         </tfoot>
         @endif
     @else
-        {{-- ================= TABEL REKAP ================= --}}
+        {{-- ================= TABEL REKAP (MATRIX) ================= --}}
         <thead>
             <tr>
-                <th>Tahun</th>
-                <th>Bulan</th>
-                <th>Total Transaksi</th>
-                <th>Total Nominal</th>
+                <th>Periode</th>
+                <th>Kategori</th> @foreach($stores as $store)
+                    <th>{{ $store->nama_toko }}</th>
+                @endforeach
+                <th>TOTAL</th>
             </tr>
         </thead>
         <tbody>
             @foreach($data as $row)
                 <tr>
-                    <td>{{ $row->year }}</td>
-                    {{-- FIX: Ditambahkan backslash \ sebelum Carbon --}}
-                    <td>{{ \Carbon\Carbon::create()->month($row->month)->locale('id')->format('F') }}</td>
-                    <td>{{ $row->total_data }}</td>
-                    <td align="right">{{ $row->total_nominal }}</td>
+                    <td>{{ $row->Periode }}</td>
+                    <td>{{ $row->Kategori }}</td> 
+                    @foreach($stores as $store)
+                        @php 
+                            $colName = str_replace('GL ', '', $store->nama_toko);
+                            $val = $row->$colName; 
+                        @endphp
+                        
+                        {{-- Tampilkan angka hanya jika val tidak kosong atau 0, jika sekat tampilkan kosong --}}
+                        <td>{{ ($val === '' || $val === null) ? '' : number_format($val ?? 0, 0, ',', '.') }}</td>
+                    @endforeach
+                    {{-- Kolom TOTAL di paling kanan --}}
+                    <td align="right" style="font-weight: bold;">
+                    {{ ($row->TOTAL === '' || $row->TOTAL === null) ? '' : number_format($row->TOTAL ?? 0, 0, ',', '.') }}
+                    </td>
                 </tr>
             @endforeach
         </tbody>
