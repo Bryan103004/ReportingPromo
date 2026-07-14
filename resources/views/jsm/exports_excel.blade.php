@@ -4,16 +4,16 @@
         {{-- ================= TABEL DETAIL ================= --}}
         <thead>
             <tr>
-                <th>No</th>
-                <th>Category</th>
-                <th>No. RAF</th>
-                <th>Kode Supplier</th>
-                <th>Nama Supplier</th>
-                <th>Region</th>
-                <th>Store</th>
-                <th>Periode Awal</th>
-                <th>Periode Akhir</th>
-                <th>Nominal</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">No</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Category</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">No. RAF</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Kode Supplier</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Nama Supplier</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Region</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Store</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Periode Awal</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Periode Akhir</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Nominal</th>
             </tr>
         </thead>
         <tbody>
@@ -36,9 +36,8 @@
         @if($data->count() > 0)
         <tfoot>
             <tr>
-                {{-- FIX: Ubah colspan ke 9 agar Grand Total sejajar dengan kolom Nominal --}}
-                <td colspan="9" align="right"><b>Grand Total:</b></td>
-                <td align="right"><b>{{ $data->sum('nominal') }}</b></td>
+                <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="9" align="right"><b>Grand Total:</b></td>
+                <td style="background-color: #FF4E73DF; color: #FFFFFF;" align="right"><b>{{ $data->sum('nominal') }}</b></td>
             </tr>
         </tfoot>
         @endif
@@ -46,29 +45,35 @@
         {{-- ================= TABEL REKAP ================= --}}
         <thead>
             <tr>
-                <th>Periode</th>
-                <th>Kategori</th> @foreach($stores as $store)
-                    <th>{{ $store->nama_toko }}</th>
+                <!-- Bagian ini juga wajib dipasang inline style ARGB agar tabel rekapnya ikut biru -->
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Periode</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Kategori</th> 
+                @foreach($stores as $store)
+                    <th style="background-color: #FF4E73DF; color: #FFFFFF;">{{ $store->nama_toko }}</th>
                 @endforeach
-                <th>TOTAL</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">TOTAL</th>
             </tr>
         </thead>
         <tbody>
             @foreach($data as $row)
+                    @php
+                        $isAkhirRekap = str_contains($row->Periode, 'AKHIR REKAP');
+                        $isTotalKeseluruhan = str_contains($row->Periode, 'TOTAL KESELURUHAN');
+                    @endphp
                 <tr>
-                    <td>{{ $row->Periode }}</td>
-                    <td>{{ $row->Kategori }}</td> 
+                    <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">
+                        {{ $row->Periode }}
+                    </td>
+                    <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">{{ $row->Kategori }}</td> 
                     @foreach($stores as $store)
                         @php 
                             $colName = str_replace('GL ', '', $store->nama_toko);
                             $val = $row->$colName; 
                         @endphp
                         
-                        {{-- Tampilkan angka hanya jika val tidak kosong atau 0, jika sekat tampilkan kosong --}}
-                        <td>{{ ($val === '' || $val === null) ? '' : number_format($val ?? 0, 0, ',', '.') }}</td>
+                        <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">{{ ($val === '' || $val === null) ? '' : number_format($val ?? 0, 0, ',', '.') }}</td>
                     @endforeach
-                    {{-- Kolom TOTAL di paling kanan --}}
-                    <td align="right" style="font-weight: bold;">
+                    <td align="right" style="background-color: #FF4E73DF; font-weight: bold;">
                     {{ ($row->TOTAL === '' || $row->TOTAL === null) ? '' : number_format($row->TOTAL ?? 0, 0, ',', '.') }}
                     </td>
                 </tr>

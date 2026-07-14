@@ -62,7 +62,7 @@ class JsmController extends Controller
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
-            'periode_akhir' => 'date|required',
+            'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
@@ -94,7 +94,7 @@ class JsmController extends Controller
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
-            'periode_akhir' => 'date|required',
+            'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
@@ -224,6 +224,8 @@ class JsmController extends Controller
         $year = $request->year;
         $month = $request->month;
 
+        $stores = Toko::all();
+
         // Tentukan nama file secara dinamis berdasarkan parameter
         if ($year && $month) {
             $fileName = 'Detail_Jsm_Report_'. $year . '_' . $month . '.xlsx';
@@ -232,7 +234,7 @@ class JsmController extends Controller
         }
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
-        return Excel::download(new DetailJsmReport($year, $month), $fileName);
+        return Excel::download(new DetailJsmReport($year, $month, $stores), $fileName);
     }
 
     public function printPdf(Request $request){
@@ -278,21 +280,22 @@ class JsmController extends Controller
             foreach ($allStores as $store) {
                 $aliasToko = str_replace('GL ', '', $store->nama_toko);
                 // Tambahkan filter category_id langsung di dalam CASE
-                $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' AND r.category_id = {$category->id} THEN r.nominal ELSE 0 END) AS `{$aliasToko}`";
+                $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' AND j.category_id = {$category->id} THEN j.nominal ELSE 0 END) AS `{$aliasToko}`";
             }
             // Filter total juga harus spesifik kategori
-            $selectFields[] = "SUM(CASE WHEN r.category_id = {$category->id} THEN IFNULL(r.nominal, 0) ELSE 0 END) AS TOTAL";
+            $selectFields[] = "SUM(CASE WHEN j.category_id = {$category->id} THEN IFNULL(j.nominal, 0) ELSE 0 END) AS TOTAL";
 
             // 2. Query Utama
             $categoryData = DB::table(DB::raw($bulanSubquery))
-                ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM rafaksis WHERE periode_bulan IS NOT NULL) AS m_tahun"))
-                // Join r (rafaksis) dengan kondisi semua bulan/tahun yang ada
-                ->leftJoin('rafaksis as r', function($join) {
-                    $join->on(DB::raw('MONTH(r.periode_bulan)'), '=', 'm_bulan.id_bulan')
-                        ->on(DB::raw('YEAR(r.periode_bulan)'), '=', 'm_tahun.tahun');
+                ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM jsm WHERE periode_bulan IS NOT NULL) AS m_tahun"))
+                // JOIN transaksi (j) dengan kondisi filter kategori sudah dilakukan di sini
+                ->leftJoin('jsm as j', function($join) use ($category) {
+                    $join->on(DB::raw('MONTH(j.periode_bulan)'), '=', 'm_bulan.id_bulan')
+                        ->on(DB::raw('YEAR(j.periode_bulan)'), '=', 'm_tahun.tahun')
+                        ->where('j.category_id', '=', $category->id); // <--- FILTER KATEGORI HARUS DI SINI
                 })
-                ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')
-                ->leftJoin('tokos as tk', 'rt.toko_id', '=', 'tk.id')
+                ->leftJoin('jsm_toko as jt', 'j.id', '=', 'jt.jsm_id')
+                ->leftJoin('tokos as tk', 'jt.toko_id', '=', 'tk.id')
                 ->selectRaw(implode(', ', $selectFields))
                 ->where('m_tahun.tahun', $year) 
                 ->groupBy('m_tahun.tahun', 'm_bulan.id_bulan', 'm_bulan.nama_bulan')
@@ -303,16 +306,16 @@ class JsmController extends Controller
 
                 // Baris Pembatas (Sekat 99)
                 $pembatasArray = [
-                    'Kategori'     => $category->nama_kategori,
+                    'Kategori'     => '',
                     'urutan_bulan' => 99,
                     'Tahun'        => null,
-                    'Periode'      => "--- AKHIR REKAP {$category->nama_kategori} ---",
-                    'TOTAL'        => 0
+                    'Periode'      => "--- AKHIR REKAP {$category->nama_kategori} --- \n",
+                    'TOTAL'        => ''
                 ];
                 
                 foreach ($allStores as $store) {
                     $aliasToko = str_replace('GL ', '', $store->nama_toko);
-                    $pembatasArray[$aliasToko] = 0;
+                    $pembatasArray[$aliasToko] = '';
                 }
                 $finalData->push((object) $pembatasArray);
             }
