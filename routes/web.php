@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\JsmController;
+use App\Http\Controllers\LocController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RafaksiController;
@@ -75,6 +76,12 @@ Route::get('/rafaksi/{year}/{month}', [RafaksiController::class, 'showMonth'])->
 Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->name('rafaksi.export.excel');
 Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');
 Route::resource('rafaksi', RafaksiController::class);
+
+Route::get('/loc/print', [LocController::class, 'printPdf'])->name('loc.print');
+Route::get('/loc/{year}/{month}', [LocController::class, 'showMonth'])->name('loc.show_month');
+Route::get('/loc/export_excel', [LocController::class, 'exportExcel'])->name('loc.export.excel');
+Route::get('/loc/export_csv', [LocController::class, 'exportCSV'])->name('loc.export');
+Route::resource('loc', LocController::class);
 
 Route::resource('region', RegionController::class);
 

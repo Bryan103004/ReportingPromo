@@ -16,4 +16,14 @@ class SupplierRafaksi extends Model
     {
         return $this->hasMany(Rafaksi::class, 'supplier_code', 'kode_supplier');
     }
+
+    public function jsm()
+    {
+        return $this->hasMany(Jsm::class, 'supplier_code', 'kode_supplier');
+    }
+
+    public function loc()
+    {
+        return $this->hasMany(Loc::class, 'supplier_code', 'kode_supplier');
+    }
 }

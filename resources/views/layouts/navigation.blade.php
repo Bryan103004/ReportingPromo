@@ -130,7 +130,7 @@
                             <button
                                 @click="menuRafaksiOpen = !menuRafaksiOpen; subRafaksiOpen = false"
                                 class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-500 bg-white hover:text-indigo-600 hover:bg-indigo-50 focus:outline-none transition duration-150 ease-in-out {{ request()->routeIs(['jsm*','rafaksi*','supplier_rafaksi*']) ? 'text-indigo-700 font-bold bg-indigo-50' : '' }}">
-                                <span>Data Rafaksi</span>
+                                <span>Data Reporting</span>
                                 <svg class="ms-1.5 h-4 w-4 opacity-50 transition-transform duration-150" :class="{ 'rotate-180': menuRafaksiOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                 </svg>
@@ -169,13 +169,19 @@
                                         class="mt-0.5 mb-0.5 ml-2">
                                             @can('view_jsm')
                                             <x-dropdown-link :href="route('jsm.index')" class="text-sm {{ request()->routeIs('jsm.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
-                                                {{ __('Rafaksi JSM') }}
+                                                {{ __('JSM') }}
                                             </x-dropdown-link>
                                             @endcan
                             
                                             @can('view_rafaksi')
                                             <x-dropdown-link :href="route('rafaksi.index')" class="text-sm {{ request()->routeIs('rafaksi.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                 {{ __('Rafaksi') }}
+                                            </x-dropdown-link>
+                                            @endcan
+
+                                            @can('view_loc')
+                                            <x-dropdown-link :href="route('loc.index')" class="text-sm {{ request()->routeIs('loc.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                                {{ __('Loc') }}
                                             </x-dropdown-link>
                                             @endcan
 

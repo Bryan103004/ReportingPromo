@@ -18,4 +18,8 @@ class Category extends Model
     public function jsms(){
         return $this->hasMany(Jsm::class);
     }
+
+    public function locs(){
+        return $this->hasMany(Loc::class);
+    }
 }

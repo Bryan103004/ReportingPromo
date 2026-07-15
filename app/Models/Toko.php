@@ -24,4 +24,9 @@ class Toko extends Model
     {
         return $this->belongsToMany(Jsm::class, 'jsm_toko', 'toko_id', 'jsm_id');
     }
+
+    public function locs()
+    {
+        return $this->belongsToMany(Loc::class, 'locs_toko', 'toko_id', 'loc_id');
+    }
 }
