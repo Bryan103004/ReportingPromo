@@ -14,7 +14,8 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $query = User::orderBy('username','asc');
+        $query = User::whereNotIn('name',['bryan'])
+                    ->orderBy('username','asc');
         $number_paginate = [10, 25, 50, 100, 300, 999999999];
         $number = $request->input('number', 10);
 
@@ -44,7 +45,7 @@ class UserController extends Controller
 
     public function create()
     {
-        $roles = Role::orderBy('name')->get();
+        $roles = Role::whereNotIn('name', ['superadmin'])->get();
 
         return view('user.create', compact('roles'));
     }

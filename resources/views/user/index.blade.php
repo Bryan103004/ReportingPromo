@@ -99,7 +99,7 @@
                 @if ($user->name != config('app.admin_name'))
                     <tr>
                         <td class="px-4 py-3">
-                            {{ ($users->currentPage() - 1) * $users->perPage() + $loop->iteration }}
+                            {{ $loop->iteration }}
                         </td>
                         <td class="px-4 py-3">{{ $user->name }}</td>
                         <td class="px-4 py-3">{{ $user->username }}</td>
