@@ -358,45 +358,68 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
             
-        {{--    <!-- Mobile Group: Data Master -->
+        <!-- Mobile Group: Data Master -->
             <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">Data Master</div>
-            @can('view_perusahaan')
-                <x-responsive-nav-link :href="route('perusahaan.index')" :active="request()->routeIs('perusahaan.index')">🏢 Perusahaan</x-responsive-nav-link>
+            @can('view_users')
+            <x-responsive-nav-link :href="route('user.index')" :active="request()->routeIs('user.index')">
+                <span>👤</span> Users
+            </x-responsive-nav-link>
             @endcan
+
+            @can('view_roles')
+            <x-responsive-nav-link :href="route('role.index')" :active="request()->routeIs('role.index')">
+                <span>🔑</span> Roles
+                </x-responsive-nav-link>
+            @endcan
+
             @can('view_toko')
                 <x-responsive-nav-link :href="route('toko.index')" :active="request()->routeIs('toko.index')">🏪 Toko</x-responsive-nav-link>
             @endcan
-            @can('view_users')
-                <x-responsive-nav-link :href="route('user.index')" :active="request()->routeIs('user.index')">👤 Users</x-responsive-nav-link>
-            @endcan
-            @can('view_roles')
-                <x-responsive-nav-link :href="route('role.index')" :active="request()->routeIs('role.index')">🔑 Roles</x-responsive-nav-link>
-            @endcan    
 
-            @can('email_tambahan')
+            @can('view_region')
+                <x-responsive-nav-link :href="route('region.index')" :active="request()->routeIs('region.index')">📍 Region</x-responsive-nav-link>
+            @endcan
+
+            @canany(['view_jsm', 'view_rafaksi'])
+                <x-responsive-nav-link :href="route('supplier_rafaksi.index')" :active="request()->routeIs('supplier_rafaksi.index')">
+                    <span class="text-base">🤝</span> Supplier Rafaksi
+                </x-responsive-nav-link>
+            @endcanany
+
+            <!-- @can('email_tambahan')
                 <x-dropdown-link :href="route('notification-recipients.index')" class="text-sm {{ request()->routeIs('notification-recipients.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                     <span>📧</span> Email Tambahan
                 </x-dropdown-link>
-            @endcan
+            @endcan -->
             
-            @can('view_data_kendaraan')
-            <x-dropdown-link :href="route('master-alokasi.index')" class="text-sm {{ request()->routeIs('master-alokasi.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
-                <span></span>📁 Master Alokasi
-            </x-dropdown-link>     
-            @endcan
 
-            @can('view_data_izin_oss')
+            <!-- @can('view_data_izin_oss')
             <x-dropdown-link :href="route('master-izin-oss.index')" class="text-sm {{ request()->routeIs('master-izin-oss.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                 <span></span>📁 Master Izin Oss
             </x-dropdown-link>
-            @endcan
+            @endcan -->
 
             <div class="border-t border-gray-200 my-1"></div>
             
-            <x-responsive-nav-link :href="route('data_kendaraan.index')" :active="request()->routeIs('data_kendaraan.index')">Data Kendaraan</x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('perizinan.index')" :active="request()->routeIs('perizinan.index')">Data Perizinan</x-responsive-nav-link>
+            @can('view_rafaksi')
+            <x-responsive-nav-link :href="route('rafaksi.index')" :active="request()->routeIs('rafaksi.index')">Data Rafaksi</x-responsive-nav-link>
+
+            @endcan
+
+            @can('view_jsm')
+                <x-responsive-nav-link :href="route('jsm.index')" :active="request()->routeIs('jsm.index')">Data Jsm</x-responsive-nav-link>
+
+            @endcan
+
+            @can('view_loc')
+                <x-responsive-nav-link :href="route('loc.index')" :active="request()->routeIs('loc.index')">Data Loc</x-responsive-nav-link>
+            @endcan
+        
+
+            @can('view_reports_promo_weekend')
+                <x-responsive-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.index')">Report Promo Weekend</x-responsive-nav-link>
+            @endcan
         </div>
-         --}}
 
         <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">

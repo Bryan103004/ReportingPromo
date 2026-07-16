@@ -121,7 +121,7 @@
     var printForm = document.getElementById('print-form');
 
     printbutton.addEventListener('click'){
-        printForm.toggleAttribute('hidden')
+        printForm.classList.toggle('hidden')
     }
 </script>
 @endsection
