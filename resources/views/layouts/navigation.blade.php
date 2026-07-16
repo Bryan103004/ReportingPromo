@@ -117,14 +117,38 @@
                                                 <span class="text-base">📍</span> Master Region
                                             </x-dropdown-link>
                                             @endcan
+
+                                            @canany(['view_jsm', 'view_rafaksi'])
+                                            <x-dropdown-link :href="route('supplier_rafaksi.index')" class="text-sm {{ request()->routeIs('supplier_rafaksi.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                                <span class="text-base">🤝</span> Supplier Rafaksi
+                                            </x-dropdown-link>
+                                            @endcanany
                                     </div>
                                 </div>
                             </div>
+
+                            @can('view_jsm')
+                            <x-nav-link :href="route('jsm.index')" :active="request()->routeIs('jsm.index')">
+                                {{ __('JSM') }}
+                            </x-nav-link>
+                            @endcan
+            
+                            @can('view_rafaksi')
+                            <x-nav-link :href="route('rafaksi.index')" :active="request()->routeIs('rafaksi.index')">
+                                {{ __('RAFAKSI') }}
+                            </x-nav-link>
+                            @endcan
+
+                            @can('view_loc')
+                            <x-nav-link :href="route('loc.index')" :active="request()->routeIs('loc.index')">
+                                {{ __('LOC') }}
+                            </x-nav-link>
+                            @endcan
                         </div>
                     </div>
 
                     <!-- Dropdown Rafaksi -->
-                    @canany(['view_jsm', 'view_rafaksi'])
+                   {{-- @canany(['view_jsm', 'view_rafaksi'])
                     <div class="h-full flex items-center" x-data="{ menuRafaksiOpen: false, subRafaksiOpen: false }" @click.outside="menuRafaksiOpen = false; subRafaksiOpen = false">
                         <div class="relative">
                             <button
@@ -155,7 +179,7 @@
                                         class="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs(['jsm.*', 'rafaksi.*', 'supplier_rafaksi.*']) ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                         <div class="flex items-center gap-2.5">
                                             <span class="text-base">👥</span>
-                                            <span>Manajemen Rafaksi</span>
+                                            <span>Manajemen Report</span>
                                         </div>
                                             <svg class="ms-1.5 h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                                     </button>
@@ -184,19 +208,14 @@
                                                 {{ __('Loc') }}
                                             </x-dropdown-link>
                                             @endcan
-
-                                            @canany(['view_jsm', 'view_rafaksi'])
-                                            <x-dropdown-link :href="route('supplier_rafaksi.index')" class="text-sm {{ request()->routeIs('supplier_rafaksi.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
-                                                {{ __('Supplier Rafaksi') }}
-                                            </x-dropdown-link>
-                                            @endcanany
                                     </div>
                                 </div>
 
                             </div>
                         </div>
                     </div>
-                    @endcanany
+                    @endcanany --}}
+                      
 
                     @can('view_reports_promo_weekend')
                     <x-nav-link :href="route('reports.index')" :active="request()->routeIs('reports.index')">

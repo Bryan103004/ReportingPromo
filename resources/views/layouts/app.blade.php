@@ -18,6 +18,14 @@
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
         
         <style>
+            body { 
+                background-image: url('{{ asset('images/background.jpeg') }}'); 
+                background-size: cover; /* Agar gambar memenuhi layar */
+                background-position: center center; /* Posisi gambar di tengah */
+                background-repeat: no-repeat; /* Agar gambar tidak berulang */
+                background-attachment: fixed; /* Agar gambar tetap di tempat saat halaman di-scroll */
+                background-color: #f8f9fa; 
+            }
             /* Sedikit penyesuaian agar DataTables menyatu dengan Tailwind */
             .dataTables_wrapper .dataTables_filter input {
                 border: 1px solid #d1d5db;
@@ -38,7 +46,7 @@
         <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
     </head>
     <body class="font-sans antialiased">
-        <div class="flex min-h-screen flex-col bg-gray-100">
+        <div class="flex min-h-screen flex-col bg-transparent">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
