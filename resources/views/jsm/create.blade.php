@@ -314,7 +314,7 @@
         container.innerHTML = '<div class="col-span-full text-center text-blue-500 text-sm py-4">Memuat data toko...</div>';
 
         // Fetch data dari endpoint yang sudah kita buat
-        fetch(`/get-tokos/${regionId}`)
+        fetch("{{ url('/get-tokos') }}/" + regionId)
             .then(response => response.json())
             .then(data => {
                 container.innerHTML = ''; // Bersihkan container
