@@ -15,7 +15,7 @@ class AddIdAliasToTokos extends Migration
     {
         Schema::table('tokos', function (Blueprint $table) {
             //
-            $table->bigInteger('id_alias')->after('id')->index()->nullable();
+            $table->string('id_alias')->after('id')->index()->nullable();
         });
     }
 
