@@ -12,7 +12,7 @@
                 </a>
                 <h1 class="text-2xl font-bold text-gray-900">Detail Loc</h1>
             </div>
-            <p class="text-sm text-gray-500 mt-1">Daftar seluruh transaksi loc pada periode <span class="font-bold text-gray-700">{{ $periodeTitle }}</span>.</p>
+            <p class="text-md text-black font-medium">Daftar seluruh transaksi loc pada periode <span class="font-bold text-gray-700">{{ $periodeTitle }}</span>.</p>
         </div>
     </div>
     <div class="flex ms-auto m-4 gap-2">

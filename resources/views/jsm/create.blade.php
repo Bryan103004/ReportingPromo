@@ -331,11 +331,11 @@
                     
                     // Radio di-set 'checked' secara default (sesuai permintaanmu)
                     div.innerHTML = `
-                        <input type="radio" id="toko_${toko.id}" name="toko_id" value="${toko.id}" checked 
-                                class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                        <label for="toko_${toko.id}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
-                            ${toko.nama_toko}
-                        </label>
+                    <input type="radio" id="toko_${toko.id}" name="toko_id" value="${toko.id}" required
+                        class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                    <label for="toko_${toko.id}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
+                        ${toko.nama_toko}
+                    </label>
                     `;
                     container.appendChild(div);
                 });
