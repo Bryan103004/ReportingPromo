@@ -31,7 +31,7 @@ class LocController extends Controller
             ->groupBy('store', 'year_kerja', 'month_kerja')
             ->orderBy('year_kerja', 'asc')
             ->orderBy('month_kerja', 'asc')
-            ->get();
+            ->customPaginate();
 
         return view('loc.index', compact('locGroups'));
     }
@@ -42,7 +42,7 @@ class LocController extends Controller
             ->whereYear('periode_bulan', $year)
             ->whereMonth('periode_bulan', $month)
             ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
-            ->get(); 
+            ->customPaginate(); 
 
         $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
 
@@ -296,6 +296,8 @@ class LocController extends Controller
         // Tentukan nama file secara dinamis berdasarkan parameter
         if ($year && $month) {
             $fileName = 'Detail_Loc_Report_'. $year . '_' . $month . '.xlsx';
+        } elseif ($year) {
+            $fileName = 'Rekap_Loc_Report_'. $year . '_' . 'xlsx'; 
         } else {
             $fileName = 'Rekap_Loc_Report_All.xlsx';
         }

@@ -12,7 +12,7 @@
                 </a>
                 <h1 class="text-2xl font-bold text-gray-900">Detail Rafaksi</h1>
             </div>
-            <p class="text-sm text-gray-500 mt-1">Daftar seluruh transaksi rafaksi pada periode <span class="font-bold text-gray-700">{{ $periodeTitle }}</span>.</p>
+            <p class="text-md text-black font-medium">Daftar seluruh transaksi rafaksi pada periode <span class="font-bold text-gray-700">{{ $periodeTitle }}</span>.</p>
         </div>
     </div>
     <div class="flex ms-auto m-4 gap-2">
@@ -31,6 +31,8 @@
         placeholder="Masukkan user atau aksi..." 
         tableId="rafaksiDetail" 
     />
+
+    <x-per-page/>
 
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -152,6 +154,10 @@
                 
             </table>
         </div>
+    </div>
+
+    <div class="my-2">
+        {{ $rafaksis->links() }}
     </div>
     
 </div>

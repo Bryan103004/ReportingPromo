@@ -5,7 +5,7 @@
     <div class="mb-5 flex items-center justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold">Data Master Permissions</h1>
-            <p class="mt-1 text-sm text-gray-600">Daftar permission yang tersedia.</p>
+            <p class="mt-1 text-md font-medium">Daftar permission yang tersedia.</p>
         </div>
 
         <a class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-100" href="{{ route('permission.create') }}">+ Buat Permission</a>
@@ -31,7 +31,7 @@
         </div>
 
         {{-- Form Paginate Atas --}}
-        <form method="GET" action="{{ route('permission.index') }}" id="paginateForm" class="inline-block mb-4">
+        <form method="GET" action="{{ route('permission.index') }}" id="paginateForm" class="paginateForm inline-block mb-4">
             @foreach(request()->except('number') as $key => $val)
                 @if(is_array($val))
                     @foreach($val as $v) <input type="hidden" name="{{ $key }}[]" value="{{ $v }}"> @endforeach
@@ -121,7 +121,7 @@
             {{ $permissions->links() }}
         </div>
 
-        <form method="GET" action="{{ route('permission.index') }}" id="paginateFormBottom" class="inline-block mt-2 mb-2">
+        <form method="GET" action="{{ route('permission.index') }}" id="paginateFormBottom" class="paginateForm inline-block mt-2 mb-2">
             @foreach(request()->except('number') as $key => $val)
                 @if(is_array($val))
                     @foreach($val as $v)

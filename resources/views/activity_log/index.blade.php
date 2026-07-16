@@ -5,7 +5,7 @@
     
     {{-- Form Paginate & Search Bar Atas (Card Putih) --}}
     <div class="flex flex-wrap justify-between items-center mb-6 shadow-sm p-4 bg-white rounded-lg gap-4">
-        <form method="GET" action="{{ route('activity-log.index') }}" id="paginateForm" class="flex items-center gap-2">
+        <form method="GET" action="{{ route('activity-log.index') }}" id="paginateForm" class="paginateForm flex items-center gap-2">
             @foreach(request()->except('number') as $key => $val)
                 @if(is_array($val))
                     @foreach($val as $v) <input type="hidden" name="{{ $key }}[]" value="{{ $v }}"> @endforeach
@@ -41,7 +41,7 @@
             </button>
         </form>
         <h2 class="text-2xl font-bold text-gray-900 tracking-wide mb-1">Activity Log</h2>
-        <p class="text-sm text-gray-600 mb-3">Pantau seluruh aktivitas perubahan data di dalam sistem.</p>
+        <p class="text-md text-black font-medium mb-3">Pantau seluruh aktivitas perubahan data di dalam sistem.</p>
         <span class="inline-block bg-gray-100 text-gray-800 border border-gray-200 text-xs font-bold px-4 py-1.5 rounded-full shadow-sm">
             Total: {{ $logs->total() }} Log
         </span>
@@ -120,7 +120,7 @@
     </div>
 
     {{-- Form Paginate Bawah --}}
-    <form method="GET" action="{{ route('activity-log.index') }}" id="paginateFormBottom" class="flex items-center gap-2 mb-6">
+    <form method="GET" action="{{ route('activity-log.index') }}" id="paginateFormBottom" class="paginateForm flex items-center gap-2 mb-6">
         @foreach(request()->except('number') as $key => $val)
             @if(is_array($val))
                 @foreach($val as $v) <input type="hidden" name="{{ $key }}[]" value="{{ $v }}"> @endforeach

@@ -7,7 +7,7 @@
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Data Master Supplier</h1>
-            <p class="text-sm text-gray-500 mt-1">Daftar seluruh kode dan nama supplier rafaksi.</p>
+            <p class="text-md font-medium mt-1">Daftar seluruh kode dan nama supplier rafaksi.</p>
         </div>
         
         {{-- Tombol Tambah (Opsional, arahkan ke route create milikmu) --}}
@@ -20,6 +20,8 @@
         placeholder="Masukkan user atau aksi..." 
         tableId="supplier-rafaksi-table" 
     />
+
+    <x-per-page/>
     
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -64,16 +66,19 @@
                     <tr>
                         <td colspan="3" class="px-6 py-10 text-center text-gray-500 font-medium">
                             <div class="flex flex-col items-center justify-center">
-                                <svg class="w-10 h-10 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-.jumbo"></path></svg>
                                 Belum ada data supplier yang terdaftar.
                             </div>
                         </td>
                     </tr>
                     @endforelse
                 </tbody>
-                
             </table>
         </div>
+    </div>
+    
+    <div class="my-2">
+        {{ $supplier_rafaksi->links() }}
     </div>
     
 </div>

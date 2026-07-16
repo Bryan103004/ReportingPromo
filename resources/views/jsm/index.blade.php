@@ -6,7 +6,7 @@
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Rekapitulasi Rafaksi JSM</h1>
-            <p class="text-sm text-gray-500 mt-1">Daftar total transaksi dan nominal rafaksi jsm yang dikelompokkan per bulan.</p>
+            <p class="text-md font-medium mt-1">Daftar total transaksi dan nominal rafaksi jsm yang dikelompokkan per bulan.</p>
         </div>
         
         {{-- Tombol Tambah Rafaksi Baru --}}
@@ -24,9 +24,13 @@
             Export Rekap XLS
         </a>
 
-        <a href="{{ route('jsm.print') }}" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+        <a id="print-button" href="{{ route('jsm.print') }}" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
             Print
         </a>
+    </div>
+    
+    <div id="print-form" class="hidden">
+
     </div>
 
     {{-- ===== SEARCH BAR ===== --}}
@@ -34,6 +38,8 @@
         placeholder="Masukkan user atau aksi..." 
         tableId="jsmTable" 
     />
+
+    <x-per-page/>
 
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -103,6 +109,19 @@
             </table>
         </div>
     </div>
+
+    <div class="my-2">
+        {{ $jsmGroups->links() }}
+    </div>
     
 </div>
+
+<script>
+    var printbutton = document.getElementById('print-button');
+    var printForm = document.getElementById('print-form');
+
+    printbutton.addEventListener('click'){
+        printForm.toggleAttribute('hidden')
+    }
+</script>
 @endsection

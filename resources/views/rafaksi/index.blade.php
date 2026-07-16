@@ -6,7 +6,7 @@
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Rekapitulasi Rafaksi</h1>
-            <p class="text-sm text-gray-500 mt-1">Daftar total transaksi dan nominal rafaksi yang dikelompokkan per bulan.</p>
+            <p class="text-md font-medium mt-1">Daftar total transaksi dan nominal rafaksi yang dikelompokkan per bulan.</p>
         </div>
         
         {{-- Tombol Tambah Rafaksi Baru --}}
@@ -35,6 +35,8 @@
         placeholder="Masukkan user atau aksi..." 
         tableId="rafaksiTable" 
     />
+
+    <x-per-page/>
 
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -103,6 +105,10 @@
                 
             </table>
         </div>
+    </div>
+
+    <div class="my-2">
+        {{ $rafaksiGroups->links() }}
     </div>
     
 </div>

@@ -11,7 +11,7 @@
                 </div>
 
                 <!-- Navigation Links -->
-                <div class="hidden space-x-4 sm:-my-px sm:ms-10 sm:flex items-center">
+                <div class="hidden space-x-4 sm:-my-px sm:ms-10 sm:flex items-center gap-x-2">
           
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         <i class="fa-solid fa-gauge-high mr-2 opacity-70"></i> {{ __('Dashboard') }}
@@ -127,21 +127,21 @@
                                 </div>
                             </div>
 
-                            @can('view_jsm')
-                            <x-nav-link :href="route('jsm.index')" :active="request()->routeIs('jsm.index')">
-                                {{ __('JSM') }}
-                            </x-nav-link>
-                            @endcan
-            
                             @can('view_rafaksi')
                             <x-nav-link :href="route('rafaksi.index')" :active="request()->routeIs('rafaksi.index')">
-                                {{ __('RAFAKSI') }}
+                                {{ __('Data Rafaksi') }}
+                            </x-nav-link>
+                            @endcan
+
+                            @can('view_jsm')
+                            <x-nav-link :href="route('jsm.index')" :active="request()->routeIs('jsm.index')">
+                                {{ __(' Data Jsm') }}
                             </x-nav-link>
                             @endcan
 
                             @can('view_loc')
                             <x-nav-link :href="route('loc.index')" :active="request()->routeIs('loc.index')">
-                                {{ __('LOC') }}
+                                {{ __('Data Loc') }}
                             </x-nav-link>
                             @endcan
                         </div>

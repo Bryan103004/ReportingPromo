@@ -10,7 +10,7 @@
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
 
-        <link rel="stylesheet" href="{{ asset('build/assets/app-DpeE0s5i.css') }}">
+        <link rel="stylesheet" href="{{ asset('build/assets/app-DtgsOtR3.css') }}">
         <script src="{{ asset('build/assets/app-DXU0SP3V.js') }}" type="module"></script>
 
         <!-- <script src="https://cdn.tailwindcss.com"></script> -->
@@ -18,8 +18,12 @@
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
         
         <style>
+            .paginateForm{
+                background-color: #f7fafc ;
+            }
+
             body { 
-                background-image: url('{{ asset('images/background.jpeg') }}'); 
+                background-image: url('{{ asset('images/background.jpg') }}'); 
                 background-size: cover; /* Agar gambar memenuhi layar */
                 background-position: center center; /* Posisi gambar di tengah */
                 background-repeat: no-repeat; /* Agar gambar tidak berulang */

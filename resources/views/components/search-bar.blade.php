@@ -7,7 +7,7 @@
 <div class="search-component-container">
     <input 
         type="text" 
-        class="form-control my-4 dynamic-search-bar w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500"
+        class="bg-gray-100 form-control my-4 dynamic-search-bar w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-blue-500"
 
         placeholder="{{ $placeholder }}" 
         data-target="{{ $tableId }}"

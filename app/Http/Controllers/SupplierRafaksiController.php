@@ -10,7 +10,7 @@ class SupplierRafaksiController extends Controller
 {
     //
     public function index(){
-        $supplier_rafaksi = SupplierRafaksi::all(); 
+        $supplier_rafaksi = SupplierRafaksi::customPaginate(); 
         return view('supplier_rafaksi.index', compact('supplier_rafaksi'));
     }
 

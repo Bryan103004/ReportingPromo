@@ -33,6 +33,8 @@
         tableId="jsmDetail" 
     />
 
+    <x-per-page/>
+
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
@@ -148,6 +150,10 @@
                 @endif
             </table>
         </div>
+    </div>
+
+    <div class="my-2">
+        {{ $jsms->links() }}
     </div>
     
 </div>
