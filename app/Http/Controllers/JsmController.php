@@ -53,7 +53,7 @@ class JsmController extends Controller
 
     public function create(){
         $supplierRafaksi = SupplierRafaksi::all();
-        $regions = Region::all();
+        $regions = Region::whereNotIn('status',['nonaktif'])->get();
         return view('jsm.create', compact('supplierRafaksi','regions'));
     }
 

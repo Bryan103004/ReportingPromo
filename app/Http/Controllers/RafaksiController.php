@@ -52,7 +52,7 @@ class RafaksiController extends Controller
 
     public function create(){
         $supplierRafaksi = SupplierRafaksi::all();
-        $regions = Region::all();
+        $regions = Region::whereNotIn('status',['nonaktif'])->get();
         return view('rafaksi.create', compact('supplierRafaksi', 'regions'));
     }
 

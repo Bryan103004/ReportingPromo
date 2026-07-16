@@ -86,7 +86,8 @@ class TokoController extends Controller
     public function getByRegion($region_id)
     {
         // Ambil toko yang sesuai dengan region_id
-        $tokos = Toko::where('region_id', $region_id)->get(['id', 'nama_toko']);
+        $tokos = Toko::whereNotIn('status',['nonaktif'])
+                    ->where('region_id', $region_id)->get(['id', 'nama_toko']);
         return response()->json($tokos);
     }
 }
