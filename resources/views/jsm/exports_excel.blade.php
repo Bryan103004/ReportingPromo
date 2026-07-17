@@ -71,10 +71,10 @@
                             $val = $row->$colName; 
                         @endphp
                         
-                        <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">{{ ($val === '' || $val === null) ? '' : number_format($val ?? 0, 0, ',', '.') }}</td>
+                        <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">{{ ($val === '' || $val === null) ? '' : $val }}</td>
                     @endforeach
                     <td align="right" style="background-color: #FF4E73DF; font-weight: bold;">
-                    {{ ($row->TOTAL === '' || $row->TOTAL === null) ? '' : number_format($row->TOTAL ?? 0, 0, ',', '.') }}
+                        {{ ($row->TOTAL === '' || $row->TOTAL === null) ? '' : $row->TOTAL }}
                     </td>
                 </tr>
             @endforeach

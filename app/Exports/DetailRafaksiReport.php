@@ -8,19 +8,39 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles
+class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles, WithStrictNullComparison, WithColumnFormatting
 {
     protected $year;
     protected $month;
+    protected $stores;
 
     // Terima parameter dari Controller
-    public function __construct($year = null, $month = null)
+    public function __construct($year = null, $month = null, $stores)
     {
         $this->year = $year;
         $this->month = $month;
+        $this->stores = $stores;
+    }
+
+    public function columnFormats(): array
+    {
+        // Asumsi: kolom toko mulai dari index C (3) sampai sebelum kolom TOTAL
+        $formats = [];
+        $char = 'C';
+        foreach ($this->stores as $store) {
+            // Gunakan string '#,##0' untuk pemisah ribuan tanpa desimal
+            $formats[$char] = '#,##0'; 
+            $char++;
+        }
+        $formats[$char] = '#,##0'; // Untuk kolom TOTAL
+        
+        return $formats;
     }
 
     public function view(): View

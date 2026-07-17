@@ -20,15 +20,36 @@
         <!-- <a href="{{ route('loc.export') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
             Export Rekap CSV
         </a> -->
-        <a href="{{ route('loc.export.excel') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+        <button type="button" onclick="openExportModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
             Export Rekap XLS
-        </a>
+        </button>
+
+       <!-- Modal -->
+        <div id="exportModal" class="fixed inset-0 z-50 hidden bg-gray-100 bg-opacity-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
+                <h3 class="text-lg font-bold mb-4">Pilih Tahun Export</h3>
+                <form action="{{ route('jsm.export.excel') }}" method="GET">
+                    <select name="year" class="w-full border-gray-300 rounded-md mb-4" required>
+                        @for ($y = date('Y'); $y >= 2020; $y--)
+                            <option value="{{ $y }}">{{ $y }}</option>
+                        @endfor
+                    </select>
+                    <div class="flex justify-end gap-2">
+                        <button type="button" onclick="closeExportModal()" class="px-4 py-2 text-gray-600">Batal</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Download</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 
         <a href="{{ route('loc.print') }}" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
             Print
         </a>
     </div>
 
+
+    {{--  KOMPONEN FILTER --}}
+    <x-filter-bar :suppliers="$suppliers" />
 
     {{-- ===== SEARCH BAR ===== --}}
     <x-search-bar 
@@ -49,7 +70,7 @@
                         <th class="px-6 py-4 w-16 text-center">No</th>
                         <th class="hidden px-6 py-4">Periode Loc</th>
                         <th class="px-6 py-4">Periode Bulan</th>
-                        <th class="px-6 py-4">Store</th>
+                        <th class="px-6 py-4">Region</th>
                         <th class="px-6 py-4 text-center">Total Transaksi</th>
                         <th class="px-6 py-4 text-right">Total Nominal</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
@@ -112,4 +133,9 @@
     </div>
     
 </div>
+
+<script>
+    function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); }
+    function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
+</script>
 @endsection

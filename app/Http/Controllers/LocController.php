@@ -17,42 +17,121 @@ use Maatwebsite\Excel\Facades\Excel;
 class LocController extends Controller
 {
     //
-    public function index()
+    // public function index()
+    // {
+    //     $locGroups = Loc::selectRaw('
+    //             store,  
+    //             MAX(YEAR(periode_akhir)) as year, -- Mengambil tahun terbaru dalam grup
+    //             MAX(MONTH(periode_akhir)) as month, -- Mengambil bulan terbaru dalam grup
+    //             YEAR(periode_bulan) as year_kerja, 
+    //             MONTH(periode_bulan) as month_kerja, 
+    //             COUNT(*) as total_data, 
+    //             SUM(nominal) as total_nominal
+    //         ')
+    //         ->groupBy('store', 'year_kerja', 'month_kerja')
+    //         ->orderBy('year_kerja', 'asc')
+    //         ->orderBy('month_kerja', 'asc')
+    //         ->customPaginate();
+
+    //     return view('loc.index', compact('locGroups'));
+    // }
+
+    public function index(Request $request)
     {
-        $locGroups = Loc::selectRaw('
+        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        $suppliers = SupplierRafaksi::all();
+
+        // 2. Siapkan Query Dasar
+        $query = Loc::selectRaw('
                 store,  
-                MAX(YEAR(periode_akhir)) as year, -- Mengambil tahun terbaru dalam grup
-                MAX(MONTH(periode_akhir)) as month, -- Mengambil bulan terbaru dalam grup
+                MAX(YEAR(periode_akhir)) as year,
+                MAX(MONTH(periode_akhir)) as month,
                 YEAR(periode_bulan) as year_kerja, 
                 MONTH(periode_bulan) as month_kerja, 
                 COUNT(*) as total_data, 
                 SUM(nominal) as total_nominal
-            ')
-            ->groupBy('store', 'year_kerja', 'month_kerja')
+            ');
+
+        // 3. Terapkan Filter Jika Ada
+        if ($request->filled('supplier_code')) {
+            $query->where('supplier_code', $request->supplier_code);
+        }
+        
+        if ($request->filled('start_date')) {
+            $query->where('periode_awal', '>=', $request->start_date);
+        }
+        
+        if ($request->filled('end_date')) {
+            $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        // 4. Eksekusi Query dengan Group By & Pagination
+        $locGroups = $query->groupBy('store', 'year_kerja', 'month_kerja')
             ->orderBy('year_kerja', 'asc')
             ->orderBy('month_kerja', 'asc')
             ->customPaginate();
 
-        return view('loc.index', compact('locGroups'));
+        // 5. Appends Request (SANGAT PENTING!)
+        // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
+        $locGroups->appends($request->all());
+
+        return view('loc.index', compact('locGroups', 'suppliers'));
     }
 
-    public function showMonth($year, $month)
+    // public function showMonth($year, $month)
+    // {
+    //     $locs = Loc::with(['tokos'])
+    //         ->whereYear('periode_bulan', $year)
+    //         ->whereMonth('periode_bulan', $month)
+    //         ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
+    //         ->customPaginate(); 
+
+    //     $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
+
+    //     return view('loc.show_month', compact('locs', 'periodeTitle', 'year', 'month'));
+    // }
+
+    public function showMonth(Request $request, $year, $month)
     {
-        $locs = Loc::with(['tokos'])
+        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        $suppliers = SupplierRafaksi::all();
+
+        // 2. Siapkan Query Builder Dasar (JANGAN panggil customPaginate di sini)
+        $query = Loc::with(['tokos'])
             ->whereYear('periode_bulan', $year)
             ->whereMonth('periode_bulan', $month)
-            ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
-            ->customPaginate(); 
+            ->orderBy('periode_akhir', 'desc'); 
 
         $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
 
-        return view('loc.show_month', compact('locs', 'periodeTitle', 'year', 'month'));
+        // 3. Terapkan Filter Jika Ada
+        if ($request->filled('supplier_code')) {
+            $query->where('supplier_code', $request->supplier_code);
+        }
+        
+        if ($request->filled('start_date')) {
+            $query->where('periode_awal', '>=', $request->start_date);
+        }
+        
+        if ($request->filled('end_date')) {
+            $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        // 4. Eksekusi Query dengan memanggil Pagination di bagian akhir
+        $locs = $query->customPaginate();
+
+        // 5. Appends Request (SANGAT PENTING!)
+        // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
+        $locs->appends($request->all());
+
+        return view('loc.show_month', compact('locs', 'periodeTitle', 'year', 'month', 'suppliers'));
     }
 
     public function create(){
         $supplierRafaksi = SupplierRafaksi::all();
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
-        return view('loc.create', compact('supplierRafaksi', 'regions'));
+        $categories = Category::all();
+        return view('loc.create', compact('supplierRafaksi', 'regions', 'categories'));
     }
 
     public function store(Request $request){
@@ -68,6 +147,7 @@ class LocController extends Controller
             'remarks' => 'string|nullable',
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
+            'category_id' => 'exists:categories,id',
         ]);
 
         $loc = Loc::create($request->except('toko_id'));
@@ -100,6 +180,7 @@ class LocController extends Controller
             'remarks' => 'string|nullable',
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
+            'category_id' => 'exists:categories,id',
         ]);
 
         $loc->update($request->except('toko_id'));
@@ -297,7 +378,7 @@ class LocController extends Controller
         if ($year && $month) {
             $fileName = 'Detail_Loc_Report_'. $year . '_' . $month . '.xlsx';
         } elseif ($year) {
-            $fileName = 'Rekap_Loc_Report_'. $year . '_' . 'xlsx'; 
+            $fileName = 'Rekap_Loc_Report_'. $year . 'xlsx'; 
         } else {
             $fileName = 'Rekap_Loc_Report_All.xlsx';
         }

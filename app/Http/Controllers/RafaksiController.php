@@ -18,42 +18,122 @@ use Maatwebsite\Excel\Facades\Excel;
 class RafaksiController extends Controller
 {
     //
-    public function index()
+    // public function index()
+    // {
+    //     $rafaksiGroups = Rafaksi::selectRaw('
+    //             store,  
+    //             MAX(YEAR(periode_akhir)) as year, -- Mengambil tahun terbaru dalam grup
+    //             MAX(MONTH(periode_akhir)) as month, -- Mengambil bulan terbaru dalam grup
+    //             YEAR(periode_bulan) as year_kerja, 
+    //             MONTH(periode_bulan) as month_kerja, 
+    //             COUNT(*) as total_data, 
+    //             SUM(nominal) as total_nominal
+    //         ')
+    //         ->groupBy('store', 'year_kerja', 'month_kerja')
+    //         ->orderBy('year_kerja', 'asc')
+    //         ->orderBy('month_kerja', 'asc')
+    //         ->customPaginate();
+
+    //     return view('rafaksi.index', compact('rafaksiGroups'));
+    // }
+
+
+    public function index(Request $request)
     {
-        $rafaksiGroups = Rafaksi::selectRaw('
+        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        $suppliers = SupplierRafaksi::all();
+
+        // 2. Siapkan Query Dasar
+        $query = Rafaksi::selectRaw('
                 store,  
-                MAX(YEAR(periode_akhir)) as year, -- Mengambil tahun terbaru dalam grup
-                MAX(MONTH(periode_akhir)) as month, -- Mengambil bulan terbaru dalam grup
+                MAX(YEAR(periode_akhir)) as year,
+                MAX(MONTH(periode_akhir)) as month,
                 YEAR(periode_bulan) as year_kerja, 
                 MONTH(periode_bulan) as month_kerja, 
                 COUNT(*) as total_data, 
                 SUM(nominal) as total_nominal
-            ')
-            ->groupBy('store', 'year_kerja', 'month_kerja')
+            ');
+
+        // 3. Terapkan Filter Jika Ada
+        if ($request->filled('supplier_code')) {
+            $query->where('supplier_code', $request->supplier_code);
+        }
+        
+        if ($request->filled('start_date')) {
+            $query->where('periode_awal', '>=', $request->start_date);
+        }
+        
+        if ($request->filled('end_date')) {
+            $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        // 4. Eksekusi Query dengan Group By & Pagination
+        $rafaksiGroups = $query->groupBy('store', 'year_kerja', 'month_kerja')
             ->orderBy('year_kerja', 'asc')
             ->orderBy('month_kerja', 'asc')
             ->customPaginate();
 
-        return view('rafaksi.index', compact('rafaksiGroups'));
+        // 5. Appends Request (SANGAT PENTING!)
+        // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
+        $rafaksiGroups->appends($request->all());
+
+        return view('rafaksi.index', compact('rafaksiGroups', 'suppliers'));
     }
 
-    public function showMonth($year, $month)
+    // public function showMonth($year, $month)
+    // {
+    //     $rafaksis = Rafaksi::with(['tokos'])
+    //         ->whereYear('periode_bulan', $year)
+    //         ->whereMonth('periode_bulan', $month)
+    //         ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
+    //         ->customPaginate(); 
+
+    //     $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
+
+    //     return view('rafaksi.show_month', compact('rafaksis', 'periodeTitle', 'year', 'month'));
+    // }
+
+    public function showMonth(Request $request, $year, $month)
     {
-        $rafaksis = Rafaksi::with(['tokos'])
+        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        $suppliers = SupplierRafaksi::all();
+
+        // 2. Siapkan Query Builder Dasar (JANGAN panggil customPaginate di sini)
+        $query = Rafaksi::with(['tokos'])
             ->whereYear('periode_bulan', $year)
             ->whereMonth('periode_bulan', $month)
-            ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
-            ->customPaginate(); 
+            ->orderBy('periode_akhir', 'desc'); 
 
         $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
 
-        return view('rafaksi.show_month', compact('rafaksis', 'periodeTitle', 'year', 'month'));
+        // 3. Terapkan Filter Jika Ada
+        if ($request->filled('supplier_code')) {
+            $query->where('supplier_code', $request->supplier_code);
+        }
+        
+        if ($request->filled('start_date')) {
+            $query->where('periode_awal', '>=', $request->start_date);
+        }
+        
+        if ($request->filled('end_date')) {
+            $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        // 4. Eksekusi Query dengan memanggil Pagination di bagian akhir
+        $rafaksis = $query->customPaginate();
+
+        // 5. Appends Request (SANGAT PENTING!)
+        // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
+        $rafaksis->appends($request->all());
+
+        return view('rafaksi.show_month', compact('rafaksis', 'periodeTitle', 'year', 'month', 'suppliers'));
     }
 
     public function create(){
         $supplierRafaksi = SupplierRafaksi::all();
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
-        return view('rafaksi.create', compact('supplierRafaksi', 'regions'));
+        $categories = Category::all();
+        return view('rafaksi.create', compact('supplierRafaksi', 'regions', 'categories'));
     }
 
     public function store(Request $request){
@@ -69,6 +149,7 @@ class RafaksiController extends Controller
             'remarks' => 'string|nullable',
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
+            'category_id' => 'exists:categories,id',
         ]);
 
         $rafaksi = Rafaksi::create($request->except('toko_id'));
@@ -101,6 +182,7 @@ class RafaksiController extends Controller
             'remarks' => 'string|nullable',
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
+            'category_id' => 'exists:categories,id',
         ]);
 
         $rafaksi->update($request->except('toko_id'));
@@ -298,7 +380,7 @@ class RafaksiController extends Controller
         if ($year && $month) {
             $fileName = 'Detail_Rafaksi_Report_'. $year . '_' . $month . '.xlsx';
         } elseif ($year) {
-            $fileName = 'Rekap_Rafaksi_Report_'. $year . '_' . 'xlsx'; 
+            $fileName = 'Rekap_Rafaksi_Report_'. $year . 'xlsx'; 
         } else {
             $fileName = 'Rekap_Rafaksi_Report_All.xlsx';
         }

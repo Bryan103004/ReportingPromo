@@ -19,42 +19,124 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class JsmController extends Controller
 {
     //
-    public function index()
+    // public function index()
+    // {
+    //     $jsmGroups = Jsm::selectRaw('
+    //             store,  
+    //             MAX(YEAR(periode_akhir)) as year, -- Mengambil tahun terbaru dalam grup
+    //             MAX(MONTH(periode_akhir)) as month, -- Mengambil bulan terbaru dalam grup
+    //             YEAR(periode_bulan) as year_kerja, 
+    //             MONTH(periode_bulan) as month_kerja, 
+    //             COUNT(*) as total_data, 
+    //             SUM(nominal) as total_nominal
+    //         ')
+    //         ->groupBy('store', 'year_kerja', 'month_kerja')
+    //         ->orderBy('year_kerja', 'asc')
+    //         ->orderBy('month_kerja', 'asc')
+    //         ->customPaginate();
+
+    //     return view('jsm.index', compact('jsmGroups'));
+    // }
+
+
+
+    // Pastikan kamu meng-inject (Request $request) di parameternya
+    public function index(Request $request)
     {
-        $jsmGroups = Jsm::selectRaw('
+        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        $suppliers = SupplierRafaksi::all();
+
+        // 2. Siapkan Query Dasar
+        $query = Jsm::selectRaw('
                 store,  
-                MAX(YEAR(periode_akhir)) as year, -- Mengambil tahun terbaru dalam grup
-                MAX(MONTH(periode_akhir)) as month, -- Mengambil bulan terbaru dalam grup
+                MAX(YEAR(periode_akhir)) as year,
+                MAX(MONTH(periode_akhir)) as month,
                 YEAR(periode_bulan) as year_kerja, 
                 MONTH(periode_bulan) as month_kerja, 
                 COUNT(*) as total_data, 
                 SUM(nominal) as total_nominal
-            ')
-            ->groupBy('store', 'year_kerja', 'month_kerja')
+            ');
+
+        // 3. Terapkan Filter Jika Ada
+        if ($request->filled('supplier_code')) {
+            $query->where('supplier_code', $request->supplier_code);
+        }
+        
+        if ($request->filled('start_date')) {
+            $query->where('periode_awal', '>=', $request->start_date);
+        }
+        
+        if ($request->filled('end_date')) {
+            $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        // 4. Eksekusi Query dengan Group By & Pagination
+        $jsmGroups = $query->groupBy('store', 'year_kerja', 'month_kerja')
             ->orderBy('year_kerja', 'asc')
             ->orderBy('month_kerja', 'asc')
             ->customPaginate();
 
-        return view('jsm.index', compact('jsmGroups'));
+        // 5. Appends Request (SANGAT PENTING!)
+        // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
+        $jsmGroups->appends($request->all());
+
+        return view('jsm.index', compact('jsmGroups', 'suppliers'));
     }
 
-    public function showMonth($year, $month)
+    // public function showMonth($year, $month)
+    // {
+    //     $jsms = Jsm::with(['tokos'])
+    //         ->whereYear('periode_bulan', $year)
+    //         ->whereMonth('periode_bulan', $month)
+    //         ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
+    //         ->customPaginate(); 
+
+    //     $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
+
+    //     return view('jsm.show_month', compact('jsms', 'periodeTitle', 'year', 'month'));
+    // }
+
+    public function showMonth(Request $request, $year, $month)
     {
-        $jsms = Jsm::with(['tokos'])
+        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        $suppliers = SupplierRafaksi::all();
+
+        // 2. Siapkan Query Builder Dasar (JANGAN panggil customPaginate di sini)
+        $query = Jsm::with(['tokos'])
             ->whereYear('periode_bulan', $year)
             ->whereMonth('periode_bulan', $month)
-            ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
-            ->customPaginate(); 
+            ->orderBy('periode_akhir', 'desc'); 
 
         $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
 
-        return view('jsm.show_month', compact('jsms', 'periodeTitle', 'year', 'month'));
+        // 3. Terapkan Filter Jika Ada
+        if ($request->filled('supplier_code')) {
+            $query->where('supplier_code', $request->supplier_code);
+        }
+        
+        if ($request->filled('start_date')) {
+            $query->where('periode_awal', '>=', $request->start_date);
+        }
+        
+        if ($request->filled('end_date')) {
+            $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        // 4. Eksekusi Query dengan memanggil Pagination di bagian akhir
+        $jsms = $query->customPaginate();
+
+        // 5. Appends Request (SANGAT PENTING!)
+        // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
+        $jsms->appends($request->all());
+
+        return view('jsm.show_month', compact('jsms', 'periodeTitle', 'year', 'month', 'suppliers'));
     }
 
     public function create(){
         $supplierRafaksi = SupplierRafaksi::all();
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
-        return view('jsm.create', compact('supplierRafaksi','regions'));
+        $categories = Category::all();
+        return view('jsm.create', compact('supplierRafaksi','regions','categories'));
     }
 
     public function store(Request $request){
@@ -70,6 +152,7 @@ class JsmController extends Controller
             'remarks' => 'string|nullable',
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
+            'category_id' => 'exists:categories,id',
         ]);
 
         $jsm = Jsm::create($request->all());
@@ -102,6 +185,7 @@ class JsmController extends Controller
             'remarks' => 'string|nullable',
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
+            'category_id' => 'exists:categories,id',
         ]);
 
         $jsm->update($request->all());
@@ -230,7 +314,7 @@ class JsmController extends Controller
         if ($year && $month) {
             $fileName = 'Detail_Jsm_Report_'. $year . '_' . $month . '.xlsx';
         } elseif ($year) {
-            $fileName = 'Rekap_Jsm_Report_'. $year . '_' . 'xlsx'; 
+            $fileName = 'Rekap_Jsm_Report_'. $year . '.xlsx';
         } else {
             $fileName = 'Rekap_Jsm_Report_All.xlsx';
         }

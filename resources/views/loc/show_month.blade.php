@@ -27,10 +27,15 @@
         </a>
     </div>
 
+    {{--  KOMPONEN FILTER --}}
+    <x-filter-bar :suppliers="$suppliers" />
+
     <x-search-bar 
         placeholder="Masukkan user atau aksi..." 
         tableId="locDetail" 
     />
+
+    <x-per-page/>
 
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -43,12 +48,14 @@
                         <th class="px-6 py-4 w-16 text-center">No</th>
                         <th class="px-6 py-4">Supplier Code</th>
                         <th class="px-6 py-4">Supplier Name</th>
+                        <th class="px-6 py-4">Category</th>                        
                         <th class="px-6 py-4">Periode Promo</th>
                         <th class="px-6 py-4">No. RAF</th>
                         <th class="px-6 py-4">Region</th>
                         <th class="px-6 py-4">Store</th>
-                        <th class="px-6 py-4 text-right">Nominal</th>
                         <th class="px-6 py-4 text-right">Remarks</th>
+                        <th class="px-6 py-4 text-right">Nominal</th>
+                       
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
                     </tr>
                 </thead>
@@ -70,6 +77,10 @@
                             {{-- Supplier (Kode & Nama) --}}
                             <td class="px-6 py-4">
                                 <div class="font-semibold text-gray-800">{{ $loc->supplier_name }}</div>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-800">{{ $loc->categories->nama_kategori }}</div>
                             </td>
                             
                             {{-- Periode (Awal - Akhir) --}}
@@ -100,17 +111,16 @@
                                 </span>
                             </td>
                             
-                            {{-- Nominal --}}
-                            <td class="px-6 py-4 text-right font-bold text-green-600">
-                                Rp {{ number_format($loc->nominal, 0, ',', '.') }}
-                            </td>
-
-
                             {{-- Remarks --}}
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
                                     {{ $loc->remarks }}
                                 </span>
+                            </td>
+
+                            {{-- Nominal --}}
+                            <td class="px-6 py-4 text-right font-bold text-green-600">
+                                Rp {{ number_format($loc->nominal, 0, ',', '.') }}
                             </td>
 
                             {{-- Aksi (Opsional) --}}
@@ -138,7 +148,7 @@
                 @if($locs->count() > 0)
                 <tfoot class="bg-gray-50 border-t border-gray-200">
                     <tr>
-                        <td colspan="7" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
+                        <td colspan="9" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
                             Grand Total:
                         </td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 text-base">
@@ -152,6 +162,10 @@
                 
             </table>
         </div>
+    </div>
+
+    <div class="my-2">
+        {{ $locs->links() }}
     </div>
     
 </div>

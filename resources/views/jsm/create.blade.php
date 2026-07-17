@@ -57,6 +57,31 @@
                     <label for="supplier_name" class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Supplier <span class="text-red-500">*</span></label>
                     <input type="text" name="supplier_name" id="supplier_name" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="Otomatis Terisi Saat Anda Memilih Kode Supplier" readonly required>
                 </div>     
+
+                {{-- Category --}}
+                <div>
+                    <label for="category_id" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                        Category <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <select name="category_id" id="category_id" 
+                            class="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm transition-all focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 appearance-none" 
+                            required>
+                            <option value="" disabled selected class="text-gray-400">-- Pilih Category --</option>
+                            @foreach ($categories as $category)
+                                <option value="{{ $category->id }}" class="text-gray-900">
+                                    {{ $category->nama_kategori }}
+                                </option>
+                            @endforeach
+                        </select>
+                        {{-- Icon Panah Dropdown Custom --}}
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                </div>     
                 
                 {{-- Periode Awal --}}
                 <div>
