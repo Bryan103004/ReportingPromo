@@ -9,7 +9,7 @@
             <option value="">Semua Supplier</option>
             @foreach($suppliers as $supplier)
                 {{-- request('supplier_code') berguna untuk menjaga pilihan terakhir user agar tidak reset saat direfresh --}}
-                <option value="{{ $supplier->kode_supplier }}" {{ request('supplier_code') == $supplier->kode_supplier ? 'selected' : '' }}>
+                <option value="{{ $supplier->kode_supplier }}" {{ request()->filled('supplier_code') && request()->filled('supplier_code') == $supplier->kode_supplier}}>
                     {{ $supplier->nama_supplier }} ({{ $supplier->kode_supplier }})
                 </option>
             @endforeach

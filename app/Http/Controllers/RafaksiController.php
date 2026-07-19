@@ -373,6 +373,7 @@ class RafaksiController extends Controller
     public function exportExcel(Request $request)
     {
         // Tangkap parameter dari URL (bisa ada isinya, bisa juga kosong)
+        $stores = Toko::all();
         $year = $request->year;
         $month = $request->month;
 
@@ -386,7 +387,7 @@ class RafaksiController extends Controller
         }
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
-        return Excel::download(new DetailRafaksiReport($year, $month), $fileName);
+        return Excel::download(new DetailRafaksiReport($year, $month, $stores), $fileName);
     }
 
     public function printPdf(Request $request){

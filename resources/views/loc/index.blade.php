@@ -6,7 +6,7 @@
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
             <h1 class="text-2xl font-bold text-gray-900">Rekapitulasi Loc</h1>
-            <p class="text-sm text-gray-500 mt-1">Daftar total transaksi dan nominal loc yang dikelompokkan per bulan.</p>
+            <p class="text-md text-black font-medium mt-1">Daftar total transaksi dan nominal loc yang dikelompokkan per bulan.</p>
         </div>
         
         {{-- Tombol Tambah Loc Baru --}}
