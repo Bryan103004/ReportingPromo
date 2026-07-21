@@ -1,5 +1,6 @@
 <div class="bg-white rounded-lg shadow p-4 mb-6 overflow-x-auto">
     <h3 class="text-lg font-semibold text-gray-800 mb-3">Tabel Kontrak Loc</h3>
+    <h5>Total Data: {{ $data->total() }}</h5>
     <x-per-page/>
     <table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50">
