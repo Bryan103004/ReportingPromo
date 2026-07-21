@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JsmController;
 use App\Http\Controllers\LocController;
 use App\Http\Controllers\PermissionController;
@@ -29,9 +30,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth'])->name('dashboard');
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -89,5 +90,7 @@ Route::get('/get-tokos/{region_id}',[TokoController::class, 'getByRegion']);
 Route::resource('toko', TokoController::class);
 
 Route::resource('supplier_rafaksi', SupplierRafaksiController::class);
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 require __DIR__.'/auth.php';
