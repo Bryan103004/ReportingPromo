@@ -41,44 +41,44 @@
                                     <select name="region_id" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                         <option value="">-- Pilih Region --</option>
                                         @foreach($regions as $region)
-                                            <option value="{{ $region->id }}">{{ $region->nama_region }}</option>
+                                            <option value="{{ old('id', $region->id) }}">{{ old('nama_region', $region->nama_region) }}</option>
                                         @endforeach
                                     </select>
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">ID Alias</label>
-                                    <input type="text" name="id_alias" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <input type="text" name="id_alias" value="{{ old('id_alias', $toko->id_alias) }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Toko <span class="text-red-500">*</span></label>
-                                    <input type="text" name="nama_toko" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <input type="text" name="nama_toko" value="{{ old('nama_toko', $toko->nama_toko) }}" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Kode Toko <span class="text-red-500">*</span></label>
-                                    <input type="text" name="kode_toko" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <input type="text" name="kode_toko" value="{{ old('kode_toko', $toko->kode_toko) }}" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                 </div>
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
-                                    <input type="text" name="npwp" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <input type="text" name="npwp" value="{{ old('npwp', $toko->npwp) }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                 </div>
 
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama PT</label>
-                                    <input type="text" name="nama_pt" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                    <input type="text" name="nama_pt" value="{{ old('nama_pt', $toko->nama_pt) }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                                 </div>
 
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Alamat PT</label>
-                                    <textarea name="alamat_pt" rows="2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                    <textarea name="alamat_pt" rows="2" value="{{ old('alamat_pt', $toko->alamat_pt) }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
                                 </div>
 
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Toko</label>
-                                    <textarea name="alamat_toko" rows="2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                    <textarea name="alamat_toko" rows="2" value="{{ old('alamat_toko', $toko->alamat_toko) }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
                                 </div>
 
                             </div>
