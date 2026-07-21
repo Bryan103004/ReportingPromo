@@ -16,9 +16,9 @@
         </div>
     </div>
     <div class="flex ms-auto m-4 gap-2">
-        <a href="{{ route('loc.export', ['year' => $year, 'month' => $month]) }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
+        <!-- <a href="{{ route('loc.export', ['year' => $year, 'month' => $month]) }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
             Export Rekap CSV
-        </a>
+        </a> -->
         <a href="{{ route('loc.export.excel', ['year' => $year, 'month' => $month]) }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
             Export Rekap XLS
         </a>
