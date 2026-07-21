@@ -24,7 +24,8 @@ class TokoController extends Controller
             'nama_pt' => 'nullable|string',
             'alamat_pt' => 'nullable|string',
             'npwp' => 'nullable|string',
-            'alamat_toko' => 'nullable|string'
+            'alamat_toko' => 'nullable|string',
+            'id_alias' => 'nullable|string'
         ]);
 
         $tokoPayload = collect($validatedData)->all();
@@ -54,7 +55,8 @@ class TokoController extends Controller
             'nama_pt' => 'nullable|string',
             'alamat_pt' => 'nullable|string',
             'npwp' => 'nullable|string',
-            'alamat_toko' => 'nullable|string'
+            'alamat_toko' => 'nullable|string',
+            'id_alias' => 'nullable|string'
         ]);
 
         $toko->update($validatedData);

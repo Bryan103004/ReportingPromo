@@ -32,41 +32,65 @@
                     @csrf
                     @method('PUT')
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Region <span class="text-red-500">*</span></label>
-                            <select name="region_id" id="region_id" required class="text-center py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition duration-150">
-                                <option value="">-- Pilih Region --</option>
-                                @foreach ($regions as $region)
-                                <option value="{{ $region->id }}" {{ old('region_id', $toko->region_id) == $region->id ? 'selected' : '' }}>
-                                    {{ $region->nama_region }}
-                                </option>
-                                @endforeach
-                            </select>
-                        </div>
+                    <div class="gap-6 mb-8">
+                        <div class="bg-white px-4 pt-4 pb-6 sm:px-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Region <span class="text-red-500">*</span></label>
+                                    <select name="region_id" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                        <option value="">-- Pilih Region --</option>
+                                        @foreach($regions as $region)
+                                            <option value="{{ $region->id }}">{{ $region->nama_region }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nama Toko <span class="text-red-500">*</span></label>
-                            <input type="text" name="nama_toko" value="{{ old('nama_toko', $toko->nama_toko) }}" required class="text-center py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition duration-150">
-                        </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">ID Alias</label>
+                                    <input type="text" name="id_alias" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Kode Toko</label>
-                            <input type="text" name="kode_toko" value="{{ old('kode_toko', $toko->kode_toko) }}" class="text-center py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition duration-150">
-                        </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Toko <span class="text-red-500">*</span></label>
+                                    <input type="text" name="nama_toko" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
-                            <input type="text" name="npwp" value="{{ old('npwp', $toko->npwp) }}" class="text-center py-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm transition duration-150">
-                        </div>
-                    </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kode Toko <span class="text-red-500">*</span></label>
+                                    <input type="text" name="kode_toko" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
 
-                    <div class="flex items-center justify-end space-x-4 pt-5 border-t border-gray-100">
-                        <a href="{{ route('toko.index') }}" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Batal & Kembali</a>
-                        <button type="submit" class="inline-flex justify-center rounded-md border border-transparent bg-blue-600 py-2.5 px-5 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150">
-                            Simpan Perubahan
-                        </button>
-                    </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
+                                    <input type="text" name="npwp" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama PT</label>
+                                    <input type="text" name="nama_pt" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Alamat PT</label>
+                                    <textarea name="alamat_pt" rows="2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Alamat Toko</label>
+                                    <textarea name="alamat_toko" rows="2" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
+                                </div>
+
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 px-4 py-4 sm:px-6 sm:flex sm:flex-row-reverse rounded-b-xl border-t border-gray-100">
+                            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition">
+                                Simpan Data
+                            </button>
+                            <button type="button" onclick="document.getElementById('createTokoModal').classList.add('hidden')" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition">
+                                Batal
+                            </button>
+                        </div>
                 </form>
             </div>
         </div>

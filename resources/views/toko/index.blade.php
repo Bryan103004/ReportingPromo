@@ -120,6 +120,11 @@
                             </div>
 
                             <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">ID Alias</label>
+                                <input type="text" name="id_alias" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                            </div>
+
+                            <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Nama Toko <span class="text-red-500">*</span></label>
                                 <input type="text" name="nama_toko" required class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                             </div>
