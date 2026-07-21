@@ -55,6 +55,7 @@
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-right">Remarks</th>
                         <th class="px-6 py-4 text-right">Nominal</th>
+                        <th class="px-6 py-4">Aksi</th>
                        
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
                     </tr>
@@ -124,14 +125,23 @@
                             </td>
 
                             {{-- Aksi (Opsional) --}}
-                            {{-- 
                             <td class="px-6 py-4 text-center">
-                                <form action="{{ route('loc.destroy', $loc->id) }}" method="POST" class="inline">
-                                    @csrf @method('DELETE')
-                                    <button type="submit" class="text-red-500 hover:text-red-700" onclick="return confirm('Yakin hapus data ini?')">Hapus</button>
-                                </form>
-                            </td> 
-                            --}}
+                                <div class="flex flex-row justify-center items-center gap-x-2">
+                                    {{-- Tombol Edit --}}
+                                    <a href="{{ route('loc.edit', $loc->id) }}" title="Edit Data">
+                                        ✎
+                                    </a>
+                                    
+                                    {{-- Tombol Hapus --}}
+                                    <form action="{{ route('loc.destroy', $loc->id) }}" method="POST" class="inline">
+                                        @csrf 
+                                        @method('DELETE')
+                                        <button type="submit" class="cursor-pointer text-red-500 hover:text-red-700 transition-colors duration-200" onclick="return confirm('Yakin hapus data ini?')" title="Hapus Data">
+                                            🗑
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
                         </tr>
                     @empty
                         <tr>

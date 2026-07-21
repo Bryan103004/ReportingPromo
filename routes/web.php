@@ -65,20 +65,20 @@ Route::get('/reports/export', [ReportController::class, 'exportExcel'])->name('r
 Route::get('/api/reports/weekly-matrix', [ReportController::class, 'getWeeklyMatrix'])->name('api.reports.matrix');
 
 Route::get('/jsm/print', [JsmController::class, 'printPdf'])->name('jsm.print');
-Route::get('/jsm/{year}/{month}', [JsmController::class, 'showMonth'])->name('jsm.show_month');
+Route::get('/jsm/rekap/{year}/{month}', [JsmController::class, 'showMonth'])->name('jsm.show_month');
 Route::get('/jsm/export_excel', [JsmController::class, 'exportExcel'])->name('jsm.export.excel');
 Route::get('/jsm/export_csv', [JsmController::class, 'exportCSV'])->name('jsm.export');
 
 Route::resource('jsm', JsmController::class);
 
 Route::get('/rafaksi/print', [RafaksiController::class, 'printPdf'])->name('rafaksi.print');
-Route::get('/rafaksi/{year}/{month}', [RafaksiController::class, 'showMonth'])->name('rafaksi.show_month');
+Route::get('/rafaksi/rekap/{year}/{month}', [RafaksiController::class, 'showMonth'])->name('rafaksi.show_month');
 Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->name('rafaksi.export.excel');
 Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');
 Route::resource('rafaksi', RafaksiController::class);
 
 Route::get('/loc/print', [LocController::class, 'printPdf'])->name('loc.print');
-Route::get('/loc/{year}/{month}', [LocController::class, 'showMonth'])->name('loc.show_month');
+Route::get('/loc/rekap/{year}/{month}', [LocController::class, 'showMonth'])->name('loc.show_month');
 Route::get('/loc/export_excel', [LocController::class, 'exportExcel'])->name('loc.export.excel');
 Route::get('/loc/export_csv', [LocController::class, 'exportCSV'])->name('loc.export');
 Route::resource('loc', LocController::class);

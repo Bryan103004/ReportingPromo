@@ -164,7 +164,12 @@ class LocController extends Controller
     }
 
     public function edit(Loc $loc){
-        return view('loc.edit', compact('loc'));
+        $supplierRafaksi = SupplierRafaksi::all();
+        $regions = Region::whereNotIn('status',['nonaktif'])->get();
+        $categories = Category::all();
+        $tokos = Toko::all();
+
+        return view('loc.edit', compact('loc', 'supplierRafaksi', 'regions', 'categories', 'tokos'));
     }
 
     public function update(Request $request, Loc $loc){

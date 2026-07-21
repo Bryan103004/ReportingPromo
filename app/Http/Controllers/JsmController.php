@@ -169,7 +169,11 @@ class JsmController extends Controller
     }
 
     public function edit(Jsm $jsm){
-        return view('jsm.edit', compact('jsm'));
+        $supplierRafaksi = SupplierRafaksi::all();
+        $regions = Region::whereNotIn('status',['nonaktif'])->get();
+        $categories = Category::all();
+        $tokos = Toko::all();
+        return view('jsm.edit', compact('jsm', 'supplierRafaksi', 'regions', 'tokos', 'categories'));
     }
 
     public function update(Request $request, Jsm $jsm){

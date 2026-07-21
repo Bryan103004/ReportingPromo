@@ -165,8 +165,12 @@ class RafaksiController extends Controller
         return redirect()->route('rafaksi.index')->with('success', 'Data Rafaksi berhasil disimpan.');
     }
 
-    public function edit(Rafaksi $rafaksi){
-        return view('rafaksi.edit', compact('rafaksi'));
+    public function edit(Rafaksi $rafaksi) {
+        $tokos = Toko::all(); // Sesuaikan nama model Toko Anda
+        $supplierRafaksi = SupplierRafaksi::all();
+        $regions = Region::whereNotIn('status',['nonaktif'])->get();
+        $categories = Category::all();
+        return view('rafaksi.edit', compact('rafaksi', 'tokos', 'categories', 'supplierRafaksi', 'regions'));
     }
 
     public function update(Request $request, Rafaksi $rafaksi){
