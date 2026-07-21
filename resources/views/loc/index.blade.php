@@ -57,7 +57,7 @@
         tableId="locTable" 
     />
 
-    <x-per-page/>
+    <!-- <x-per-page/> -->
 
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
