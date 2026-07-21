@@ -168,12 +168,14 @@ class JsmController extends Controller
         return redirect()->route('jsm.index')->with('success', 'Data JSM berhasil disimpan.');
     }
 
-    public function edit(Jsm $jsm){
+    public function edit(Request $request, Jsm $jsm){
+        $year = Carbon::parse($jsm->periode_bulan)->year;
+        $month = Carbon::parse($jsm->periode_bulan)->month;
         $supplierRafaksi = SupplierRafaksi::all();
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
         $categories = Category::all();
         $tokos = Toko::all();
-        return view('jsm.edit', compact('jsm', 'supplierRafaksi', 'regions', 'tokos', 'categories'));
+        return view('jsm.edit', compact('jsm', 'supplierRafaksi', 'regions', 'tokos', 'categories', 'year', 'month'));
     }
 
     public function update(Request $request, Jsm $jsm){

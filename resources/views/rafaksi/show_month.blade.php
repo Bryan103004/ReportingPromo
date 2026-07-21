@@ -128,7 +128,7 @@
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
                                     {{-- Tombol Edit --}}
-                                    <a href="{{ route('rafaksi.edit', $rafaksi->id) }}" title="Edit Data">
+                                    <a href="{{ route('rafaksi.edit', ['rafaksi' => $rafaksi->id, 'page' => request('page')]) }}" title="Edit Data">
                                         ✎
                                     </a>
                                     

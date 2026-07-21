@@ -159,7 +159,7 @@
 
             {{-- Action Buttons --}}
             <div class="m-4 flex items-center justify-end gap-3 pt-5 border-t border-gray-100">
-                <a href="{{ route('loc.index') }}" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Batal</a>
+                <a href="{{ route('loc.show_month', ['year' => $year, 'month' => $month, 'page' => request('page')]) }}" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Batal</a>
                 
                 <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
                     Simpan Data

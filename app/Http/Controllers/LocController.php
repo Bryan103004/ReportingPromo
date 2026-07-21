@@ -163,13 +163,15 @@ class LocController extends Controller
         return redirect()->route('loc.index')->with('success', 'Data Loc berhasil disimpan.');
     }
 
-    public function edit(Loc $loc){
+    public function edit(Request $request, Loc $loc){
+        $year = Carbon::parse($loc->periode_bulan)->year;
+        $month = Carbon::parse($loc->periode_bulan)->month;
         $supplierRafaksi = SupplierRafaksi::all();
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
         $categories = Category::all();
         $tokos = Toko::all();
 
-        return view('loc.edit', compact('loc', 'supplierRafaksi', 'regions', 'categories', 'tokos'));
+        return view('loc.edit', compact('loc', 'supplierRafaksi', 'regions', 'categories', 'tokos', 'year', 'month'));
     }
 
     public function update(Request $request, Loc $loc){
