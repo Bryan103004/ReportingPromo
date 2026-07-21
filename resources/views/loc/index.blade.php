@@ -49,7 +49,7 @@
 
 
     {{--  KOMPONEN FILTER --}}
-    <x-filter-bar :suppliers="$suppliers" />
+    <!-- <x-filter-bar :suppliers="$suppliers" /> -->
 
     {{-- ===== SEARCH BAR ===== --}}
     <x-search-bar 
@@ -57,7 +57,7 @@
         tableId="locTable" 
     />
 
-    <!-- <x-per-page/> -->
+    <x-per-page/>
 
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
