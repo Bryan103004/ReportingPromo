@@ -1,38 +1,30 @@
-<div class="bg-white rounded-lg shadow p-4 mb-6 overflow-x-auto">
-    <h3 class="text-lg font-semibold text-gray-800 mb-3">Tabel Kontrak Jsm</h3>
-    <h5>Total Data: {{ $data->total() }}</h5>
-    <x-per-page/>
-    <table class="min-w-full divide-y divide-gray-200 text-sm">
-        <thead class="bg-gray-50">
-            <tr>
-                <th class="px-4 py-2 text-left">Periode</th>
-                <th class="px-4 py-2 text-left">Region</th>
-                <th class="px-4 py-2 text-left">Toko</th>
-                <th class="px-4 py-2 text-left">No RAF</th>
-                <th class="px-4 py-2 text-left">Supplier</th>
-                <th class="px-4 py-2 text-right">Nominal</th>
-            </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-200">
-            @forelse($data as $row)
-            <tr>
-                <td class="px-4 py-2 whitespace-nowrap">{{ $row->Periode_Pengerjaan }}</td>
-                <td class="px-4 py-2">{{ $row->nama_region }}</td>
-                <td class="px-4 py-2">{{ $row->nama_toko }}</td>
-                <td class="px-4 py-2 font-mono text-xs">{{ $row->no_raf }}</td>
-                <td class="px-4 py-2">{{ $row->supplier_name }}</td>
-                <td class="px-4 py-2 text-right font-medium text-green-600">
-                    {{ number_format($row->nominal, 0, ',', '.') }}
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="6" class="px-4 py-6 text-center text-gray-500">Tidak ada data JSM bulan ini.</td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
-    <div class="my-2">
-        {{ $data->links() }}
-    </div>
-</div>
+<x-list-container title="JSM EXPIRING   | Total Data: {{ $data->total() }}">
+    
+    <!-- Looping Data dari Controller / Livewire -->
+    @forelse($data as $row)
+        <a href="{{ route('jsm.renew.index', ['id' => $row->id]) }}" class="block">
+            <x-list-item 
+                title="{{ $row->supplier_name }}" 
+                subtitle="{{ $row->nama_toko }} • {{ $row->nama_region }} • No: {{ $row->no_raf }} • Periode Akhir: {{ Carbon::parse($row->periode_akhir)->format('d/M/Y') }}" 
+                badge="Rp {{ number_format($row->nominal, 0, ',', '.') }}" 
+                theme="blue" 
+            />
+        </a>
+    @empty
+        <div class="flex flex-col items-center justify-center py-10 text-gray-400">
+            <svg class="w-10 h-10 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+            <span class="text-sm font-medium">Tidak ada data JSM bulan ini.</span>
+        </div>
+    @endforelse
+
+    <!-- Mengisi Slot Footer untuk Pagination -->
+    <x-slot name="footer">
+        <!-- <div>{{ $data->firstItem() ?? 0 }} - {{ $data->lastItem() ?? 0 }} DARI {{ $data->total() }} DATA</div> -->
+        
+        <!-- Gunakan link pagination sederhana agar mirip tombol "Prev | Next" di gambar -->
+        <div class="flex gap-2 mx-auto">
+            {{ $data->links() }}
+        </div>
+    </x-slot>
+
+</x-list-container>

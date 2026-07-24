@@ -10,7 +10,7 @@
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
 
-        <link rel="stylesheet" href="{{ asset('build/assets/app-CQt5jZvq.css ') }}">
+        <link rel="stylesheet" href="{{ asset('build/assets/app-Dg-3aU6I.css') }}">
         <script src="{{ asset('build/assets/app-DXU0SP3V.js') }}" type="module"></script>
 
         <!-- <script src="https://cdn.tailwindcss.com"></script> -->
@@ -48,6 +48,8 @@
 
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
         <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+    
+        <!-- @livewireStyle -->
     </head>
     <body class="font-sans antialiased">
         <div class="flex min-h-screen flex-col bg-transparent">
@@ -85,6 +87,7 @@
                 </div>
             </footer>
         </div>
+        @livewireScripts
     </body>
     <script>
         document.addEventListener("DOMContentLoaded", function() {

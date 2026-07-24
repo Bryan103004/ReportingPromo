@@ -36,8 +36,12 @@ class LocDashboard extends Component
                 'lc.periode_awal',
                 'lc.periode_akhir',
                 'lc.nominal',
-                'lc.remarks'
+                'lc.remarks',
+                'lc.id',
+                DB::raw('YEAR(lc.periode_bulan) as year'),
+                DB::raw('MONTH(lc.periode_bulan) as month')
             ])
+            ->whereRaw('lc.periode_akhir <= NOW()')
             // Mengurutkan kronologis secara efisien lewat kolom tanggal asli
             ->orderBy('lc.periode_bulan', 'asc') 
             ->customPaginate();

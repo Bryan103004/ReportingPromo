@@ -19,7 +19,7 @@ class JsmDashboard extends Component
     }
 
     public function render()
-    {
+    {   
         $data = DB::table('jsm as j')
             ->join('jsm_toko as jt', 'j.id', '=', 'jt.jsm_id')
             ->leftJoin('tokos as tk', 'jt.toko_id', '=', 'tk.id')
@@ -36,8 +36,12 @@ class JsmDashboard extends Component
                 'j.periode_awal',
                 'j.periode_akhir',
                 'j.nominal',
-                'j.remarks'
+                'j.remarks',
+                'j.id',
+                DB::raw('YEAR(j.periode_bulan) as year'),
+                DB::raw('MONTH(j.periode_bulan) as month')
             ])
+            ->whereRaw('j.periode_akhir <= NOW()') 
             // Optimasi: mengurutkan langsung dari kolom tanggal asli j.periode_bulan
             ->orderBy('j.periode_bulan', 'asc') 
             ->customPaginate();

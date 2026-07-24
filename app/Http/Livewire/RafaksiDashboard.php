@@ -36,8 +36,12 @@ class RafaksiDashboard extends Component
                 'r.periode_awal',
                 'r.periode_akhir',
                 'r.nominal',
-                'r.remarks'
+                'r.remarks',
+                'r.id',
+                DB::raw('YEAR(r.periode_bulan) as year'),
+                DB::raw('MONTH(r.periode_bulan) as month')
             ])
+            ->whereRaw('r.periode_akhir <= NOW()') 
             // Menggunakan kolom asli untuk optimasi kecepatan database
             ->orderBy('r.periode_bulan', 'asc') 
             ->customPaginate();

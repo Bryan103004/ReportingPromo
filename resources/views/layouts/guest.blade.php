@@ -10,7 +10,7 @@
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap">
 
-        <link rel="stylesheet" href="{{ asset('build/assets/app-CQt5jZvq.css') }}">
+        <link rel="stylesheet" href="{{ asset('build/assets/app-Dg-3aU6I.css') }}">
         <script src="{{ asset('build/assets/app-DXU0SP3V.js') }}" type="module"></script>
     </head>
     <body>

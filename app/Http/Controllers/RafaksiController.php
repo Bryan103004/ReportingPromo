@@ -511,4 +511,36 @@ class RafaksiController extends Controller
             return $pdf->setPaper('A4', 'landscape')->stream('rafaksi-report-all.pdf');
         }
     }
+
+    public function renew(Request $request, Rafaksi $rafaksi)
+    {
+        // 1. Validasi dinamis dengan membandingkan langsung ke data awal di database
+        $request->validate([
+            'periode_bulan' => 'required|date'
+        ]);
+
+        // 2. Lakukan update data terlebih dahulu ke database
+        $rafaksi->update($request->all());
+
+        // 3. AMBIL DATA SETELAH UPDATE (Agar mendapatkan tahun & bulan yang baru diinput)
+        // Gunakan ->format('m') agar bulan tetap bernilai 2 digit (01-12) sesuai rute Laravel umum
+        $year = Carbon::parse($rafaksi->periode_bulan)->format('Y');
+        $month = Carbon::parse($rafaksi->periode_bulan)->format('m');
+
+        // 4. Redirect aman ke halaman indeks bulan baru
+        return redirect()
+            ->route('rafaksi.show_month', ['year' => $year, 'month' => $month])
+            ->with('success', 'Rafaksi dengan ID: ' . $rafaksi->id . ' berhasil diupdate.');
+    }
+
+    public function renewIndex(Request $request){
+        $id = $request->query('id');
+
+        if (!$id) {
+            abort(404, 'Parameter ID tidak ditemukan.');
+        }
+
+        $rafaksi = Rafaksi::findOrFail($id);
+        return view('rafaksi.renew_index', compact('rafaksi'));
+    }
 }

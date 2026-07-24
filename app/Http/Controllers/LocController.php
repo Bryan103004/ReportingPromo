@@ -509,4 +509,36 @@ class LocController extends Controller
             return $pdf->setPaper('A4', 'landscape')->stream('loc-report-all.pdf');
         }
     }
+
+    public function renew(Request $request, Loc $loc)
+    {
+        // 1. Validasi dinamis dengan membandingkan langsung ke data awal di database
+        $request->validate([
+            'periode_bulan' => 'required|date'
+        ]);
+
+        // 2. Lakukan update data terlebih dahulu ke database
+        $loc->update($request->all());
+
+        // 3. AMBIL DATA SETELAH UPDATE (Agar mendapatkan tahun & bulan yang baru diinput)
+        // Gunakan ->format('m') agar bulan tetap bernilai 2 digit (01-12) sesuai rute Laravel umum
+        $year = Carbon::parse($loc->periode_bulan)->format('Y');
+        $month = Carbon::parse($loc->periode_bulan)->format('m');
+
+        // 4. Redirect aman ke halaman indeks bulan baru
+        return redirect()
+            ->route('loc.show_month', ['year' => $year, 'month' => $month])
+            ->with('success', 'Loc dengan ID: ' . $loc->id . ' berhasil diupdate.');
+    }
+
+    public function renewIndex(Request $request){
+        $id = $request->query('id');
+
+        if (!$id) {
+            abort(404, 'Parameter ID tidak ditemukan.');
+        }
+
+        $loc = Loc::findOrFail($id);
+        return view('loc.renew_index', compact('loc'));
+    }
 }

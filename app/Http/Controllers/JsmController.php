@@ -442,4 +442,36 @@ class JsmController extends Controller
             return $pdf->setPaper('A4', 'landscape')->stream('jsm-report-all.pdf');
         }
     }
+
+    public function renew(Request $request, Jsm $jsm)
+    {
+        // 1. Validasi dinamis dengan membandingkan langsung ke data awal di database
+        $request->validate([
+            'periode_bulan' => 'required|date'
+        ]);
+
+        // 2. Lakukan update data terlebih dahulu ke database
+        $jsm->update($request->all());
+
+        // 3. AMBIL DATA SETELAH UPDATE (Agar mendapatkan tahun & bulan yang baru diinput)
+        // Gunakan ->format('m') agar bulan tetap bernilai 2 digit (01-12) sesuai rute Laravel umum
+        $year = Carbon::parse($jsm->periode_bulan)->format('Y');
+        $month = Carbon::parse($jsm->periode_bulan)->format('m');
+
+        // 4. Redirect aman ke halaman indeks bulan baru
+        return redirect()
+            ->route('jsm.show_month', ['year' => $year, 'month' => $month])
+            ->with('success', 'Jsm dengan ID: ' . $jsm->id . ' berhasil diupdate.');
+    }
+
+    public function renewIndex(Request $request){
+        $id = $request->query('id');
+
+        if (!$id) {
+            abort(404, 'Parameter ID tidak ditemukan.');
+        }
+
+        $jsm = Jsm::findOrFail($id);
+        return view('jsm.renew_index', compact('jsm'));
+    }
 }
