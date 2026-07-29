@@ -5,7 +5,7 @@
     <div class="mb-5 flex users-center justify-between gap-3">
         <div>
             <h1 class="text-2xl font-bold">Data Master User</h1>
-            <p class="mt-1 text-sm text-gray-600 text-white font-medium">Daftar user yang terdaftar.</p>
+            <p class="mt-1 text-md text-black font-semibold">Daftar user yang terdaftar.</p>
         </div>
         <a class="inline-flex users-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-100" href="{{ route('user.create') }}">+ Buat User</a>
     </div>

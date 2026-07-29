@@ -131,6 +131,22 @@
                                     <a href="{{ route('loc.edit', ['loc' => $loc->id, 'page' => request('page')]) }}" title="Edit Data">
                                         ✎
                                     </a>
+
+                                    @php
+                                        $today = Carbon::today();
+                                        $bulanReminder = $loc->reminder->bulan ?? 0;
+                                        $tglMulaiReminder = Carbon::parse($loc->periode_akhir)->subMonths($bulanReminder);
+                                    @endphp
+
+                                    <!-- && $today->lessThanOrEqualTo(Carbon::parse($loc->periode_akhir)->addMonth()) -->
+
+                                    @if ($today->greaterThanOrEqualTo($tglMulaiReminder) 
+                                        && !is_null($loc->periode_akhir) 
+                                        && !is_null($loc->periode_bulan))
+                                        <a href="{{ route('loc.renew.index', ['id' => $loc->id]) }}" title="Renew Data">
+                                            🆕
+                                        </a>                                    
+                                    @endif
                                     
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('loc.destroy', $loc->id) }}" method="POST" class="inline">

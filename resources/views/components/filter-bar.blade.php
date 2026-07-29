@@ -9,7 +9,7 @@
             <option value="">Semua Supplier</option>
             @foreach($suppliers as $supplier)
                 {{-- request('supplier_code') berguna untuk menjaga pilihan terakhir user agar tidak reset saat direfresh --}}
-                <option value="{{ $supplier->kode_supplier }}" {{ request()->filled('supplier_code') && request()->filled('supplier_code') == $supplier->kode_supplier}}>
+                <option value="{{ $supplier->kode_supplier }}" {{ request('supplier_code') == $supplier->kode_supplier ? 'selected' : '' }}>
                     {{ $supplier->nama_supplier }} ({{ $supplier->kode_supplier }})
                 </option>
             @endforeach
@@ -19,13 +19,13 @@
     {{-- Input Periode Awal --}}
     <div class="w-full md:w-1/4">
         <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Periode Awal</label>
-        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
+        <input type="date" name="start_date" id="start_date" value="{{ old('start_date', request('start_date')) }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
     </div>
 
     {{-- Input Periode Akhir --}}
     <div class="w-full md:w-1/4">
         <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Periode Akhir</label>
-        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
+        <input type="date" name="end_date" id="end_date" value="{{ old('end_date', request('end_date')) }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
     </div>
 
     {{-- Tombol Aksi --}}

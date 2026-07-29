@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JsmController;
 use App\Http\Controllers\LocController;
+use App\Http\Controllers\NotificationRecipientController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RafaksiController;
@@ -94,6 +95,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    Route::resource('notification-recipients', NotificationRecipientController::class);
 });
 
 require __DIR__.'/auth.php';

@@ -45,7 +45,6 @@ class RafaksiController extends Controller
 
         // 2. Siapkan Query Dasar
         $query = Rafaksi::selectRaw('
-                store,  
                 MAX(YEAR(periode_akhir)) as year,
                 MAX(MONTH(periode_akhir)) as month,
                 YEAR(periode_bulan) as year_kerja, 
@@ -68,7 +67,7 @@ class RafaksiController extends Controller
         }
 
         // 4. Eksekusi Query dengan Group By & Pagination
-        $rafaksiGroups = $query->groupBy('store', 'year_kerja', 'month_kerja')
+        $rafaksiGroups = $query->groupBy('year_kerja', 'month_kerja')
             ->orderBy('year_kerja', 'asc')
             ->orderBy('month_kerja', 'asc')
             ->customPaginate();
@@ -388,7 +387,7 @@ class RafaksiController extends Controller
         if ($year && $month) {
             $fileName = 'Detail_Rafaksi_Report_'. $year . '_' . $month . '.xlsx';
         } elseif ($year) {
-            $fileName = 'Rekap_Rafaksi_Report_'. $year . 'xlsx'; 
+            $fileName = 'Rekap_Rafaksi_Report_'. $year . '.xlsx'; 
         } else {
             $fileName = 'Rekap_Rafaksi_Report_All.xlsx';
         }

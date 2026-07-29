@@ -47,8 +47,7 @@ class JsmController extends Controller
         $suppliers = SupplierRafaksi::all();
 
         // 2. Siapkan Query Dasar
-        $query = Jsm::selectRaw('
-                store,  
+        $query = Jsm::selectRaw(' 
                 MAX(YEAR(periode_akhir)) as year,
                 MAX(MONTH(periode_akhir)) as month,
                 YEAR(periode_bulan) as year_kerja, 
@@ -71,7 +70,7 @@ class JsmController extends Controller
         }
 
         // 4. Eksekusi Query dengan Group By & Pagination
-        $jsmGroups = $query->groupBy('store', 'year_kerja', 'month_kerja')
+        $jsmGroups = $query->groupBy('year_kerja', 'month_kerja')
             ->orderBy('year_kerja', 'asc')
             ->orderBy('month_kerja', 'asc')
             ->customPaginate();

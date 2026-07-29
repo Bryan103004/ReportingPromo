@@ -131,7 +131,22 @@
                                     <a href="{{ route('rafaksi.edit', ['rafaksi' => $rafaksi->id, 'page' => request('page')]) }}" title="Edit Data">
                                         ✎
                                     </a>
-                                    
+
+                                    @php
+                                        $today = Carbon::today();
+                                        $bulanReminder = $rafaksi->reminder->bulan ?? 0;
+                                        $tglMulaiReminder = Carbon::parse($rafaksi->periode_akhir)->subMonths($bulanReminder);
+                                    @endphp
+                                    <!-- && $today->lessThanOrEqualTo(Carbon::parse($rafaksi->periode_akhir)->addMonth()) -->
+                                    @if ($today->greaterThanOrEqualTo($tglMulaiReminder) 
+                                        && !is_null($rafaksi->periode_akhir) 
+                                        && !is_null($rafaksi->periode_bulan))
+                                        <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">
+                                            🆕
+                                        </a>                                    
+                                    @endif
+
+                    
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('rafaksi.destroy', $rafaksi->id) }}" method="POST" class="inline">
                                         @csrf 

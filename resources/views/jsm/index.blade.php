@@ -69,7 +69,7 @@
                         <th class="px-6 py-4 w-16 text-center">No</th>
                         <th class="hidden px-6 py-4">Periode Rafaksi</th>
                         <th class="px-6 py-4">Periode Bulan</th>
-                        <th class="px-6 py-4">Region</th>
+                        <!-- <th class="px-6 py-4">Region</th> -->
                         <th class="px-6 py-4 text-center">Total Transaksi</th>
                         <th class="px-6 py-4 text-right">Total Nominal</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
@@ -91,9 +91,9 @@
                                 {{-- Mengubah angka bulan & tahun menjadi teks (Contoh: "Mei 2026") --}}
                                 {{ \Carbon\Carbon::createFromDate($group->year_kerja, $group->month_kerja, 1)->translatedFormat('F Y') }}
                             </td>                           
-                            <td class="px-6 py-4">
+                            <!-- <td class="px-6 py-4">
                                 {{ $group->store }}
-                            </td>
+                            </td> -->
                             <td class="px-6 py-4 text-center">
                                 <span class="bg-blue-50 text-blue-700 font-bold px-2.5 py-1 rounded-full text-xs">
                                     {{ $group->total_data }} Data

@@ -29,4 +29,10 @@ class Toko extends Model
     {
         return $this->belongsToMany(Loc::class, 'locs_toko', 'toko_id', 'loc_id');
     }
+
+    public function users()
+    {
+        return $this->belongsToMany(User::class, 'user_toko_accesses', 'toko_id', 'user_id')
+            ->withTimestamps();
+    }
 }

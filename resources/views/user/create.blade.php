@@ -57,6 +57,21 @@
                 </select>
             </div>
 
+            <div>
+                <label for="toko_ids">Toko (bisa pilih lebih dari satu) <span class="font-bold text-red-600">*</span></label>
+                @php
+                    $selectedTokoIds = old('toko_ids', $user->tokos->pluck('id')->toArray());
+                @endphp
+                <select name="toko_ids[]" id="toko_ids" multiple size="8" class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
+                    @foreach ($tokos as $toko)
+                        <option value="{{ $toko->id }}" {{ collect($selectedTokoIds)->contains($toko->id) ? 'selected' : '' }}>
+                            {{ $toko->nama_toko }}
+                        </option>
+                    @endforeach
+                </select>
+                <p class="mt-1 text-xs text-gray-500">Tekan Ctrl (Windows) / Cmd (Mac) untuk memilih lebih dari satu.</p>
+            </div>
+
             <div class="flex items-center gap-2 pt-1">
                 <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Simpan</button>
                 <a href="{{ route('user.index') }}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium hover:bg-gray-100">Kembali</a>

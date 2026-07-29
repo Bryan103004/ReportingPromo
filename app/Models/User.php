@@ -9,8 +9,6 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Support\Collection;
-use App\Models\MasterPerusahaan;
-use App\Models\MasterToko;
 
 class User extends Authenticatable
 {
@@ -56,5 +54,20 @@ class User extends Authenticatable
     public function hasGlobalCompanyAccess(): bool
     {
         return $this->hasRole('admin') || $this->hasRole('super-admin');
+    }
+
+
+    public function tokos()
+    {
+        return $this->belongsToMany(Toko::class, 'user_toko_accesses', 'user_id', 'toko_id')
+            ->withTimestamps();
+    }
+
+    public function accessibleTokoIds(): Collection
+    {
+        return $this->tokos()->pluck('tokos.id')
+            ->map(static function ($id) {
+                return (int) $id;
+            })->unique()->values();
     }
 }

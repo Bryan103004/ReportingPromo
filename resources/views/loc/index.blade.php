@@ -28,7 +28,7 @@
         <div id="exportModal" class="fixed inset-0 z-50 hidden bg-gray-100 bg-opacity-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
                 <h3 class="text-lg font-bold mb-4">Pilih Tahun Export</h3>
-                <form action="{{ route('jsm.export.excel') }}" method="GET">
+                <form action="{{ route('loc.export.excel') }}" method="GET">
                     <select name="year" class="w-full border-gray-300 rounded-md mb-4" required>
                         @for ($y = date('Y'); $y >= 2020; $y--)
                             <option value="{{ $y }}">{{ $y }}</option>
@@ -70,7 +70,7 @@
                         <th class="px-6 py-4 w-16 text-center">No</th>
                         <th class="hidden px-6 py-4">Periode Loc</th>
                         <th class="px-6 py-4">Periode Bulan</th>
-                        <th class="px-6 py-4">Region</th>
+                        <!-- <th class="px-6 py-4">Region</th> -->
                         <th class="px-6 py-4 text-center">Total Transaksi</th>
                         <th class="px-6 py-4 text-right">Total Nominal</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
@@ -92,9 +92,9 @@
                                 {{-- Mengubah angka bulan & tahun menjadi teks (Contoh: "Mei 2026") --}}
                                 {{ \Carbon\Carbon::createFromDate($group->year_kerja, $group->month_kerja, 1)->translatedFormat('F Y') }}
                             </td>     
-                            <td class="px-6 py-4">
+                            <!-- <td class="px-6 py-4">
                                 {{ $group->store }}
-                            </td>
+                            </td> -->
                             <td class="px-6 py-4 text-center">
                                 <span class="bg-blue-50 text-blue-700 font-bold px-2.5 py-1 rounded-full text-xs">
                                     {{ $group->total_data }} Data

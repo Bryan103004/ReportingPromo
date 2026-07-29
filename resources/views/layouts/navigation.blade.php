@@ -41,18 +41,12 @@
                                 class="absolute left-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 z-50"
                                 style="top: 100%;">
 
-                                <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-widest">Operasional</div>
+                                <!-- <div class="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-widest">Operasional</div>
 
                                 @can('view_perusahaan')
                                     <a href="{{ route('perusahaan.index') }}" class="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs('perusahaan.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                         <span class="text-base">🏢</span> Perusahaan
                                     </a>
-                                @endcan
-
-                                @can('email_tambahan')
-                                    <x-dropdown-link :href="route('notification-recipients.index')" class="text-sm {{ request()->routeIs('notification-recipients.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
-                                        <span>📧</span> Email Tambahan
-                                    </x-dropdown-link>
                                 @endcan
 
                                 @can('view_data_kendaraan')
@@ -66,7 +60,7 @@
                                     <span></span>📁 Master Izin Oss
                                 </x-dropdown-link>
                                 @endcan
-                                <div class="border-t border-gray-100 my-1.5 mx-1"></div>
+                                <div class="border-t border-gray-100 my-1.5 mx-1"></div> -->
 
                                 <!-- Manajemen Pengguna — expand inline ke bawah -->
                                 <div>
@@ -123,6 +117,12 @@
                                                 <span class="text-base">🤝</span> Supplier Rafaksi
                                             </x-dropdown-link>
                                             @endcanany
+
+                                            @can('email_tambahan')
+                                                <x-dropdown-link :href="route('notification-recipients.index')" class="text-sm {{ request()->routeIs('notification-recipients.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                                    <span>📧</span> Email Tambahan
+                                                </x-dropdown-link>
+                                            @endcan
                                     </div>
                                 </div>
                             </div>

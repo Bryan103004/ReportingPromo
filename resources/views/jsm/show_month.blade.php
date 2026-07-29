@@ -10,9 +10,9 @@
                 <a href="{{ route('jsm.index') }}" class="text-gray-400 hover:text-blue-600 transition-colors" title="Kembali ke Index">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
                 </a>
-                <h1 class="text-2xl font-bold text-gray-900">Detail Rafaksi JSM</h1>
+                <h1 class="text-2xl font-bold text-gray-900">Detail jsm JSM</h1>
             </div>
-            <p class="text-md text-black font-medium">Daftar seluruh transaksi Rafaksi JSM pada periode <span class="font-bold text-gray-700">{{ $periodeTitle }}</span>.</p>
+            <p class="text-md text-black font-medium">Daftar seluruh transaksi jsm JSM pada periode <span class="font-bold text-gray-700">{{ $periodeTitle }}</span>.</p>
         </div>
     </div>
 
@@ -130,6 +130,20 @@
                                         ✎
                                     </a>
                                     
+                                    @php
+                                        $today = Carbon::today();
+                                        $bulanReminder = $jsm->reminder->bulan ?? 0;
+                                        $tglMulaiReminder = Carbon::parse($jsm->periode_akhir)->subMonths($bulanReminder);
+                                    @endphp
+<!--                                && $today->lessThanOrEqualTo(Carbon::parse($jsm->periode_akhir)->addMonth()) -->
+                                    @if ($today->greaterThanOrEqualTo($tglMulaiReminder) 
+                                        && !is_null($jsm->periode_akhir) 
+                                        && !is_null($jsm->periode_bulan))
+                                        <a href="{{ route('jsm.renew.index', ['id' => $jsm->id]) }}" title="Renew Data">
+                                            🆕
+                                        </a>                                    
+                                    @endif
+
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('jsm.destroy', $jsm->id) }}" method="POST" class="inline">
                                         @csrf 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Toko;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -46,8 +47,8 @@ class UserController extends Controller
     public function create()
     {
         $roles = Role::whereNotIn('name', ['superadmin'])->get();
-
-        return view('user.create', compact('roles'));
+        $tokos = Toko::all();
+        return view('user.create', compact('roles','tokos'));
     }
 
     public function store(Request $request){
@@ -58,6 +59,8 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'roles' => 'nullable|array',
             'roles.*' => 'exists:roles,id',
+            'toko_ids' => 'required|array|min:1',
+            'toko_ids.*' => 'exists:tokos,id',
         ]);
 
         $validatedData['password'] = Hash::make($validatedData['password']);
@@ -65,6 +68,12 @@ class UserController extends Controller
 
         $userPayload = collect($validatedData)->all();
         $user = User::create($userPayload);
+
+        $selectedTokoIds = collect($validatedData['toko_ids'])->map(static function ($id) {
+            return (int) $id;
+        })->unique()->values();
+
+        $user->tokos()->sync($selectedTokoIds->all());
 
         $roleNames = Role::whereIn('id', $validatedData['roles'] ?? [])->pluck('name')->toArray();
         $user->syncRoles($roleNames);
@@ -82,8 +91,9 @@ class UserController extends Controller
     public function edit($id){
         $user = User::findOrFail($id);
         $roles = Role::orderBy('name')->get();
+        $tokos = Toko::all();
 
-        return view('user.edit', compact('user', 'roles'));
+        return view('user.edit', compact('user', 'roles', 'tokos'));
     }
 
     public function update(Request $request, $id){
@@ -95,6 +105,8 @@ class UserController extends Controller
             'password' => 'nullable|string|min:8|confirmed',
             'roles' => 'nullable|array',
             'roles.*' => 'exists:roles,id',
+            'toko_ids' => 'required|array|min:1',
+            'toko_ids.*' => 'exists:tokos,id',
         ]);
 
         if(!empty($validatedData['password'])){
@@ -102,6 +114,12 @@ class UserController extends Controller
         } else {
             unset($validatedData['password']);
         }
+
+        $selectedTokoIds = collect($validatedData['toko_ids'])->map(static function ($id) {
+            return (int) $id;
+        })->unique()->values();
+
+        $user->tokos()->sync($selectedTokoIds->all());
 
         $roleNames = [];
         if (isset($validatedData['roles'])) {
@@ -113,6 +131,8 @@ class UserController extends Controller
 
         $userPayload = collect($validatedData)->except(['toko_ids', 'perusahaan_ids', 'roles'])->all();
         $user->update($userPayload);
+
+
 
         ActivityLogger::logUpdate(
             $user,
