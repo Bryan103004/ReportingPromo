@@ -16,6 +16,10 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule)
     {
         // $schedule->command('inspire')->hourly();
+        $schedule->command('reminder:send-all')
+            ->weeklyOn(1, '09:00')
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**
