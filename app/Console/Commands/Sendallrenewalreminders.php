@@ -118,6 +118,7 @@ class SendAllRenewalReminders extends Command
 
         // 1. Ambil data dengan eager loading relasi 'tokos'
         $rafaksis = Rafaksi::with('tokos')
+            ->where('status_email', '!=', 'tidak_aktif')
             ->whereNotNull('periode_akhir')
             ->whereRaw(
                 '? BETWEEN DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH) AND DATE_ADD(periode_akhir, INTERVAL 1 YEAR)',
@@ -215,6 +216,7 @@ class SendAllRenewalReminders extends Command
 
         // 1. Ambil data dengan eager loading relasi 'tokos'
         $locs = Loc::with('tokos')
+            ->where('status_email', '!=', 'tidak_aktif')
             ->whereNotNull('periode_akhir')
             ->whereRaw(
                 '? BETWEEN DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH) AND DATE_ADD(periode_akhir, INTERVAL 1 YEAR)',
@@ -311,6 +313,7 @@ class SendAllRenewalReminders extends Command
 
         // 1. Ambil data dengan eager loading relasi 'tokos'
         $jsms = Jsm::with('tokos')
+            ->where('status_email', '!=', 'tidak_aktif')
             ->whereNotNull('periode_akhir')
             ->whereRaw(
                 '? BETWEEN DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH) AND DATE_ADD(periode_akhir, INTERVAL 1 YEAR)',

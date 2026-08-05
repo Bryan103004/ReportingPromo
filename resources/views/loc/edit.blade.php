@@ -109,6 +109,14 @@
                     <input type="text" name="no_raf" id="no_raf" value="{{ old('no_raf', $loc->no_raf) }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="Contoh: RAF/2026/001" required>
                 </div>
 
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Status Email<span class="font-bold text-red-600">*</span></label>
+                    <select name="status_email" required class="block w-full rounded-lg border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-indigo-500 transition">
+                        <option value="aktif" {{ old('status_email', $izin->status_email) == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                        <option value="tidak_aktif" {{ old('status_email', $izin->status_email) == 'tidak_aktif' ? 'selected' : '' }}>Tidak Aktif</option>
+                    </select>
+                </div>
+
                 {{-- Periode Bulan --}}
                 <div>
                     <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Rekap<span class="text-red-500">*</span></label>
