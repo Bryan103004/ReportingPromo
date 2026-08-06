@@ -61,7 +61,7 @@ class RoleController extends Controller
 
     public function edit($id){
         $role = Role::with('permissions')->findOrFail($id);
-        $permissions = Permission::all();
+        $permissions = Permission::orderBy('label', 'asc')->orderBy('name', 'asc')->get()->groupBy('label');
         return view('role.edit', compact('role', 'permissions'));
     }
 

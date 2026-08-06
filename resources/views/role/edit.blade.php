@@ -28,19 +28,31 @@
 
             <div>
                 <p class="mb-2 block text-sm font-medium text-gray-700">Permission</p>
-                <div class="grid grid-cols-1 gap-2 rounded-md border border-gray-200 bg-gray-50 p-3 sm:grid-cols-2">
-                    @foreach ($permissions as $permission)
-                        <label for="permission-{{ $permission->id }}" class="flex items-center gap-2 rounded bg-white px-3 py-2 text-sm text-gray-700">
-                            <input
-                                type="checkbox"
-                                name="permissions[]"
-                                id="permission-{{ $permission->id }}"
-                                value="{{ $permission->id }}"
-                                {{ in_array($permission->id, old('permissions', $role->permissions->pluck('id')->toArray())) ? 'checked' : '' }}
-                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
-                            >
-                            <span>{{ $permission->name }}</span>
-                        </label>
+                <div class="space-y-4">
+                    @foreach ($permissions as $groupName => $perms)
+                        <div class="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                            <!-- Judul Grup / Label -->
+                            <h3 class="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">
+                                {{ ucfirst($groupName) }}
+                            </h3>
+                            
+                            <!-- List Checkbox dalam Grup -->
+                            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                @foreach ($perms as $permission)
+                                    <label for="permission-{{ $permission->id }}" class="flex items-center gap-2 rounded bg-white px-3 py-2 text-sm text-gray-700 border border-gray-100 shadow-sm">
+                                        <input
+                                            type="checkbox"
+                                            name="permissions[]"
+                                            id="permission-{{ $permission->id }}"
+                                            value="{{ $permission->id }}"
+                                            {{ in_array($permission->id, old('permissions', $role->permissions->pluck('id')->toArray())) ? 'checked' : '' }}
+                                            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                                        >
+                                        <span>{{ $permission->name }}</span>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
                     @endforeach
                 </div>
             </div>
