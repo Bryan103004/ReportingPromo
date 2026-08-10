@@ -127,7 +127,7 @@ class SendAllRenewalReminders extends Command
             ->get();
 
         if ($rafaksis->isEmpty()) {
-            $this->info('Tidak ada kendaraan STNK yang memasuki periode notifikasi hari ini.');
+            $this->info('Tidak ada kendaraan Rafaksi yang memasuki periode notifikasi hari ini.');
             return;
         }
 
@@ -225,7 +225,7 @@ class SendAllRenewalReminders extends Command
             ->get();
 
         if ($locs->isEmpty()) {
-            $this->info('Tidak ada kendaraan STNK yang memasuki periode notifikasi hari ini.');
+            $this->info('Tidak ada Loc yang memasuki periode notifikasi hari ini.');
             return;
         }
 
@@ -322,7 +322,7 @@ class SendAllRenewalReminders extends Command
             ->get();
 
         if ($jsms->isEmpty()) {
-            $this->info('Tidak ada kendaraan STNK yang memasuki periode notifikasi hari ini.');
+            $this->info('Tidak ada Jsm yang memasuki periode notifikasi hari ini.');
             return;
         }
 
