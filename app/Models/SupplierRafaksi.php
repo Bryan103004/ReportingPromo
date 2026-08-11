@@ -26,4 +26,9 @@ class SupplierRafaksi extends Model
     {
         return $this->hasMany(Loc::class, 'supplier_code', 'kode_supplier');
     }
+
+    public function inbound()
+    {
+        return $this->hasMany(Inbound::class, 'supplier_code', 'kode_supplier');
+    }
 }

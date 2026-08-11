@@ -22,4 +22,8 @@ class Category extends Model
     public function locs(){
         return $this->hasMany(Loc::class);
     }
+
+    public function inbounds(){
+        return $this->hasMany(Inbound::class);
+    }
 }

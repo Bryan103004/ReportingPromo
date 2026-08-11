@@ -69,11 +69,10 @@ class JsmController extends Controller
             $query->where('periode_akhir', '<=', $request->end_date);
         }
 
-        // 4. Eksekusi Query dengan Group By & Pagination
-        $jsmGroups = $query->groupBy('year_kerja', 'month_kerja')
-            ->orderBy('year_kerja', 'asc')
-            ->orderBy('month_kerja', 'asc')
-            ->customPaginate();
+        // 4. Eksekusi Query menggunakan fungsi SQL asli di dalam groupBy dan orderBy
+        $jsmGroups = $query->groupByRaw('YEAR(periode_bulan), MONTH(periode_bulan)') 
+                        ->orderByRaw('YEAR(periode_bulan) ASC, MONTH(periode_bulan) ASC')
+                        ->customPaginate();
 
         // 5. Appends Request (SANGAT PENTING!)
         // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset

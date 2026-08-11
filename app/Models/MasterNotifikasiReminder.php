@@ -23,6 +23,10 @@ class MasterNotifikasiReminder extends Model
     }
 
     public function locs(){
-        return $this->hasMany(Loc::class, 'remisnder_id');
+        return $this->hasMany(Loc::class, 'reminder_id');
+    }
+
+    public function inbounds(){
+        return $this->hasMany(Inbound::class, 'reminder_id');
     }
 }

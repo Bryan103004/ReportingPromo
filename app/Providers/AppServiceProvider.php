@@ -28,8 +28,8 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Database\Eloquent\Builder::macro('customPaginate', function ($default = 10) {
             $perPage = request()->input('number', $default);
             
-            // Jika user memilih nilai maksimal (999999999 / Semua data)
-            if ($perPage == 999999999) {
+            // Jika user memilih nilai maksimal (-1/ Semua data)
+            if ($perPage == -1) {
                 $total = $this->count();
                 // Dipaginate sebanyak total data agar links() di bawah tabel tidak error/hilang
                 return $this->paginate($total > 0 ? $total : $default)->withQueryString();
@@ -42,8 +42,8 @@ class AppServiceProvider extends ServiceProvider
         \Illuminate\Database\Query\Builder::macro('customPaginate', function ($default = 10) {
             $perPage = request()->input('number', $default);
             
-            // Jika user memilih nilai maksimal (999999999 / Semua data)
-            if ($perPage == 999999999) {
+            // Jika user memilih nilai maksimal (-1/ Semua data)
+            if ($perPage == -1) {
                 $total = $this->count();
                 // Dipaginate sebanyak total data agar links() di bawah tabel tidak error/hilang
                 return $this->paginate($total > 0 ? $total : $default)->withQueryString();
