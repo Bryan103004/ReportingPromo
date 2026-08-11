@@ -15,7 +15,7 @@ class AddAdditionalsToLocsTable extends Migration
     {
         Schema::table('locs', function (Blueprint $table) {
             //
-            $table->string('no_raf_referensi')->after('no_raf')->index();
+            $table->string('no_raf_referensi')->after('no_raf')->nullable()->index();
             $table->date('created_date')->after('created_at')->nullable();
             $table->time('created_time')->after('created_date')->nullable();
 
