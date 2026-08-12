@@ -48,7 +48,6 @@
     </div>
 
     {{--  KOMPONEN FILTER --}}
-    <!-- <x-filter-bar :suppliers="$suppliers" /> -->
 
     {{-- ===== SEARCH BAR ===== --}}
     <x-search-bar 

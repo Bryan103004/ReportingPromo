@@ -129,21 +129,34 @@
                                     <a href="{{ route('jsm.edit', ['jsm' => $jsm->id, 'page' => request('page')]) }}" title="Edit Data">
                                         ✎
                                     </a>
-                                    
+                                    {{--  
                                     @php
-                                        $today = Carbon::today();
-                                        $bulanReminder = $jsm->reminder->bulan ?? 0;
-                                        $tglMulaiReminder = Carbon::parse($jsm->periode_akhir)->subMonths($bulanReminder);
+                                        $bulanReminder = $jsm->bulanReminder ?? 0;
+                                        $tglMulaiReminder = \Carbon\Carbon::parse($jsm->periode_akhir)->subMonths($bulanReminder);
+                                        $tglAkhirReminder = \Carbon\Carbon::parse($jsm->periode_akhir)->addMonth();
                                     @endphp
-<!--                                && $today->lessThanOrEqualTo(Carbon::parse($jsm->periode_akhir)->addMonth()) -->
-                                    @if ($today->greaterThanOrEqualTo($tglMulaiReminder) 
-                                        && !is_null($jsm->periode_akhir) 
-                                        && !is_null($jsm->periode_bulan))
-                                        <a href="{{ route('jsm.renew.index', ['id' => $jsm->id]) }}" title="Renew Data">
-                                            🆕
-                                        </a>                                    
-                                    @endif
 
+                                    @if (
+                                        now()->greaterThanOrEqualTo($tglMulaiReminder) && 
+                                        now()->lessThanOrEqualTo($tglAkhirReminder) && 
+                                        !is_null($jsm->periode_akhir)
+                                    )
+                                        <!-- Tombol Renew Anda di sini -->
+                                        <a href="{{ route('jsm.renew.index', ['id' => $jsm->id]) }}" title="Renew Data">🆕</a>
+                                    @endif
+                                    --}}
+
+                                    @php
+                                        // Ubah periode_akhir menjadi instance Carbon agar bisa dibandingkan
+                                        $periodeAkhir = \Carbon\Carbon::parse($jsm->periode_akhir);
+                                    @endphp
+
+                                    {{-- Muncul jika periode_akhir sudah kurang dari hari ini (sudah lewat/kadaluarsa) --}}
+                                    @if (!is_null($jsm->periode_akhir) && now()->greaterThan($periodeAkhir))
+                                        <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
+                                        <a href="{{ route('jsm.renew.index', ['id' => $jsm->id]) }}" title="Renew Data">🆕</a>
+                                    @endif
+                                    
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('jsm.destroy', $jsm->id) }}" method="POST" class="inline">
                                         @csrf 

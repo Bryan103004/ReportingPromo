@@ -132,20 +132,32 @@
                                         ✎
                                     </a>
 
+                                    {{--
                                     @php
-                                        $today = Carbon::today();
-                                        $bulanReminder = $loc->reminder->bulan ?? 0;
-                                        $tglMulaiReminder = Carbon::parse($loc->periode_akhir)->subMonths($bulanReminder);
+                                        $bulanReminder = $loc->bulanReminder ?? 0;
+                                        $tglMulaiReminder = \Carbon\Carbon::parse($loc->periode_akhir)->subMonths($bulanReminder);
+                                        $tglAkhirReminder = \Carbon\Carbon::parse($loc->periode_akhir)->addMonth();
                                     @endphp
 
-                                    <!-- && $today->lessThanOrEqualTo(Carbon::parse($loc->periode_akhir)->addMonth()) -->
+                                    @if (
+                                        now()->greaterThanOrEqualTo($tglMulaiReminder) && 
+                                        now()->lessThanOrEqualTo($tglAkhirReminder) && 
+                                        !is_null($loc->periode_akhir)
+                                    )
+                                        <!-- Tombol Renew Anda di sini -->
+                                        <a href="{{ route('loc.renew.index', ['id' => $loc->id]) }}" title="Renew Data">🆕</a>
+                                    @endif
+                                    --}}  
 
-                                    @if ($today->greaterThanOrEqualTo($tglMulaiReminder) 
-                                        && !is_null($loc->periode_akhir) 
-                                        && !is_null($loc->periode_bulan))
-                                        <a href="{{ route('loc.renew.index', ['id' => $loc->id]) }}" title="Renew Data">
-                                            🆕
-                                        </a>                                    
+                                    @php
+                                        // Ubah periode_akhir menjadi instance Carbon agar bisa dibandingkan
+                                        $periodeAkhir = \Carbon\Carbon::parse($loc->periode_akhir);
+                                    @endphp
+
+                                    {{-- Muncul jika periode_akhir sudah kurang dari hari ini (sudah lewat/kadaluarsa) --}}
+                                    @if (!is_null($loc->periode_akhir) && now()->greaterThan($periodeAkhir))
+                                        <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
+                                        <a href="{{ route('loc.renew.index', ['id' => $loc->id]) }}" title="Renew Data">🆕</a>
                                     @endif
                                     
                                     {{-- Tombol Hapus --}}

@@ -132,18 +132,32 @@
                                         ✎
                                     </a>
 
+                                    {{--
                                     @php
-                                        $today = Carbon::today();
-                                        $bulanReminder = $rafaksi->reminder->bulan ?? 0;
-                                        $tglMulaiReminder = Carbon::parse($rafaksi->periode_akhir)->subMonths($bulanReminder);
+                                        $bulanReminder = $rafaksi->bulanReminder ?? 0;
+                                        $tglMulaiReminder = \Carbon\Carbon::parse($rafaksi->periode_akhir)->subMonths($bulanReminder);
+                                        $tglAkhirReminder = \Carbon\Carbon::parse($rafaksi->periode_akhir)->addMonth();
                                     @endphp
-                                    <!-- && $today->lessThanOrEqualTo(Carbon::parse($rafaksi->periode_akhir)->addMonth()) -->
-                                    @if ($today->greaterThanOrEqualTo($tglMulaiReminder) 
-                                        && !is_null($rafaksi->periode_akhir) 
-                                        && !is_null($rafaksi->periode_bulan))
-                                        <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">
-                                            🆕
-                                        </a>                                    
+
+                                    @if (
+                                        now()->greaterThanOrEqualTo($tglMulaiReminder) && 
+                                        now()->lessThanOrEqualTo($tglAkhirReminder) && 
+                                        !is_null($rafaksi->periode_akhir)
+                                    )
+                                        <!-- Tombol Renew Anda di sini -->
+                                        <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">🆕</a>
+                                    @endif
+                                    --}}
+
+                                    @php
+                                        // Ubah periode_akhir menjadi instance Carbon agar bisa dibandingkan
+                                        $periodeAkhir = \Carbon\Carbon::parse($rafaksi->periode_akhir);
+                                    @endphp
+
+                                    {{-- Muncul jika periode_akhir sudah kurang dari hari ini (sudah lewat/kadaluarsa) --}}
+                                    @if (!is_null($rafaksi->periode_akhir) && now()->greaterThan($periodeAkhir))
+                                        <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
+                                        <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">🆕</a>
                                     @endif
 
                     
