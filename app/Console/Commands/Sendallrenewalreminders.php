@@ -121,7 +121,7 @@ class SendAllRenewalReminders extends Command
             ->where('status_email', '!=', 'tidak_aktif')
             ->whereNotNull('periode_akhir')
             ->whereRaw(
-                '? BETWEEN DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH) AND DATE_ADD(periode_akhir, INTERVAL 1 YEAR)',
+                '? >= DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH)',
                 [$todayStr]
             )
             ->get();
@@ -187,7 +187,7 @@ class SendAllRenewalReminders extends Command
                 // Saring yang Expired (jika periode_akhirnya kosong/null ATAU tanggalnya sudah lewat)
                 $expiredRafaksis = $currentRafaksis->filter(function($r) use ($todayCarbon) {
                     // Jika periode_akhir kosong ATAU tanggalnya sudah kurang dari hari ini
-                    return is_null($r->periode_akhir) && 
+                    return !is_null($r->periode_akhir) && 
                         Carbon::parse($r->periode_akhir)->startOfDay()->lessThan($todayCarbon);
                 });
 
@@ -219,7 +219,7 @@ class SendAllRenewalReminders extends Command
             ->where('status_email', '!=', 'tidak_aktif')
             ->whereNotNull('periode_akhir')
             ->whereRaw(
-                '? BETWEEN DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH) AND DATE_ADD(periode_akhir, INTERVAL 1 YEAR)',
+                '? >= DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH)',
                 [$todayStr]
             )
             ->get();
@@ -285,7 +285,7 @@ class SendAllRenewalReminders extends Command
                 // Saring yang Expired (jika periode_akhirnya kosong/null ATAU tanggalnya sudah lewat)
                 $expiredLocs = $currentLocs->filter(function($l) use ($todayCarbon) {
                     // Jika periode_akhir kosong ATAU tanggalnya sudah kurang dari hari ini
-                    return is_null($l->periode_akhir) && 
+                    return !is_null($l->periode_akhir) && 
                         Carbon::parse($l->periode_akhir)->startOfDay()->lessThan($todayCarbon);
                 });
 
@@ -316,7 +316,7 @@ class SendAllRenewalReminders extends Command
             ->where('status_email', '!=', 'tidak_aktif')
             ->whereNotNull('periode_akhir')
             ->whereRaw(
-                '? BETWEEN DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH) AND DATE_ADD(periode_akhir, INTERVAL 1 YEAR)',
+                '? >= DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH)',
                 [$todayStr]
             )
             ->get();
@@ -382,7 +382,7 @@ class SendAllRenewalReminders extends Command
                 // Saring yang Expired (jika periode_akhirnya kosong/null ATAU tanggalnya sudah lewat)
                 $expiredJsms = $currentJsms->filter(function($j) use ($todayCarbon) {
                     // Jika periode_akhir kosong ATAU tanggalnya sudah kurang dari hari ini
-                    return is_null($j->periode_akhir) && 
+                    return !is_null($j->periode_akhir) && 
                         Carbon::parse($j->periode_akhir)->startOfDay()->lessThan($todayCarbon);
                 });
 
