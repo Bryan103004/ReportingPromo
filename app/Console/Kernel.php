@@ -20,6 +20,11 @@ class Kernel extends ConsoleKernel
             ->weeklyOn(1, '11:00')
             ->withoutOverlapping()
             ->runInBackground();
+
+        $schedule->command('imports:locs')
+            ->hourlyAt(2)
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**
