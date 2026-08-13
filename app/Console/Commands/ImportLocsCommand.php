@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use App\Models\Loc;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class ImportLocsCommand extends Command
 {
@@ -145,17 +146,22 @@ class ImportLocsCommand extends Command
 
                 // A. Terjemahkan ID Alias toko dari CSV menjadi Primary Key (id) asli tabel tokos
                 $tokoIdAsli = null;
+                $namaRegionStore = null;
+
                 if (!empty($row->toko_id)) {
                     // Gunakan trim untuk menghindari masalah spasi tersembunyi
                     $cleanTokoId = trim($row->toko_id);
                     
-                    $toko = DB::table('tokos')
-                        ->where('id_alias', $cleanTokoId) 
+                    $tokoData = DB::table('tokos')
+                        ->join('regions', 'tokos.region_id', '=', 'regions.id')
+                        ->where('tokos.id_alias', $cleanTokoId)
+                        ->select('tokos.id as toko_id', 'regions.nama_region')
                         ->first();
-                    
-                    if ($toko) {
-                        $tokoIdAsli = $toko->id;
-                        $this->line(" -> DITEMUKAN: Toko ID Asli di database adalah {$tokoIdAsli}");
+                                        
+                    if ($tokoData) {
+                        $tokoIdAsli = $tokoData->toko_id;
+                        $namaRegionStore = $tokoData->nama_region; // Contoh: "Jakarta"
+                        $this->line(" -> DITEMUKAN: Toko ID {$tokoIdAsli}, Region/Store: {$namaRegionStore}");
                     } else {
                         $this->error(" -> TIDAK KETEMU: toko_id [{$cleanTokoId}] tidak ada di tabel tokos!");
                     }
@@ -175,7 +181,7 @@ class ImportLocsCommand extends Command
                         'periode_akhir'    => $formatDate($row->periode_akhir), // Pastikan ini menggunakan variabel dari data staging
                         'periode_bulan'    => $formatDate($row->periode_bulan),
                         'no_raf_referensi' => $row->no_raf_referensi,
-                        'store'            => $row->store,
+                        'store'            => $namaRegionStore ?? $row->store,
                         'nominal'          => $row->nominal,
                         'remarks'          => $row->remarks,
                         'created_date'     => $row->created_date,
