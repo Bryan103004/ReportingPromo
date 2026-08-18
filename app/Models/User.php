@@ -9,6 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class User extends Authenticatable
 {
@@ -53,7 +54,7 @@ class User extends Authenticatable
 
     public function hasGlobalCompanyAccess(): bool
     {
-        return $this->hasRole('admin') || $this->hasRole('super-admin');
+        return $this->hasRole('admin') || $this->hasRole('superadmin');
     }
 
 
@@ -69,5 +70,14 @@ class User extends Authenticatable
             ->map(static function ($id) {
                 return (int) $id;
             })->unique()->values();
+    }
+
+    public function getSignatureUrlAttribute(): ?string
+    {
+        if (! $this->signature_path) {
+            return null;
+        }
+
+        return Storage::url($this->signature_path);
     }
 }

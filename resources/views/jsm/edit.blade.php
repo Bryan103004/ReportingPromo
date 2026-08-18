@@ -126,12 +126,17 @@
 
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Filter Berdasarkan Region</label>
+                    <div class="flex items-center gap-4">
                     <select id="region_filter" onchange="fetchTokos(this.value)" class="block w-full md:w-1/2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                         <option value="">-- Pilih Region untuk memunculkan Toko --</option>
                         @foreach($regions as $region)
                             <option value="{{ $region->id }}">{{ $region->nama_region }}</option>
                         @endforeach
                     </select>
+                    <label class="flex items-center text-sm text-slate-500">
+                        <input type="checkbox" id="local_pt_filter" class="h-4 w-4 mr-2" /> Hanya PT. MITRA BELANJA ANDA
+                    </label>
+                    </div>
                 </div>
 
                 <div class="md:col-span-2">
@@ -145,6 +150,7 @@
                 </div>
                 
                 <input type="hidden" name="store" id="hidden_store_name" value="{{ old('store', $jsm->store) }}">
+                <input type="hidden" name="raf_sequence" id="raf_sequence" value="{{ old('raf_sequence', $jsm->raf_sequence) }}">
             </div>
 
             {{-- Nominal (Full Width di bawah) --}}
@@ -316,8 +322,15 @@
         // Tampilkan loading state
         container.innerHTML = '<div class="col-span-full text-center text-blue-500 text-sm py-4">Memuat data toko...</div>';
 
+        // Build URL with optional PT filter
+        let url = "{{ url('/get-tokos') }}/" + regionId;
+        const ptChecked = document.getElementById('local_pt_filter') && document.getElementById('local_pt_filter').checked;
+        if (ptChecked) {
+            url += '?name_pt=' + encodeURIComponent('PT. MITRA BELANJA ANDA');
+        }
+
         // Fetch data dari endpoint yang sudah kita buat
-        fetch("{{ url('/get-tokos') }}/" + regionId)
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 container.innerHTML = ''; // Bersihkan container
@@ -327,14 +340,14 @@
                     return;
                 }
 
-                // Loop data dan buat elemen checkbox
+                // Loop data dan buat elemen checkbox, pre-check jika sudah dipilih
+                const selected = window.selectedTokos || [];
                 data.forEach(toko => {
                     const div = document.createElement('div');
                     div.className = 'flex items-center';
-                    
-                    // Radio di-set 'checked' secara default (sesuai permintaanmu)
+                    const checked = selected.includes(toko.id) ? 'checked' : '';
                     div.innerHTML = `
-                    <input type="radio" id="toko_${toko.id}" name="toko_id" value="${toko.id}" required
+                    <input type="checkbox" id="toko_${toko.id}" name="toko_id[]" value="${toko.id}" ${checked}
                         class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                     <label for="toko_${toko.id}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
                         ${toko.nama_toko}
@@ -349,4 +362,36 @@
             });
     }
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const initialRegion = @json(optional($jsm->tokos->first())->region_id);
+        if (initialRegion) {
+            const regionSelect = document.getElementById('region_filter');
+            if (regionSelect) {
+                regionSelect.value = initialRegion;
+            }
+            fetchTokos(initialRegion);
+        }
+    });
+
+    function getNextNoRaf(){
+        const categorySelect = document.getElementById('category_id');
+        const periode = document.getElementById('periode_bulan') ? document.getElementById('periode_bulan').value : null;
+        if (!categorySelect || !categorySelect.value) return;
+        const prefix = categorySelect.options[categorySelect.selectedIndex].text.trim().toUpperCase();
+        const url = '{{ url('/next-no-raf') }}?category=' + encodeURIComponent(prefix) + (periode ? ('&periode=' + encodeURIComponent(periode)) : '');
+        fetch(url).then(r => r.json()).then(data => {
+            if (data.no_raf) {
+                document.getElementById('no_raf').value = data.no_raf;
+                document.getElementById('raf_sequence').value = data.sequence || '';
+            }
+        }).catch(err => console.error(err));
+    }
+
+    const cat = document.getElementById('category_id');
+    if (cat) cat.addEventListener('change', getNextNoRaf);
+    const per = document.getElementById('periode_bulan');
+    if (per) per.addEventListener('change', getNextNoRaf);
+</script>
 @endsection
+    

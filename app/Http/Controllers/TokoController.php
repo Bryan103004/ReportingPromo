@@ -88,8 +88,43 @@ class TokoController extends Controller
     public function getByRegion($region_id)
     {
         // Ambil toko yang sesuai dengan region_id
-        $tokos = Toko::whereNotIn('status',['nonaktif'])
-                    ->where('region_id', $region_id)->get(['id', 'nama_toko']);
+        $query = Toko::whereNotIn('status',['nonaktif'])
+                    ->where('region_id', $region_id);
+
+        // Optional filter by nama_pt (e.g., ?name_pt=PT. MITRA BELANJA ANDA)
+        if ($namePt = request()->query('name_pt')) {
+            $query->where('nama_pt', $namePt);
+        }
+
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $ids = auth()->user()->accessibleTokoIds()->toArray();
+            if (empty($ids)) {
+                return response()->json([]);
+            }
+            $query->whereIn('id', $ids);
+        }
+
+        $tokos = $query->get(['id', 'nama_toko']);
+        return response()->json($tokos);
+    }
+
+    public function getAll(Request $request)
+    {
+        $query = Toko::whereNotIn('status',['nonaktif']);
+
+        if ($namePt = $request->query('name_pt')) {
+            $query->where('nama_pt', $namePt);
+        }
+
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $ids = auth()->user()->accessibleTokoIds()->toArray();
+            if (empty($ids)) {
+                return response()->json([]);
+            }
+            $query->whereIn('id', $ids);
+        }
+
+        $tokos = $query->get(['id', 'nama_toko']);
         return response()->json($tokos);
     }
 }

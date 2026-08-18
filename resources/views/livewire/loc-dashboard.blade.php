@@ -1,4 +1,13 @@
 <x-list-container title="Loc EXPIRING   | Total Data: {{ $data->total() }}">
+    <div class="flex gap-2 mb-3">
+        @if(!empty($tokoId))
+            <?php $toko = \App\Models\Toko::find($tokoId); ?>
+            <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">Toko: {{ $toko->nama_toko ?? $tokoId }}</span>
+        @endif
+        @if(!empty($filterByPt))
+            <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">PT filter aktif</span>
+        @endif
+    </div>
     
     <!-- Looping Data dari Controller / Livewire -->
     @forelse($data as $row)

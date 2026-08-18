@@ -112,7 +112,7 @@
                                             </x-dropdown-link>
                                             @endcan
 
-                                            @canany(['view_jsm', 'view_rafaksi'])
+                                            @canany(['view_jsm', 'view_rafaksi', 'create_document'])
                                             <x-dropdown-link :href="route('supplier_rafaksi.index')" class="text-sm {{ request()->routeIs('supplier_rafaksi.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                 <span class="text-base">🤝</span> Supplier Rafaksi
                                             </x-dropdown-link>
@@ -126,6 +126,13 @@
                                     </div>
                                 </div>
                             </div>
+
+
+                            @can('create_document')
+                            <x-nav-link :href="route('create.document')" :active="request()->routeIs('create.document')">
+                                {{ __('Buat Dokumen') }}
+                            </x-nav-link>
+                            @endcan
 
                             @can('view_rafaksi')
                             <x-nav-link :href="route('rafaksi.index')" :active="request()->routeIs('rafaksi.index')">
@@ -380,7 +387,7 @@
                 <x-responsive-nav-link :href="route('region.index')" :active="request()->routeIs('region.index')">📍 Region</x-responsive-nav-link>
             @endcan
 
-            @canany(['view_jsm', 'view_rafaksi'])
+            @canany(['view_jsm', 'view_rafaksi', 'create_document'])
                 <x-responsive-nav-link :href="route('supplier_rafaksi.index')" :active="request()->routeIs('supplier_rafaksi.index')">
                     <span class="text-base">🤝</span> Supplier Rafaksi
                 </x-responsive-nav-link>
@@ -400,6 +407,10 @@
             @endcan -->
 
             <div class="border-t border-gray-200 my-1"></div>
+     
+            @can('create_document')
+            <x-responsive-nav-link :href="route('create.document')" :active="request()->routeIs('create.document')">Buat Dokumen</x-responsive-nav-link>
+            @endcan
             
             @can('view_rafaksi')
             <x-responsive-nav-link :href="route('rafaksi.index')" :active="request()->routeIs('rafaksi.index')">Data Rafaksi</x-responsive-nav-link>

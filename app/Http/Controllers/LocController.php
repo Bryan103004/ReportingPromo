@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\Storage;
 
 class LocController extends Controller
 {
@@ -62,6 +63,18 @@ class LocController extends Controller
         
         if ($request->filled('end_date')) {
             $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        // If user has limited toko access, restrict query
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $ids = auth()->user()->accessibleTokoIds()->toArray();
+            if (empty($ids)) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->whereHas('tokos', function($q) use ($ids) {
+                    $q->whereIn('tokos.id', $ids);
+                });
+            }
         }
 
         // 4. Eksekusi Query menggunakan fungsi SQL asli di dalam groupBy dan orderBy
@@ -115,6 +128,18 @@ class LocController extends Controller
             $query->where('periode_akhir', '<=', $request->end_date);
         }
 
+        // If user has limited toko access, restrict query
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $ids = auth()->user()->accessibleTokoIds()->toArray();
+            if (empty($ids)) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->whereHas('tokos', function($q) use ($ids) {
+                    $q->whereIn('tokos.id', $ids);
+                });
+            }
+        }
+
         // 4. Eksekusi Query dengan memanggil Pagination di bagian akhir
         $locs = $query->customPaginate();
 
@@ -147,10 +172,24 @@ class LocController extends Controller
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
+            'document' => 'nullable|mimes:pdf|max:10240',
         ]);
 
         $loc = Loc::create($request->except('toko_id'));
-        $loc->tokos()->sync($request->toko_id);
+        // handle document upload
+        if ($request->hasFile('document')) {
+            $file = $request->file('document');
+            $path = $file->store('loc_documents', 'public');
+            $loc->document_path = $path;
+            $loc->document_original_name = $file->getClientOriginalName();
+            $loc->save();
+        }
+        $tokoIds = is_array($request->input('toko_id')) ? $request->input('toko_id') : [$request->input('toko_id')];
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowed = auth()->user()->accessibleTokoIds()->toArray();
+            $tokoIds = array_values(array_intersect($tokoIds, $allowed));
+        }
+        $loc->tokos()->sync($tokoIds);
 
         ActivityLogger::logCreate(
             $loc,
@@ -188,10 +227,24 @@ class LocController extends Controller
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
+            'document' => 'nullable|mimes:pdf|max:10240',
         ]);
 
         $loc->update($request->except('toko_id'));
-        $loc->tokos()->sync($request->toko_id);
+        // handle document upload (replace existing)
+        if ($request->hasFile('document')) {
+            $file = $request->file('document');
+            $path = $file->store('loc_documents', 'public');
+            $loc->document_path = $path;
+            $loc->document_original_name = $file->getClientOriginalName();
+            $loc->save();
+        }
+        $tokoIds = is_array($request->input('toko_id')) ? $request->input('toko_id') : [$request->input('toko_id')];
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowed = auth()->user()->accessibleTokoIds()->toArray();
+            $tokoIds = array_values(array_intersect($tokoIds, $allowed));
+        }
+        $loc->tokos()->sync($tokoIds);
         
         ActivityLogger::logUpdate(
             $loc,
@@ -540,5 +593,82 @@ class LocController extends Controller
 
         $loc = Loc::findOrFail($id);
         return view('loc.renew_index', compact('loc'));
+    }
+
+    public function approve(Request $request, Loc $loc)
+    {
+        $user = auth()->user();
+        $loc->approved_by = $user->id;
+        $loc->approved_at = now();
+
+        // Try to stamp signature PDF onto the last page of the document if possible
+        try {
+            if ($loc->document_path && $user->signature_path && class_exists('\\setasign\\Fpdi\\Fpdi')) {
+                $origPath = Storage::disk('public')->path($loc->document_path);
+                $sigPath = Storage::disk('public')->path($user->signature_path);
+
+                if (file_exists($origPath) && file_exists($sigPath)) {
+                    $outputRel = 'loc_documents/stamped_' . $loc->id . '.pdf';
+                    $outputPath = Storage::disk('public')->path($outputRel);
+
+                    $pdf = new \setasign\Fpdi\Fpdi();
+                    $pageCount = $pdf->setSourceFile($origPath);
+
+                    for ($i = 1; $i <= $pageCount; $i++) {
+                        $tplId = $pdf->importPage($i);
+                        $size = $pdf->getTemplateSize($tplId);
+                        $orientation = ($size['width'] > $size['height']) ? 'L' : 'P';
+                        $pdf->AddPage($orientation, [$size['width'], $size['height']]);
+                        $pdf->useTemplate($tplId);
+
+                        // On the last page, overlay the signature (first page of signature pdf)
+                        if ($i === $pageCount) {
+                            $sigCount = $pdf->setSourceFile($sigPath);
+                            if ($sigCount >= 1) {
+                                $sigTpl = $pdf->importPage(1);
+                                $sigSize = $pdf->getTemplateSize($sigTpl);
+                                // place signature at bottom-right with margin
+                                $margin = 20;
+                                $sigWidth = $sigSize['width'] * 0.6;
+                                $sigHeight = $sigSize['height'] * 0.6;
+                                $x = $size['width'] - $sigWidth - $margin;
+                                $y = $size['height'] - $sigHeight - $margin;
+                                $pdf->useTemplate($sigTpl, $x, $y, $sigWidth, $sigHeight);
+                            }
+                        }
+                    }
+
+                    // Output stamped PDF
+                    $pdf->Output('F', $outputPath);
+
+                    // update document_path to stamped version
+                    $loc->document_path = $outputRel;
+                    $loc->document_original_name = pathinfo($loc->document_original_name ?? $loc->document_path, PATHINFO_FILENAME) . '-stamped.pdf';
+                }
+            }
+        } catch (\Throwable $e) {
+            // If stamping fails, continue but log exception to activity log
+            ActivityLogger::logUpdate($loc, $loc->id, ['stamp_error' => $e->getMessage()], "Stamp signature failed for Loc #{$loc->id}");
+        }
+
+        $loc->save();
+
+        ActivityLogger::logUpdate(
+            $loc,
+            $loc->id,
+            ['approved_by' => $loc->approved_by],
+            "Approved Loc #{$loc->id} by user: {$loc->approved_by}"
+        );
+
+        return redirect()->back()->with('success', 'Loc berhasil di-approve.');
+    }
+
+    public function downloadDocument(Loc $loc)
+    {
+        if (! $loc->document_path || ! Storage::disk('public')->exists($loc->document_path)) {
+            abort(404, 'Document not found.');
+        }
+
+        return Storage::disk('public')->download($loc->document_path, $loc->document_original_name ?? basename($loc->document_path));
     }
 }

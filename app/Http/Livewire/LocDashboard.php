@@ -4,9 +4,33 @@ namespace App\Http\Livewire;
 
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
-
+use Livewire\WithPagination;
 class LocDashboard extends Component
 {
+    use WithPagination;
+    public $tokoId = null;
+
+    protected $listeners = ['filterByToko', 'filterByPt'];
+
+    public function filterByToko($tokoId)
+    {
+        $this->tokoId = $tokoId ?: null;
+        $this->resetPage();
+    }
+
+    public $filterByPt = false;
+
+    public function filterByPt($val)
+    {
+        $this->filterByPt = (bool) $val;
+        $this->resetPage();
+    }
+
+
+    public function paginationView()
+    {
+        return 'vendor.pagination.tailwind'; // Sesuaikan dengan nama file view pagination kamu sebelumnya
+    }
 
     public function placeholder()
     {
@@ -43,6 +67,20 @@ class LocDashboard extends Component
             ])
             ->whereRaw('lc.periode_akhir <= NOW()')
             // Mengurutkan kronologis secara efisien lewat kolom tanggal asli
+            ->when($this->tokoId, function($q, $tokoId) {
+                $q->where('lt.toko_id', $tokoId);
+            })
+            ->when($this->filterByPt, function($q) {
+                $q->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+            })
+            ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
+                $allowed = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($allowed)) {
+                    $q->whereRaw('0 = 1');
+                } else {
+                    $q->whereIn('lt.toko_id', $allowed);
+                }
+            })
             ->orderBy('lc.periode_bulan', 'asc') 
             ->customPaginate();
 

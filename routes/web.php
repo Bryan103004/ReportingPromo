@@ -13,6 +13,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierRafaksiController;
 use App\Http\Controllers\TokoController;
+use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -84,11 +85,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/loc/rekap/{year}/{month}', [LocController::class, 'showMonth'])->name('loc.show_month');
     Route::get('/loc/export_excel', [LocController::class, 'exportExcel'])->name('loc.export.excel');
     Route::get('/loc/export_csv', [LocController::class, 'exportCSV'])->name('loc.export');
+    Route::post('/loc/{loc}/approve', [LocController::class, 'approve'])->name('loc.approve');
+    Route::get('/loc/{loc}/download', [LocController::class, 'downloadDocument'])->name('loc.download');
     Route::resource('loc', LocController::class);
 
     Route::resource('region', RegionController::class);
 
     Route::get('/get-tokos/{region_id}',[TokoController::class, 'getByRegion']);
+    Route::get('/get-tokos-all',[TokoController::class, 'getAll']);
+    Route::get('/next-no-raf',[UtilityController::class, 'nextNoRaf']);
+    Route::get('/create-document', function(){
+        $supplierRafaksi = \App\Models\SupplierRafaksi::all();
+        $regions = \App\Models\Region::whereNotIn('status',['nonaktif'])->get();
+        $categories = \App\Models\Category::all();
+        return view('unified.create', compact('supplierRafaksi', 'regions', 'categories'));
+    })->name('create.document');
+    
     Route::resource('toko', TokoController::class);
 
     Route::resource('supplier_rafaksi', SupplierRafaksiController::class);

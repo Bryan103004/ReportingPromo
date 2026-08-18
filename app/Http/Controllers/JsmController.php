@@ -69,6 +69,18 @@ class JsmController extends Controller
             $query->where('periode_akhir', '<=', $request->end_date);
         }
 
+        // If user has limited toko access, restrict query
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $ids = auth()->user()->accessibleTokoIds()->toArray();
+            if (empty($ids)) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->whereHas('tokos', function($q) use ($ids) {
+                    $q->whereIn('tokos.id', $ids);
+                });
+            }
+        }
+
         // 4. Eksekusi Query menggunakan fungsi SQL asli di dalam groupBy dan orderBy
         $jsmGroups = $query->groupByRaw('YEAR(periode_bulan), MONTH(periode_bulan)') 
                         ->orderByRaw('YEAR(periode_bulan) ASC, MONTH(periode_bulan) ASC')
@@ -120,6 +132,18 @@ class JsmController extends Controller
             $query->where('periode_akhir', '<=', $request->end_date);
         }
 
+        // If user has limited toko access, restrict query
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $ids = auth()->user()->accessibleTokoIds()->toArray();
+            if (empty($ids)) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->whereHas('tokos', function($q) use ($ids) {
+                    $q->whereIn('tokos.id', $ids);
+                });
+            }
+        }
+
         // 4. Eksekusi Query dengan memanggil Pagination di bagian akhir
         $jsms = $query->customPaginate();
 
@@ -149,13 +173,43 @@ class JsmController extends Controller
             'store' => 'string|required',
             'nominal' => 'numeric|min:0|required',
             'remarks' => 'string|nullable',
-            // 'toko_id' => 'array|required',
-            'toko_id' => 'exists:tokos,id',
+            'toko_id' => 'array|required',
+            'toko_id.*' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
         ]);
 
-        $jsm = Jsm::create($request->all());
-        $jsm->tokos()->sync($request->toko_id);
+        $data = $request->all();
+
+        // Respect explicit raf_sequence if frontend provided
+        if ($request->filled('raf_sequence')) {
+            $data['raf_sequence'] = (int) $request->input('raf_sequence');
+        }
+
+        // Auto-generate raf_sequence and no_raf when not provided
+        if (empty($data['no_raf'])) {
+            $periode = Carbon::parse($data['periode_bulan']);
+            $month = $periode->format('m');
+            $year = $periode->format('Y');
+
+            $maxSeq = Jsm::where('no_raf', 'like', "%/{$year}")
+                ->max('raf_sequence');
+
+            $nextSeq = $maxSeq ? $maxSeq + 1 : 1;
+            $padded = str_pad((string)$nextSeq, 4, '0', STR_PAD_LEFT);
+
+            if (empty($data['raf_sequence'])) {
+                $data['raf_sequence'] = $nextSeq;
+            }
+            $data['no_raf'] = "JSM/{$padded}/{$month}/{$year}";
+        }
+
+        $jsm = Jsm::create($data);
+        $tokoIds = $request->input('toko_id', []);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowed = auth()->user()->accessibleTokoIds()->toArray();
+            $tokoIds = array_values(array_intersect($tokoIds, $allowed));
+        }
+        $jsm->tokos()->sync($tokoIds);
        
         ActivityLogger::logCreate(
             $jsm,
@@ -189,13 +243,18 @@ class JsmController extends Controller
             'store' => 'string|required',
             'nominal' => 'numeric|min:0|required',
             'remarks' => 'string|nullable',
-            // 'toko_id' => 'array|required',
-            'toko_id' => 'exists:tokos,id',
+            'toko_id' => 'array|required',
+            'toko_id.*' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
         ]);
 
         $jsm->update($request->all());
-        $jsm->tokos()->sync($request->toko_id);
+        $tokoIds = $request->input('toko_id', []);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowed = auth()->user()->accessibleTokoIds()->toArray();
+            $tokoIds = array_values(array_intersect($tokoIds, $allowed));
+        }
+        $jsm->tokos()->sync($tokoIds);
 
         ActivityLogger::logUpdate(
             $jsm,

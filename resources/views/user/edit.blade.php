@@ -78,6 +78,18 @@
             <p class="mt-1 text-xs text-gray-500">Tekan Ctrl (Windows) / Cmd (Mac) untuk memilih lebih dari satu.</p>
         </div>
 
+        <div>
+            <label for="ttd" class="mb-1.5 block text-sm font-medium text-gray-700">Tanda Tangan (PDF/PNG/JPG)</label>
+            <input id="ttd" name="ttd" type="file" accept="application/pdf,image/png,image/jpeg" class="mt-1 block w-full" />
+            @if($user->ttd)
+                <p class="mt-2 text-sm text-gray-600">Tanda tangan saat ini:</p>
+                <div class="mt-2">
+                    <img src="{{ asset($user->ttd) }}" alt="Tanda Tangan" class="h-20 w-auto rounded border bg-white p-2" />
+                </div>
+            @endif
+            <p class="mt-1 text-xs text-gray-500">Optional. Upload file untuk mengganti tanda tangan.</p>
+        </div>
+
         <div class="flex items-center gap-2 pt-1">
             <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Update</button>
             <a href="{{ route('user.index') }}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium hover:bg-gray-100">Kembali</a>
