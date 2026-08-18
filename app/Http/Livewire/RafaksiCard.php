@@ -10,18 +10,38 @@ class RafaksiCard extends Component
 {
     public $selectedYear;
 
+    // 2. Set nilai default saat komponen pertama kali dimuat
     public function mount()
     {
-        $this->selectedYear = Carbon::now()->year; 
+        $this->selectedYear = Carbon::now()->year; // Default ke tahun ini (misal: 2026)
     }
 
-    // TAMBAHKAN FUNGSI INI (Magic Hook Livewire 2)
-    // Fungsi ini akan otomatis terpanggil saat dropdown berubah
-    public function updatedSelectedYear($value)
+    public $tokoId = null;
+
+    protected $listeners = ['filterByToko', 'filterByPt'];
+
+    public function filterByToko($tokoId)
     {
-        // Sengaja dibiarkan kosong, ini hanya untuk memaksa Livewire 
-        // melakukan re-render secara instan saat tahun dipilih.
+        $this->tokoId = $tokoId ?: null;
     }
+
+    public $filterByPt = false;
+
+    public function filterByPt($val)
+    {
+        $this->filterByPt = (bool) $val;
+    }
+
+    public function placeholder()
+    {
+        return <<<'HTML'
+        <div class="flex items-center justify-center p-6 bg-white rounded shadow">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
+            <span class="text-gray-500 font-medium">Memuat data Rafaksi...</span>
+        </div>
+        HTML;
+    }
+
 
     public function render()
     {
@@ -32,8 +52,30 @@ class RafaksiCard extends Component
                 DB::raw('SUM(r.nominal) as nominal'),
                 DB::raw('COUNT(r.id) as total_dokumen') 
             )
+            // 1. Join ke tabel pivot rafaksi_toko dulu
+            ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')
+            // 2. Baru join ke tabel tokos
+            ->leftJoin('tokos as tk', 'rt.toko_id', '=', 'tk.id')
             ->whereYear('r.periode_bulan', $this->selectedYear)
-            ->groupBy('year','month')
+            
+            // 3. Filter berdasarkan tokoId lewat tabel pivot
+            ->when($this->tokoId, function($q, $tokoId) {
+                $q->where('rt.toko_id', $tokoId);
+            })
+            ->when($this->filterByPt, function($q) {
+                $q->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+            })
+            
+            // 4. Pembatasan akses user berdasarkan toko lewat tabel pivot
+            ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
+                $allowed = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($allowed)) {
+                    $q->whereRaw('0 = 1');
+                } else {
+                    $q->whereIn('rt.toko_id', $allowed);
+                }
+            })
+            ->groupBy('year', 'month')
             ->orderBy('year', 'asc')
             ->orderBy('month', 'asc')
             ->get();

@@ -105,6 +105,7 @@ class ImportLocsCommand extends Command
                     'created_time'     => $row[14] ?? null,
                     'updated_date'     => $formatDate($row[15]),
                     'updated_time'     => $row[16] ?? null,
+                    'status_email'     => $row[17] ?? null,
                 ];
 
                 $rowCount++;
@@ -181,6 +182,7 @@ class ImportLocsCommand extends Command
                         'periode_akhir'    => $formatDate($row->periode_akhir), // Pastikan ini menggunakan variabel dari data staging
                         'periode_bulan'    => $formatDate($row->periode_bulan),
                         'no_raf_referensi' => $row->no_raf_referensi,
+                        'status_email'     => $row->status_email,
                         'store'            => $namaRegionStore ?? $row->store,
                         'nominal'          => $row->nominal,
                         'remarks'          => $row->remarks,

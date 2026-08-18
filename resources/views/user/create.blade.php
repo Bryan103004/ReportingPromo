@@ -60,7 +60,7 @@
             <div>
                 <label for="toko_ids">Toko (bisa pilih lebih dari satu) <span class="font-bold text-red-600">*</span></label>
                 @php
-                    $selectedTokoIds = old('toko_ids', $user->tokos->pluck('id')->toArray());
+                    $selectedTokoIds = old('toko_ids', []);
                 @endphp
                 <select name="toko_ids[]" id="toko_ids" multiple size="8" class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" required>
                     @foreach ($tokos as $toko)
@@ -70,6 +70,12 @@
                     @endforeach
                 </select>
                 <p class="mt-1 text-xs text-gray-500">Tekan Ctrl (Windows) / Cmd (Mac) untuk memilih lebih dari satu.</p>
+            </div>
+
+            <div>
+                <label for="ttd" class="mb-1.5 block text-sm font-medium text-gray-700">Tanda Tangan (PDF/PNG/JPG)</label>
+                <input id="ttd" name="ttd" type="file" accept="application/pdf,image/png,image/jpeg" class="mt-1 block w-full" />
+                <p class="mt-1 text-xs text-gray-500">Optional. File akan disimpan dan digunakan untuk approval/stamping.</p>
             </div>
 
             <div class="flex items-center gap-2 pt-1">

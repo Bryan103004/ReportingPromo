@@ -24,32 +24,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot() :void
     {
-        // Macro kustom untuk handle pagination dinamis
-        \Illuminate\Database\Eloquent\Builder::macro('customPaginate', function ($default = 10) {
-            $perPage = request()->input('number', $default);
-            
-            // Jika user memilih nilai maksimal (-1/ Semua data)
-            if ($perPage == -1) {
-                $total = $this->count();
-                // Dipaginate sebanyak total data agar links() di bawah tabel tidak error/hilang
-                return $this->paginate($total > 0 ? $total : $default)->withQueryString();
-            }
-
-            // .withQueryString() berfungsi menjaga parameter '?number=X' tetap ada saat pindah halaman (page 2, 3, dst)
-            return $this->paginate($perPage)->withQueryString();
-        });
-
         \Illuminate\Database\Query\Builder::macro('customPaginate', function ($default = 10) {
             $perPage = request()->input('number', $default);
             
-            // Jika user memilih nilai maksimal (-1/ Semua data)
             if ($perPage == -1) {
-                $total = $this->count();
-                // Dipaginate sebanyak total data agar links() di bawah tabel tidak error/hilang
-                return $this->paginate($total > 0 ? $total : $default)->withQueryString();
+                $total = (clone $this)->count();
+                $perPage = $total > 0 ? $total : $default;
             }
 
-            // .withQueryString() berfungsi menjaga parameter '?number=X' tetap ada saat pindah halaman (page 2, 3, dst)
+            // Cukup panggil paginate standar tanpa memaksa input page manual
             return $this->paginate($perPage)->withQueryString();
         });
     }

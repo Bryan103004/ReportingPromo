@@ -8,7 +8,23 @@ use Livewire\Component;
 
 class RafaksiBadge extends Component
 {
+    public $tokoId = null;
 
+    protected $listeners = ['filterByToko', 'filterByPt'];
+
+    public function filterByToko($tokoId)
+    {
+        $this->tokoId = $tokoId ?: null;
+    }
+
+    public $filterByPt = false;
+
+    public function filterByPt($val)
+    {
+        $this->filterByPt = (bool) $val;
+    }
+
+    
     public function placeholder()
     {
         return <<<'HTML'
@@ -21,13 +37,30 @@ class RafaksiBadge extends Component
 
     public function render()
     {
-        $data = DB::table('rafaksis')
-                ->select([
-                    DB::raw("SUM(CASE WHEN periode_akhir > '" . Carbon::now() . "' AND periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `aktif`"),
-                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' AND periode_bulan IS NULL THEN 1 ELSE 0 END) as `expired`"),
-                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' AND periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `done`")
-                ])
-                ->first();
+        $today = date('Y-m-d'); // Ambil tanggal hari ini saja (Y-m-d)
+
+        $data = DB::table('rafaksis as r')
+            ->select([
+                DB::raw("SUM(CASE WHEN r.periode_akhir > '{$today}' AND r.periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `aktif`"),
+                DB::raw("SUM(CASE WHEN r.periode_akhir <= '{$today}' AND r.periode_bulan IS NULL THEN 1 ELSE 0 END) as `expired`"),
+                DB::raw("SUM(CASE WHEN r.periode_akhir <= '{$today}' AND r.periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `done`")
+            ])
+            ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')
+            ->leftJoin('tokos as tk', 'rt.toko_id', '=', 'tk.id')
+            
+            // Masukkan filter tambahan jika card ini butuh difilter berdasarkan toko/user seperti sebelumnya:
+            ->when($this->tokoId, function($q, $tokoId) {
+                $q->where('rt.toko_id', $tokoId);
+            })
+            ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
+                $allowed = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($allowed)) {
+                    $q->whereRaw('0 = 1');
+                } else {
+                    $q->whereIn('rt.toko_id', $allowed);
+                }
+            })
+            ->first();
 
         return view('livewire.rafaksi-badge', compact('data'));
     }

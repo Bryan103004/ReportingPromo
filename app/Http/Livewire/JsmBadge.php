@@ -8,25 +8,55 @@ use Livewire\Component;
 
 class JsmBadge extends Component
 {
+    public $tokoId = null;
+
+    protected $listeners = ['filterByToko', 'filterByPt'];
+
+    public function filterByToko($tokoId)
+    {
+        $this->tokoId = $tokoId ?: null;
+    }
+
+    public $filterByPt = false;
+
+    public function filterByPt($val)
+    {
+        $this->filterByPt = (bool) $val;
+    }
+
 
     public function placeholder()
     {
         return <<<'HTML'
         <div class="flex items-center justify-center p-6 bg-white rounded shadow">
             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3"></div>
-            <span class="text-gray-500 font-medium">Memuat data Rafaksi...</span>
+            <span class="text-gray-500 font-medium">Memuat data Jsm...</span>
         </div>
         HTML;
     }
 
     public function render()
     {
-        $data = DB::table('jsm')
+        $data = DB::table('jsm as j')
                 ->select([
                     DB::raw("SUM(CASE WHEN periode_akhir > '" . Carbon::now() . "' AND periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `aktif`"),
                     DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' AND periode_bulan IS NULL THEN 1 ELSE 0 END) as `expired`"),
                     DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' AND periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `done`")
                 ])
+                ->leftJoin('jsm_toko as jt', 'j.id', '=', 'jt.jsm_id')
+                ->leftJoin('tokos as tk', 'jt.toko_id', '=', 'tk.id')
+                // Masukkan filter tambahan jika card ini butuh difilter berdasarkan toko/user seperti sebelumnya:
+                ->when($this->tokoId, function($q, $tokoId) {
+                    $q->where('jt.toko_id', $tokoId);
+                })
+                ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
+                    $allowed = auth()->user()->accessibleTokoIds()->toArray();
+                    if (empty($allowed)) {
+                        $q->whereRaw('0 = 1');
+                    } else {
+                        $q->whereIn('jt.toko_id', $allowed);
+                    }
+                })
                 ->first();
 
         return view('livewire.jsm-badge', compact('data'));

@@ -9,9 +9,11 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use App\Support\ManagesPublicFiles;
 use App\Services\ActivityLogger;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
+    use ManagesPublicFiles;
 
     public function index(Request $request)
     {
@@ -61,12 +63,21 @@ class UserController extends Controller
             'roles.*' => 'exists:roles,id',
             'toko_ids' => 'required|array|min:1',
             'toko_ids.*' => 'exists:tokos,id',
+            'ttd' => 'nullable|file|mimes:pdf,png,jpg,jpeg',
         ]);
 
         $validatedData['password'] = Hash::make($validatedData['password']);
         $validatedData['email'] = $validatedData['email'] ?? $validatedData['username'] . '@local.invalid';
 
         $userPayload = collect($validatedData)->all();
+
+        if ($request->hasFile('ttd')) {
+            $file = $request->file('ttd');
+            $path = $file->store('signatures', 'public');
+            $userPayload['signature_path'] = $path;
+            $userPayload['ttd'] = 'storage/' . $path;
+        }
+
         $user = User::create($userPayload);
 
         $selectedTokoIds = collect($validatedData['toko_ids'])->map(static function ($id) {
@@ -107,6 +118,7 @@ class UserController extends Controller
             'roles.*' => 'exists:roles,id',
             'toko_ids' => 'required|array|min:1',
             'toko_ids.*' => 'exists:tokos,id',
+            'ttd' => 'nullable|file|mimes:pdf,png,jpg,jpeg',
         ]);
 
         if(!empty($validatedData['password'])){
@@ -130,6 +142,18 @@ class UserController extends Controller
         }
 
         $userPayload = collect($validatedData)->except(['toko_ids', 'perusahaan_ids', 'roles'])->all();
+
+        if ($request->hasFile('ttd')) {
+            $file = $request->file('ttd');
+            $path = $file->store('signatures', 'public');
+            // delete old signature file from storage disk
+            if ($user->signature_path) {
+                Storage::disk('public')->delete($user->signature_path);
+            }
+            $userPayload['signature_path'] = $path;
+            $userPayload['ttd'] = 'storage/' . $path;
+        }
+
         $user->update($userPayload);
 
 

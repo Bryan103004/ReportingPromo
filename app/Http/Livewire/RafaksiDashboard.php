@@ -4,9 +4,27 @@ namespace App\Http\Livewire;
 
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class RafaksiDashboard extends Component
 {
+    use WithPagination;
+    public $tokoId = null;
+    public $filterByPt = false;
+
+    protected $listeners = ['filterByToko', 'filterByPt'];
+
+    public function filterByToko($tokoId)
+    {
+        $this->tokoId = $tokoId ?: null;
+        $this->resetPage();
+    }
+
+    public function filterByPt($val)
+    {
+        $this->filterByPt = (bool) $val;
+        $this->resetPage();
+    }
 
     public function placeholder()
     {
@@ -16,6 +34,11 @@ class RafaksiDashboard extends Component
             <span class="text-gray-500 font-medium">Memuat data Rafaksi...</span>
         </div>
         HTML;
+    }
+
+    public function paginationView()
+    {
+        return 'vendor.pagination.tailwind'; // Sesuaikan dengan nama file view pagination kamu sebelumnya
     }
 
     public function render()
@@ -43,6 +66,20 @@ class RafaksiDashboard extends Component
             ])
             ->whereRaw('r.periode_akhir <= NOW()') 
             // Menggunakan kolom asli untuk optimasi kecepatan database
+            ->when($this->tokoId, function($q, $tokoId) {
+                $q->where('rt.toko_id', $tokoId);
+            })
+            ->when($this->filterByPt, function($q) {
+                $q->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+            })
+            ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
+                $allowed = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($allowed)) {
+                    $q->whereRaw('0 = 1');
+                } else {
+                    $q->whereIn('rt.toko_id', $allowed);
+                }
+            })
             ->orderBy('r.periode_bulan', 'asc') 
             ->customPaginate();
 

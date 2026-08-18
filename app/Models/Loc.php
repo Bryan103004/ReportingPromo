@@ -53,4 +53,9 @@ class Loc extends Model
     public function reminder(){
         return $this->belongsTo(MasterNotifikasiReminder::class, 'reminder_id', 'id');
     }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
 }

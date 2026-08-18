@@ -4,9 +4,28 @@ namespace App\Http\Livewire;
 
 use Illuminate\Support\Facades\DB;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class JsmDashboard extends Component
 {
+    use WithPagination;
+    public $tokoId = null;
+
+    protected $listeners = ['filterByToko', 'filterByPt'];
+
+    public function filterByToko($tokoId)
+    {
+        $this->tokoId = $tokoId ?: null;
+        $this->resetPage();
+    }
+
+    public $filterByPt = false;
+
+    public function filterByPt($val)
+    {
+        $this->filterByPt = (bool) $val;
+        $this->resetPage();
+    }
 
     public function placeholder()
     {
@@ -18,6 +37,11 @@ class JsmDashboard extends Component
         HTML;
     }
 
+    public function paginationView()
+    {
+        return 'vendor.pagination.tailwind'; // Sesuaikan dengan nama file view pagination kamu sebelumnya
+    }
+    
     public function render()
     {   
         $data = DB::table('jsm as j')
@@ -43,6 +67,20 @@ class JsmDashboard extends Component
             ])
             ->whereRaw('j.periode_akhir <= NOW()') 
             // Optimasi: mengurutkan langsung dari kolom tanggal asli j.periode_bulan
+            ->when($this->tokoId, function($q, $tokoId) {
+                $q->where('jt.toko_id', $tokoId);
+            })
+            ->when($this->filterByPt, function($q) {
+                $q->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+            })
+            ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
+                $allowed = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($allowed)) {
+                    $q->whereRaw('0 = 1');
+                } else {
+                    $q->whereIn('jt.toko_id', $allowed);
+                }
+            })
             ->orderBy('j.periode_bulan', 'asc') 
             ->customPaginate();
 
