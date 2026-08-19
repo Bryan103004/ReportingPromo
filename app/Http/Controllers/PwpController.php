@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Exports\DetailRafaksiReport;
+use App\Exports\DetailPwpReport;
 use App\Models\Category;
-use App\Models\Rafaksi;
+use App\Models\Pwp;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Models\Toko;
@@ -15,41 +15,20 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
-class RafaksiController extends Controller
+class PwpController extends Controller
 {
-    //
-    // public function index()
-    // {
-    //     $rafaksiGroups = Rafaksi::selectRaw('
-    //             store,  
-    //             MAX(YEAR(periode_akhir)) as year, -- Mengambil tahun terbaru dalam grup
-    //             MAX(MONTH(periode_akhir)) as month, -- Mengambil bulan terbaru dalam grup
-    //             YEAR(periode_bulan) as year_kerja, 
-    //             MONTH(periode_bulan) as month_kerja, 
-    //             COUNT(*) as total_data, 
-    //             SUM(nominal) as total_nominal
-    //         ')
-    //         ->groupBy('store', 'year_kerja', 'month_kerja')
-    //         ->orderBy('year_kerja', 'asc')
-    //         ->orderBy('month_kerja', 'asc')
-    //         ->customPaginate();
-
-    //     return view('rafaksi.index', compact('rafaksiGroups'));
-    // }
-
-
     public function index(Request $request)
     {
         // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
         $suppliers = SupplierRafaksi::all();
 
         // 2. Siapkan Query Dasar
-        $query = Rafaksi::selectRaw('
+        $query = Pwp::selectRaw('
                 MAX(YEAR(periode_akhir)) as year,
                 MAX(MONTH(periode_akhir)) as month,
-                YEAR(periode_bulan) as year_kerja, 
-                MONTH(periode_bulan) as month_kerja, 
-                COUNT(*) as total_data, 
+                YEAR(periode_bulan) as year_kerja,
+                MONTH(periode_bulan) as month_kerja,
+                COUNT(*) as total_data,
                 SUM(nominal) as total_nominal
             ');
 
@@ -57,11 +36,11 @@ class RafaksiController extends Controller
         if ($request->filled('supplier_code')) {
             $query->where('supplier_code', $request->supplier_code);
         }
-        
+
         if ($request->filled('start_date')) {
             $query->where('periode_awal', '>=', $request->start_date);
         }
-        
+
         if ($request->filled('end_date')) {
             $query->where('periode_akhir', '<=', $request->end_date);
         }
@@ -79,29 +58,15 @@ class RafaksiController extends Controller
         }
 
         // 4. Eksekusi Query menggunakan fungsi SQL asli di dalam groupBy dan orderBy
-        $rafaksiGroups = $query->groupByRaw('YEAR(periode_bulan), MONTH(periode_bulan)') 
+        $pwpGroups = $query->groupByRaw('YEAR(periode_bulan), MONTH(periode_bulan)')
                         ->orderByRaw('YEAR(periode_bulan) ASC, MONTH(periode_bulan) ASC')
                         ->customPaginate();
 
         // 5. Appends Request (SANGAT PENTING!)
-        // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
-        $rafaksiGroups->appends($request->all());
+        $pwpGroups->appends($request->all());
 
-        return view('rafaksi.index', compact('rafaksiGroups', 'suppliers'));
+        return view('pwp.index', compact('pwpGroups', 'suppliers'));
     }
-
-    // public function showMonth($year, $month)
-    // {
-    //     $rafaksis = Rafaksi::with(['tokos'])
-    //         ->whereYear('periode_bulan', $year)
-    //         ->whereMonth('periode_bulan', $month)
-    //         ->orderBy('periode_akhir', 'desc') // Urutkan dari tanggal terbaru di bulan tersebut
-    //         ->customPaginate(); 
-
-    //     $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
-
-    //     return view('rafaksi.show_month', compact('rafaksis', 'periodeTitle', 'year', 'month'));
-    // }
 
     public function showMonth(Request $request, $year, $month)
     {
@@ -109,10 +74,10 @@ class RafaksiController extends Controller
         $suppliers = SupplierRafaksi::all();
 
         // 2. Siapkan Query Builder Dasar (JANGAN panggil customPaginate di sini)
-        $query = Rafaksi::with(['tokos'])
+        $query = Pwp::with(['tokos'])
             ->whereYear('periode_bulan', $year)
             ->whereMonth('periode_bulan', $month)
-            ->orderBy('periode_akhir', 'desc'); 
+            ->orderBy('periode_akhir', 'desc');
 
         $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
 
@@ -120,11 +85,11 @@ class RafaksiController extends Controller
         if ($request->filled('supplier_code')) {
             $query->where('supplier_code', $request->supplier_code);
         }
-        
+
         if ($request->filled('start_date')) {
             $query->where('periode_awal', '>=', $request->start_date);
         }
-        
+
         if ($request->filled('end_date')) {
             $query->where('periode_akhir', '<=', $request->end_date);
         }
@@ -142,20 +107,19 @@ class RafaksiController extends Controller
         }
 
         // 4. Eksekusi Query dengan memanggil Pagination di bagian akhir
-        $rafaksis = $query->customPaginate();
+        $pwps = $query->customPaginate();
 
         // 5. Appends Request (SANGAT PENTING!)
-        // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
-        $rafaksis->appends($request->all());
+        $pwps->appends($request->all());
 
-        return view('rafaksi.show_month', compact('rafaksis', 'periodeTitle', 'year', 'month', 'suppliers'));
+        return view('pwp.show_month', compact('pwps', 'periodeTitle', 'year', 'month', 'suppliers'));
     }
 
     public function create(){
         $supplierRafaksi = SupplierRafaksi::all();
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
         $categories = Category::all();
-        return view('rafaksi.create', compact('supplierRafaksi', 'regions', 'categories'));
+        return view('pwp.create', compact('supplierRafaksi', 'regions', 'categories'));
     }
 
     public function store(Request $request){
@@ -187,7 +151,7 @@ class RafaksiController extends Controller
             $month = $periode->format('m');
             $year = $periode->format('Y');
 
-            $maxSeq = Rafaksi::where('no_raf', 'like', "%/{$year}")
+            $maxSeq = Pwp::where('no_raf', 'like', "%/{$year}")
                 ->max('raf_sequence');
 
             $nextSeq = $maxSeq ? $maxSeq + 1 : 1;
@@ -197,40 +161,40 @@ class RafaksiController extends Controller
             if (empty($data['raf_sequence'])) {
                 $data['raf_sequence'] = $nextSeq;
             }
-            $data['no_raf'] = "RAF/NF/{$padded}/{$month}/{$year}";
+            $data['no_raf'] = "RAFPWP/NF/{$padded}/{$month}/{$year}";
         }
 
-        $rafaksi = Rafaksi::create($data);
+        $pwp = Pwp::create($data);
         // ensure user can only assign tokos they have access to
         $tokoIds = $request->input('toko_id', []);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowed = auth()->user()->accessibleTokoIds()->toArray();
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
-        $rafaksi->tokos()->sync($tokoIds);
+        $pwp->tokos()->sync($tokoIds);
 
         ActivityLogger::logCreate(
-            $rafaksi,
-            $rafaksi->id,
+            $pwp,
+            $pwp->id,
             $request->only(['supplier_code', 'supplier_name', 'periode_awal', 'periode_akhir', 'no_raf', 'nominal', 'toko_id']),
-            "Created Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal}"
+            "Created Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal}"
         );
 
-        return redirect()->route('rafaksi.index')->with('success', 'Data Rafaksi berhasil disimpan.');
+        return redirect()->route('pwp.index')->with('success', 'Data PWP berhasil disimpan.');
     }
 
-    public function edit(Request $request, Rafaksi $rafaksi) {
-        $year = Carbon::parse($rafaksi->periode_bulan)->year;
-        $month = Carbon::parse($rafaksi->periode_bulan)->month;
-        $tokos = Toko::all(); // Sesuaikan nama model Toko Anda
+    public function edit(Request $request, Pwp $pwp) {
+        $year = Carbon::parse($pwp->periode_bulan)->year;
+        $month = Carbon::parse($pwp->periode_bulan)->month;
+        $tokos = Toko::all();
         $supplierRafaksi = SupplierRafaksi::all();
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
         $categories = Category::all();
 
-        return view('rafaksi.edit', compact('rafaksi', 'tokos', 'categories', 'supplierRafaksi', 'regions', 'year', 'month'));
+        return view('pwp.edit', compact('pwp', 'tokos', 'categories', 'supplierRafaksi', 'regions', 'year', 'month'));
     }
 
-    public function update(Request $request, Rafaksi $rafaksi){
+    public function update(Request $request, Pwp $pwp){
         $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
@@ -247,44 +211,44 @@ class RafaksiController extends Controller
             'category_id' => 'exists:categories,id',
         ]);
 
-        $rafaksi->update($request->except('toko_id'));
+        $pwp->update($request->except('toko_id'));
         $tokoIds = $request->input('toko_id', []);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowed = auth()->user()->accessibleTokoIds()->toArray();
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
-        $rafaksi->tokos()->sync($tokoIds);
-        
+        $pwp->tokos()->sync($tokoIds);
+
         ActivityLogger::logUpdate(
-            $rafaksi,
-            $rafaksi->id,
+            $pwp,
+            $pwp->id,
             $request->only(['supplier_code', 'supplier_name', 'periode_awal', 'periode_akhir', 'no_raf', 'nominal', 'toko_id']),
-            "Updated Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal}"
+            "Updated Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal}"
         );
 
-        return redirect()->route('rafaksi.index')->with('success', 'Data Rafaksi berhasil diperbarui.');
+        return redirect()->route('pwp.index')->with('success', 'Data PWP berhasil diperbarui.');
     }
 
-    public function destroy(Rafaksi $rafaksi){
-        $rafaksi->delete();
+    public function destroy(Pwp $pwp){
+        $pwp->delete();
 
         ActivityLogger::logDelete(
-            $rafaksi,
-            $rafaksi->id,
-            ['supplier_name' => $rafaksi->supplier_name, 'nominal' => $rafaksi->nominal],
-            "Deleted Master Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal}"
+            $pwp,
+            $pwp->id,
+            ['supplier_name' => $pwp->supplier_name, 'nominal' => $pwp->nominal],
+            "Deleted Master Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal}"
         );
 
-        return redirect()->route('rafaksi.index')->with('success', 'Data Rafaksi berhasil dihapus.');
+        return redirect()->route('pwp.index')->with('success', 'Data PWP berhasil dihapus.');
     }
 
-    public function show(Rafaksi $rafaksi){
-        return view('rafaksi.show', compact('rafaksi'));
+    public function show(Pwp $pwp){
+        return view('pwp.show', compact('pwp'));
     }
 
     public function exportCsv(Request $request)
     {
-        $fileName = 'export_rafaksi.csv';
+        $fileName = 'export_pwp.csv';
         $headers = [
             "Content-type"        => "text/csv",
             "Content-Disposition" => "attachment; filename=$fileName",
@@ -300,11 +264,11 @@ class RafaksiController extends Controller
         if ($request->has('year') && $request->has('month')) {
             $year = $request->year;
             $month = $request->month;
-            $fileName = "detail_rafaksi_{$year}_{$month}.csv";
-            
+            $fileName = "detail_pwp_{$year}_{$month}.csv";
+
             $columns = ['No', 'No. RAF', 'Kode Supplier', 'Nama Supplier', 'Region', 'Store', 'Periode Awal', 'Periode Akhir', 'Nominal'];
-            
-            $query = Rafaksi::with(['tokos'])
+
+            $query = Pwp::with(['tokos'])
                 ->whereYear('periode_bulan', $year)
                 ->whereMonth('periode_bulan', $month)
                 ->orderBy('periode_awal', 'asc')
@@ -321,9 +285,9 @@ class RafaksiController extends Controller
                 }
             }
 
-            $rafaksis = $query->get();
+            $pwps = $query->get();
 
-            foreach ($rafaksis as $index => $row) {
+            foreach ($pwps as $index => $row) {
                 $data[] = [
                     $index + 1,
                     $row->no_raf,
@@ -336,7 +300,7 @@ class RafaksiController extends Controller
                     $row->nominal
                 ];
             }
-        } 
+        }
         // MODE 2: Jika tidak ada parameter (Export Summary dari Index)
         else {
             $year = $this->year ?? date('Y');
@@ -345,12 +309,12 @@ class RafaksiController extends Controller
             $allCategories = Category::all();
 
             // 1. Bangun Subquery Bulan Statis
-            $bulanSubquery = "(SELECT 1 AS id_bulan, 'JANUARI' AS nama_bulan 
-                                UNION ALL SELECT 2, 'FEBRUARI' UNION ALL SELECT 3, 'MARET' 
-                                UNION ALL SELECT 4, 'APRIL' UNION ALL SELECT 5, 'MEI' 
-                                UNION ALL SELECT 6, 'JUNI' UNION ALL SELECT 7, 'JULI' 
-                                UNION ALL SELECT 8, 'AGUSTUS' UNION ALL SELECT 9, 'SEPTEMBER' 
-                                UNION ALL SELECT 10, 'OKTOBER' UNION ALL SELECT 11, 'NOVEMBER' 
+            $bulanSubquery = "(SELECT 1 AS id_bulan, 'JANUARI' AS nama_bulan
+                                UNION ALL SELECT 2, 'FEBRUARI' UNION ALL SELECT 3, 'MARET'
+                                UNION ALL SELECT 4, 'APRIL' UNION ALL SELECT 5, 'MEI'
+                                UNION ALL SELECT 6, 'JUNI' UNION ALL SELECT 7, 'JULI'
+                                UNION ALL SELECT 8, 'AGUSTUS' UNION ALL SELECT 9, 'SEPTEMBER'
+                                UNION ALL SELECT 10, 'OKTOBER' UNION ALL SELECT 11, 'NOVEMBER'
                                 UNION ALL SELECT 12, 'DESEMBER') AS m_bulan";
 
             $finalData = collect();
@@ -368,24 +332,24 @@ class RafaksiController extends Controller
             foreach ($allStores as $store) {
                 $aliasToko = str_replace('GL ', '', $store->nama_toko);
                 // Tambahkan filter category_id langsung di dalam CASE
-                $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' AND r.category_id = {$category->id} THEN r.nominal ELSE 0 END) AS `{$aliasToko}`";
+                $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' AND p.category_id = {$category->id} THEN p.nominal ELSE 0 END) AS `{$aliasToko}`";
             }
             // Filter total juga harus spesifik kategori
-            $selectFields[] = "SUM(CASE WHEN r.category_id = {$category->id} THEN IFNULL(r.nominal, 0) ELSE 0 END) AS TOTAL";
+            $selectFields[] = "SUM(CASE WHEN p.category_id = {$category->id} THEN IFNULL(p.nominal, 0) ELSE 0 END) AS TOTAL";
 
             // 2. Query Utama
             $categoryData = DB::table(DB::raw($bulanSubquery))
-                ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM rafaksis WHERE periode_bulan IS NOT NULL) AS m_tahun"))
-                // JOIN transaksi (r) dengan kondisi filter kategori sudah dilakukan di sini
-                ->leftJoin('rafaksis as r', function($join) use ($category) {
-                    $join->on(DB::raw('MONTH(r.periode_bulan)'), '=', 'm_bulan.id_bulan')
-                        ->on(DB::raw('YEAR(r.periode_bulan)'), '=', 'm_tahun.tahun')
-                        ->where('r.category_id', '=', $category->id); // <--- FILTER KATEGORI HARUS DI SINI
+                ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM pwps WHERE periode_bulan IS NOT NULL) AS m_tahun"))
+                // JOIN transaksi (p) dengan kondisi filter kategori sudah dilakukan di sini
+                ->leftJoin('pwps as p', function($join) use ($category) {
+                    $join->on(DB::raw('MONTH(p.periode_bulan)'), '=', 'm_bulan.id_bulan')
+                        ->on(DB::raw('YEAR(p.periode_bulan)'), '=', 'm_tahun.tahun')
+                        ->where('p.category_id', '=', $category->id); // <--- FILTER KATEGORI HARUS DI SINI
                 })
-                ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')
-                ->leftJoin('tokos as tk', 'rt.toko_id', '=', 'tk.id')
+                ->leftJoin('pwp_toko as pt', 'p.id', '=', 'pt.pwp_id')
+                ->leftJoin('tokos as tk', 'pt.toko_id', '=', 'tk.id')
                 ->selectRaw(implode(', ', $selectFields))
-                ->where('m_tahun.tahun', $year) 
+                ->where('m_tahun.tahun', $year)
                 ->groupBy('m_tahun.tahun', 'm_bulan.id_bulan', 'm_bulan.nama_bulan')
                 ->orderBy('m_bulan.id_bulan', 'ASC')
                 ->get();
@@ -400,7 +364,7 @@ class RafaksiController extends Controller
                     'Periode'      => "--- AKHIR REKAP {$category->nama_kategori} --- \n",
                     'TOTAL'        => ''
                 ];
-                
+
                 foreach ($allStores as $store) {
                     $aliasToko = str_replace('GL ', '', $store->nama_toko);
                     $pembatasArray[$aliasToko] = '';
@@ -431,13 +395,10 @@ class RafaksiController extends Controller
 
         // Proses Generate File CSV
         $headers["Content-Disposition"] = "attachment; filename=$fileName";
-        
+
         $callback = function() use($columns, $data) {
             $file = fopen('php://output', 'w');
-            
-            // Opsional: Tambahkan separator untuk mengenali format Excel Indonesia (titik koma)
-            // fputs($file, $bom =(chr(0xEF) . chr(0xBB) . chr(0xBF))); 
-            
+
             fputcsv($file, $columns);
 
             foreach ($data as $item) {
@@ -458,15 +419,15 @@ class RafaksiController extends Controller
 
         // Tentukan nama file secara dinamis berdasarkan parameter
         if ($year && $month) {
-            $fileName = 'Detail_Rafaksi_Report_'. $year . '_' . $month . '.xlsx';
+            $fileName = 'Detail_Pwp_Report_'. $year . '_' . $month . '.xlsx';
         } elseif ($year) {
-            $fileName = 'Rekap_Rafaksi_Report_'. $year . '.xlsx'; 
+            $fileName = 'Rekap_Pwp_Report_'. $year . '.xlsx';
         } else {
-            $fileName = 'Rekap_Rafaksi_Report_All.xlsx';
+            $fileName = 'Rekap_Pwp_Report_All.xlsx';
         }
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
-        return Excel::download(new DetailRafaksiReport($year, $month, $stores), $fileName);
+        return Excel::download(new DetailPwpReport($year, $month, $stores), $fileName);
     }
 
     public function printPdf(Request $request){
@@ -475,7 +436,7 @@ class RafaksiController extends Controller
         $month = $request->month;
 
         if($year && $month){
-            $query = Rafaksi::with(['tokos','categories'])
+            $query = Pwp::with(['tokos','categories'])
                     ->whereYear('periode_bulan', $year)
                     ->whereMonth('periode_bulan', $month)
                     ->orderBy('category_id')
@@ -494,8 +455,8 @@ class RafaksiController extends Controller
             }
 
             $data = $query->get();
-                    $isDetail = true;
-                    $stores = null;
+            $isDetail = true;
+            $stores = null;
         }
         else {
             $year = $this->year ?? date('Y');
@@ -504,12 +465,12 @@ class RafaksiController extends Controller
             $allCategories = Category::all();
 
             // 1. Bangun Subquery Bulan Statis
-            $bulanSubquery = "(SELECT 1 AS id_bulan, 'JANUARI' AS nama_bulan 
-                                UNION ALL SELECT 2, 'FEBRUARI' UNION ALL SELECT 3, 'MARET' 
-                                UNION ALL SELECT 4, 'APRIL' UNION ALL SELECT 5, 'MEI' 
-                                UNION ALL SELECT 6, 'JUNI' UNION ALL SELECT 7, 'JULI' 
-                                UNION ALL SELECT 8, 'AGUSTUS' UNION ALL SELECT 9, 'SEPTEMBER' 
-                                UNION ALL SELECT 10, 'OKTOBER' UNION ALL SELECT 11, 'NOVEMBER' 
+            $bulanSubquery = "(SELECT 1 AS id_bulan, 'JANUARI' AS nama_bulan
+                                UNION ALL SELECT 2, 'FEBRUARI' UNION ALL SELECT 3, 'MARET'
+                                UNION ALL SELECT 4, 'APRIL' UNION ALL SELECT 5, 'MEI'
+                                UNION ALL SELECT 6, 'JUNI' UNION ALL SELECT 7, 'JULI'
+                                UNION ALL SELECT 8, 'AGUSTUS' UNION ALL SELECT 9, 'SEPTEMBER'
+                                UNION ALL SELECT 10, 'OKTOBER' UNION ALL SELECT 11, 'NOVEMBER'
                                 UNION ALL SELECT 12, 'DESEMBER') AS m_bulan";
 
             $finalData = collect();
@@ -525,24 +486,24 @@ class RafaksiController extends Controller
 
                 foreach ($allStores as $store) {
                     $aliasToko = str_replace('GL ', '', $store->nama_toko);
-                    $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' THEN r.nominal ELSE 0 END) AS `{$aliasToko}`";
+                    $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' THEN p.nominal ELSE 0 END) AS `{$aliasToko}`";
                 }
-                $selectFields[] = "SUM(IFNULL(r.nominal, 0)) AS TOTAL";
+                $selectFields[] = "SUM(IFNULL(p.nominal, 0)) AS TOTAL";
 
                 $categoryData = DB::table(DB::raw($bulanSubquery))
-                    ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM rafaksis WHERE periode_bulan IS NOT NULL) AS m_tahun"))
-                    ->leftJoin('rafaksis as r', function($join) {
-                        $join->on(DB::raw('MONTH(r.periode_bulan)'), '=', 'm_bulan.id_bulan')
-                            ->on(DB::raw('YEAR(r.periode_bulan)'), '=', 'm_tahun.tahun');
+                    ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM pwps WHERE periode_bulan IS NOT NULL) AS m_tahun"))
+                    ->leftJoin('pwps as p', function($join) {
+                        $join->on(DB::raw('MONTH(p.periode_bulan)'), '=', 'm_bulan.id_bulan')
+                            ->on(DB::raw('YEAR(p.periode_bulan)'), '=', 'm_tahun.tahun');
                     })
-                    ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')
-                    ->leftJoin('tokos as tk', 'rt.toko_id', '=', 'tk.id')
+                    ->leftJoin('pwp_toko as pt', 'p.id', '=', 'pt.pwp_id')
+                    ->leftJoin('tokos as tk', 'pt.toko_id', '=', 'tk.id')
                     ->leftJoin('categories as ct', function($join) use ($category) {
-                        $join->on('r.category_id', '=', 'ct.id')
+                        $join->on('p.category_id', '=', 'ct.id')
                             ->where('ct.nama_kategori', '=', $category->nama_kategori);
                     })
                     ->selectRaw(implode(', ', $selectFields))
-                    ->where('m_tahun.tahun', $year) 
+                    ->where('m_tahun.tahun', $year)
                     ->groupBy('m_tahun.tahun', 'm_bulan.id_bulan', 'm_bulan.nama_bulan')
                     ->orderBy('m_bulan.id_bulan', 'ASC')
                     ->get();
@@ -557,7 +518,7 @@ class RafaksiController extends Controller
                     'Periode'      => "--- AKHIR REKAP {$category->nama_kategori} ---",
                     'TOTAL'        => 0
                 ];
-                
+
                 foreach ($allStores as $store) {
                     $aliasToko = str_replace('GL ', '', $store->nama_toko);
                     $pembatasArray[$aliasToko] = 0;
@@ -587,16 +548,16 @@ class RafaksiController extends Controller
         }
 
         // Load view
-        $pdf = Pdf::loadView('rafaksi.exports_excel', compact('data', 'isDetail', 'year', 'month', 'stores'));
+        $pdf = Pdf::loadView('pwp.exports_excel', compact('data', 'isDetail', 'year', 'month', 'stores'));
 
         if($year && $month){
-            return $pdf->setPaper('A4', 'landscape')->stream('rafaksi-report' . $year . '-' . $month .'.pdf');
+            return $pdf->setPaper('A4', 'landscape')->stream('pwp-report' . $year . '-' . $month .'.pdf');
         } else{
-            return $pdf->setPaper('A4', 'landscape')->stream('rafaksi-report-all.pdf');
+            return $pdf->setPaper('A4', 'landscape')->stream('pwp-report-all.pdf');
         }
     }
 
-    public function renew(Request $request, Rafaksi $rafaksi)
+    public function renew(Request $request, Pwp $pwp)
     {
         // 1. Validasi dinamis dengan membandingkan langsung ke data awal di database
         $request->validate([
@@ -604,17 +565,16 @@ class RafaksiController extends Controller
         ]);
 
         // 2. Lakukan update data terlebih dahulu ke database
-        $rafaksi->update($request->all());
+        $pwp->update($request->all());
 
         // 3. AMBIL DATA SETELAH UPDATE (Agar mendapatkan tahun & bulan yang baru diinput)
-        // Gunakan ->format('m') agar bulan tetap bernilai 2 digit (01-12) sesuai rute Laravel umum
-        $year = Carbon::parse($rafaksi->periode_bulan)->format('Y');
-        $month = Carbon::parse($rafaksi->periode_bulan)->format('m');
+        $year = Carbon::parse($pwp->periode_bulan)->format('Y');
+        $month = Carbon::parse($pwp->periode_bulan)->format('m');
 
         // 4. Redirect aman ke halaman indeks bulan baru
         return redirect()
-            ->route('rafaksi.show_month', ['year' => $year, 'month' => $month])
-            ->with('success', 'Rafaksi dengan ID: ' . $rafaksi->id . ' berhasil diupdate.');
+            ->route('pwp.show_month', ['year' => $year, 'month' => $month])
+            ->with('success', 'Pwp dengan ID: ' . $pwp->id . ' berhasil diupdate.');
     }
 
     public function renewIndex(Request $request){
@@ -624,7 +584,7 @@ class RafaksiController extends Controller
             abort(404, 'Parameter ID tidak ditemukan.');
         }
 
-        $rafaksi = Rafaksi::findOrFail($id);
-        return view('rafaksi.renew_index', compact('rafaksi'));
+        $pwp = Pwp::findOrFail($id);
+        return view('pwp.renew_index', compact('pwp'));
     }
 }

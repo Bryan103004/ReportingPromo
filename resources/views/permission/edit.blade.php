@@ -23,6 +23,20 @@
             <input type="text" name="name" id="name" value="{{ old('name', $permission->name) }}" required class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         </div>
 
+        <div>
+            <label for="label" class="mb-1.5 block text-sm font-medium text-gray-700">Nama Label <span class="font-bold text-red-600">*</span></label>
+            <input
+                type="text"
+                name="label"
+                id="label"
+                value="{{ old('label') }}"
+                required
+                class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                placeholder="Contoh: permissions"
+            >
+            <p class="mt-1 text-xs text-gray-500">Gunakan format konsisten, misalnya: `users`, `roles`, `others`.</p>
+        </div>
+
         <div class="flex items-center gap-2 pt-1">
             <button type="submit" class="inline-flex items-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700">Update</button>
             <a href="{{ route('permission.index') }}" class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium hover:bg-gray-100">Kembali</a>

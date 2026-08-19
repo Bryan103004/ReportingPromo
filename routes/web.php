@@ -7,6 +7,7 @@ use App\Http\Controllers\LocController;
 use App\Http\Controllers\NotificationRecipientController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PwpController;
 use App\Http\Controllers\RafaksiController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\ReportController;
@@ -78,6 +79,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->name('rafaksi.export.excel');
     Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');
     Route::resource('rafaksi', RafaksiController::class);
+
+    Route::get('/pwp/renew', [PwpController::class, 'renewIndex'])->name('pwp.renew.index');
+    Route::put('/pwp/renew/{pwp}', [PwpController::class, 'renew'])->name('pwp.renew');
+    Route::get('/pwp/print', [PwpController::class, 'printPdf'])->name('pwp.print');
+    Route::get('/pwp/rekap/{year}/{month}', [PwpController::class, 'showMonth'])->name('pwp.show_month');
+    Route::get('/pwp/export_excel', [PwpController::class, 'exportExcel'])->name('pwp.export.excel');
+    Route::get('/pwp/export_csv', [PwpController::class, 'exportCSV'])->name('pwp.export');
+    Route::resource('pwp', PwpController::class);
 
     Route::get('/loc/renew', [LocController::class, 'renewIndex'])->name('loc.renew.index');
     Route::put('/loc/renew/{loc}', [LocController::class, 'renew'])->name('loc.renew');

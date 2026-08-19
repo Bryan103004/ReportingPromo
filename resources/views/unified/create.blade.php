@@ -1,8 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <div class="mx-auto max-w-4xl px-4 py-8">
-    
+
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {{-- Header Form --}}
         <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 flex items-center justify-between">
@@ -105,17 +107,18 @@
                 <div class="md:col-span-2 text-lg font-semibold text-gray-700 border-b pb-2 mt-4">Pemilihan Toko (Store)</div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter Berdasarkan Region</label>
-                    <div class="flex items-center gap-4">
-                        <select id="region_filter" onchange="fetchTokos(this.value)" class="block w-full md:w-1/2 rounded-md border-gray-300 shadow-sm">
-                        <option value="">-- Pilih Region untuk memunculkan Toko --</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter Berdasarkan Region (bisa pilih lebih dari satu)</label>
+                    <div class="flex flex-col md:flex-row md:items-center gap-4">
+                        <select id="region_filter" multiple class="tom-select block w-full md:w-1/2 rounded-md border-gray-300 shadow-sm">
                         @foreach($regions as $region)
                             <option value="{{ $region->id }}">{{ $region->nama_region }}</option>
                         @endforeach
                     </select>
-                        <label class="flex items-center text-sm text-slate-500">
-                            <input type="checkbox" id="local_pt_filter" class="h-4 w-4 mr-2" /> Hanya PT. MITRA BELANJA ANDA
-                        </label>
+                        <select id="pt_filter_mode" class="block w-full md:w-auto rounded-md border-gray-300 shadow-sm text-sm">
+                            <option value="all">Semua Toko</option>
+                            <option value="include">Hanya PT. MITRA BELANJA ANDA</option>
+                            <option value="exclude">Selain PT. MITRA BELANJA ANDA</option>
+                        </select>
                     </div>
                 </div>
 
@@ -278,21 +281,62 @@
         .finally(()=>{ btn.innerHTML = 'Simpan'; btn.disabled = false; });
     }
 
-    function fetchTokos(regionId){
+    // Remember which tokos the user has checked so switching/adding regions doesn't lose selections.
+    window.checkedTokoIds = new Set();
+
+    function rememberCheckedTokos(){
+        document.querySelectorAll('#toko_container input[type=checkbox]').forEach(cb => {
+            if (cb.checked) window.checkedTokoIds.add(cb.value);
+            else window.checkedTokoIds.delete(cb.value);
+        });
+    }
+
+    async function fetchTokos(){
         const container = document.getElementById('toko_container');
+        rememberCheckedTokos();
+
+        const regionSelect = document.getElementById('region_filter');
+        const regionIds = Array.from(regionSelect.selectedOptions).map(o => o.value);
+        const regionNames = Array.from(regionSelect.selectedOptions).map(o => o.text);
+        document.getElementById('hidden_store_name').value = regionNames.length ? regionNames.join(', ') : '-';
+
+        if (!regionIds.length) {
+            container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Silakan pilih region terlebih dahulu.</div>';
+            return;
+        }
+
         container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Memuat...</div>';
-        let url = '/get-tokos/' + regionId;
-        const onlyPt = document.getElementById('local_pt_filter').checked;
-        if (onlyPt) url += '?name_pt=' + encodeURIComponent('PT. MITRA BELANJA ANDA');
-        fetch(url).then(r => r.json()).then(data => {
-            if(!data.length){ container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Tidak ada toko di region ini.</div>'; return; }
+
+        const ptMode = document.getElementById('pt_filter_mode').value;
+        const ptParam = ptMode !== 'all'
+            ? '&name_pt=' + encodeURIComponent('PT. MITRA BELANJA ANDA') + '&name_pt_mode=' + ptMode
+            : '';
+
+        try {
+            const results = await Promise.all(regionIds.map(id =>
+                fetch('/get-tokos/' + id + '?_=1' + ptParam).then(r => r.json())
+            ));
+
+            const seen = new Map();
+            results.flat().forEach(t => { seen.set(t.id, t); });
+            const data = Array.from(seen.values());
+
+            if (!data.length) {
+                container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Tidak ada toko untuk region/filter ini.</div>';
+                return;
+            }
+
             container.innerHTML = '';
             data.forEach(t => {
                 const id = 'toko_cb_' + t.id;
-                const html = `<label class="flex items-center gap-2 p-2 bg-white rounded shadow-sm border"><input type="checkbox" name="toko_id[]" value="${t.id}" id="${id}" /> <span class="text-sm">${t.nama_toko}</span></label>`;
+                const checked = window.checkedTokoIds.has(String(t.id)) ? 'checked' : '';
+                const html = `<label class="flex items-center gap-2 p-2 bg-white rounded shadow-sm border"><input type="checkbox" name="toko_id[]" value="${t.id}" id="${id}" ${checked} /> <span class="text-sm">${t.nama_toko}</span></label>`;
                 container.insertAdjacentHTML('beforeend', html);
             });
-        }).catch(e => { container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Gagal memuat toko.</div>'; console.error(e); });
+        } catch (e) {
+            container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Gagal memuat toko.</div>';
+            console.error(e);
+        }
     }
 
     // Auto-generate no_raf when category or periode_bulan changes
@@ -316,18 +360,27 @@
     }
 
     categoryEl.addEventListener('change', function(){
-        // switch form action
+        // switch form action to the table that matches the chosen category
         const form = document.getElementById('unifiedForm');
         if (this.value === 'JSM') form.action = '{{ url('/jsm') }}';
+        else if (this.value === 'PWP') form.action = '{{ url('/pwp') }}';
         else form.action = '{{ url('/rafaksi') }}';
         refreshNoRaf();
     });
 
     periodeBulanEl.addEventListener('change', refreshNoRaf);
-    document.getElementById('local_pt_filter').addEventListener('change', function(){
-        const region = document.getElementById('region_filter').value;
-        if(region) fetchTokos(region);
+
+    document.addEventListener('DOMContentLoaded', function(){
+        new TomSelect('#region_filter', {
+            plugins: ['remove_button'],
+            create: false,
+            maxItems: null,
+            placeholder: '-- Pilih Region (bisa lebih dari satu) --',
+            onChange: fetchTokos,
+        });
     });
+
+    document.getElementById('pt_filter_mode').addEventListener('change', fetchTokos);
 
     window.addEventListener('load', function(){
         refreshNoRaf();

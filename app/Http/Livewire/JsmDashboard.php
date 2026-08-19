@@ -10,6 +10,7 @@ class JsmDashboard extends Component
 {
     use WithPagination;
     public $tokoId = null;
+    public $perPage = 10;
 
     protected $listeners = ['filterByToko', 'filterByPt'];
 
@@ -27,6 +28,11 @@ class JsmDashboard extends Component
         $this->resetPage();
     }
 
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
+
     public function placeholder()
     {
         return <<<'HTML'
@@ -39,12 +45,12 @@ class JsmDashboard extends Component
 
     public function paginationView()
     {
-        return 'vendor.pagination.tailwind'; // Sesuaikan dengan nama file view pagination kamu sebelumnya
+        return 'vendor.pagination.livewire-tailwind';
     }
-    
+
     public function render()
-    {   
-        $data = DB::table('jsm as j')
+    {
+        $query = DB::table('jsm as j')
             ->join('jsm_toko as jt', 'j.id', '=', 'jt.jsm_id')
             ->leftJoin('tokos as tk', 'jt.toko_id', '=', 'tk.id')
             ->leftJoin('regions as rg', 'tk.region_id', '=', 'rg.id')
@@ -81,8 +87,10 @@ class JsmDashboard extends Component
                     $q->whereIn('jt.toko_id', $allowed);
                 }
             })
-            ->orderBy('j.periode_bulan', 'asc') 
-            ->customPaginate();
+            ->orderBy('j.periode_bulan', 'asc');
+
+        $perPage = $this->perPage == -1 ? max((clone $query)->count(), 1) : $this->perPage;
+        $data = $query->paginate($perPage);
 
         return view('livewire.jsm-dashboard', compact('data'));
     }

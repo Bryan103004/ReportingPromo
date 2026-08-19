@@ -5,21 +5,18 @@
     {{-- Bagian Header Tabel --}}
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Rekapitulasi Loc</h1>
-            <p class="text-md text-black font-medium mt-1">Daftar total transaksi dan nominal loc yang dikelompokkan per bulan.</p>
+            <h1 class="text-2xl font-bold text-gray-900">Rekapitulasi PWP</h1>
+            <p class="text-md font-medium mt-1">Daftar total transaksi dan nominal PWP yang dikelompokkan per bulan.</p>
         </div>
-        
-        {{-- Tombol Tambah Loc Baru --}}
-        <!-- <a href="{{ route('loc.create') }}" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
+
+        {{-- Tombol Tambah PWP Baru --}}
+        <a href="{{ route('pwp.create') }}" class="inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
             <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-            Tambah Loc Baru
-        </a> -->
+            Tambah PWP Baru
+        </a>
     </div>
 
     <div class="flex ms-auto m-4 gap-2">
-        <!-- <a href="{{ route('loc.export') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
-            Export Rekap CSV
-        </a> -->
         <button type="button" onclick="openExportModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
             Export Rekap XLS
         </button>
@@ -28,7 +25,7 @@
         <div id="exportModal" class="fixed inset-0 z-50 hidden bg-gray-100 bg-opacity-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
                 <h3 class="text-lg font-bold mb-4">Pilih Tahun Export</h3>
-                <form action="{{ route('loc.export.excel') }}" method="GET">
+                <form action="{{ route('pwp.export.excel') }}" method="GET">
                     <select name="year" class="w-full border-gray-300 rounded-md mb-4" required>
                         @for ($y = date('Y'); $y >= 2020; $y--)
                             <option value="{{ $y }}">{{ $y }}</option>
@@ -42,18 +39,17 @@
             </div>
         </div>
 
-        <a href="{{ route('loc.print') }}" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+        <a href="{{ route('pwp.print') }}" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
             Print
         </a>
     </div>
 
-
     {{--  KOMPONEN FILTER --}}
 
     {{-- ===== SEARCH BAR ===== --}}
-    <x-search-bar 
-        placeholder="Masukkan user atau aksi..." 
-        tableId="locTable" 
+    <x-search-bar
+        placeholder="Masukkan user atau aksi..."
+        tableId="pwpTable"
     />
 
     <x-per-page/>
@@ -61,39 +57,33 @@
     {{-- Tabel Container (Card) --}}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="overflow-x-auto">
-            <table id="locTable" class="w-full text-left text-sm text-gray-600">
-                
+            <table id="pwpTable" class="w-full text-left text-sm text-gray-600">
+
                 {{-- Head Tabel --}}
                 <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500 tracking-wider">
                     <tr>
                         <th class="px-6 py-4 w-16 text-center">No</th>
-                        <th class="hidden px-6 py-4">Periode Loc</th>
+                        <th class="hidden px-6 py-4">Periode PWP</th>
                         <th class="px-6 py-4">Periode Bulan</th>
-                        <!-- <th class="px-6 py-4">Region</th> -->
                         <th class="px-6 py-4 text-center">Total Transaksi</th>
                         <th class="px-6 py-4 text-right">Total Nominal</th>
                         <th class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
-                
+
                 {{-- Body Tabel --}}
                 <tbody class="divide-y divide-gray-100">
-                    @forelse ($locGroups as $group)
+                    @forelse ($pwpGroups as $group)
                         <tr class="hover:bg-gray-50 transition-colors">
                             <td class="px-6 py-4 text-center font-medium text-gray-500">
                                 {{ $loop->iteration }}
                             </td>
                             <td class="hidden px-6 py-4 font-bold text-gray-800">
-                                {{-- Mengubah angka bulan & tahun menjadi teks (Contoh: "Mei 2026") --}}
                                 {{ \Carbon\Carbon::createFromDate($group->year, $group->month, 1)->translatedFormat('F Y') }}
                             </td>
                             <td class="px-6 py-4 font-bold text-gray-800">
-                                {{-- Mengubah angka bulan & tahun menjadi teks (Contoh: "Mei 2026") --}}
                                 {{ \Carbon\Carbon::createFromDate($group->year_kerja, $group->month_kerja, 1)->translatedFormat('F Y') }}
-                            </td>     
-                            <!-- <td class="px-6 py-4">
-                                {{ $group->store }}
-                            </td> -->
+                            </td>
                             <td class="px-6 py-4 text-center">
                                 <span class="bg-blue-50 text-blue-700 font-bold px-2.5 py-1 rounded-full text-xs">
                                     {{ $group->total_data }} Data
@@ -103,8 +93,7 @@
                                 Rp {{ number_format($group->total_nominal, 0, ',', '.') }}
                             </td>
                             <td class="px-6 py-4 text-center">
-                                {{-- Tombol menuju halaman detail per bulan --}}
-                                <a href="{{ route('loc.show_month', ['year' => $group->year_kerja, 'month' => $group->month_kerja]) }}" 
+                                <a href="{{ route('pwp.show_month', ['year' => $group->year_kerja, 'month' => $group->month_kerja]) }}"
                                    class="inline-flex items-center justify-center px-3 py-1.5 text-xs font-bold text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:text-blue-600 transition-colors">
                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                    Lihat Detail
@@ -116,21 +105,21 @@
                             <td colspan="5" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                                    <span class="font-medium text-gray-500">Belum ada data loc yang dicatat.</span>
+                                    <span class="font-medium text-gray-500">Belum ada data PWP yang dicatat.</span>
                                 </div>
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
-                
+
             </table>
         </div>
     </div>
 
     <div class="my-2">
-        {{ $locGroups->links() }}
+        {{ $pwpGroups->links() }}
     </div>
-    
+
 </div>
 
 <script>

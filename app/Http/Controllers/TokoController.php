@@ -91,10 +91,7 @@ class TokoController extends Controller
         $query = Toko::whereNotIn('status',['nonaktif'])
                     ->where('region_id', $region_id);
 
-        // Optional filter by nama_pt (e.g., ?name_pt=PT. MITRA BELANJA ANDA)
-        if ($namePt = request()->query('name_pt')) {
-            $query->where('nama_pt', $namePt);
-        }
+        $this->applyNamePtFilter($query, request());
 
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $ids = auth()->user()->accessibleTokoIds()->toArray();
@@ -112,9 +109,7 @@ class TokoController extends Controller
     {
         $query = Toko::whereNotIn('status',['nonaktif']);
 
-        if ($namePt = $request->query('name_pt')) {
-            $query->where('nama_pt', $namePt);
-        }
+        $this->applyNamePtFilter($query, $request);
 
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $ids = auth()->user()->accessibleTokoIds()->toArray();
@@ -126,5 +121,26 @@ class TokoController extends Controller
 
         $tokos = $query->get(['id', 'nama_toko']);
         return response()->json($tokos);
+    }
+
+    /**
+     * Applies the nama_pt filter to a toko query.
+     *
+     * ?name_pt=PT. MITRA BELANJA ANDA&name_pt_mode=include  -> only that PT (default mode when name_pt is set)
+     * ?name_pt=PT. MITRA BELANJA ANDA&name_pt_mode=exclude  -> everything except that PT (nulls included)
+     * no name_pt / mode=all                                  -> unfiltered
+     */
+    protected function applyNamePtFilter($query, Request $request): void
+    {
+        $namePt = $request->query('name_pt');
+        $mode = $request->query('name_pt_mode', $namePt ? 'include' : 'all');
+
+        if ($mode === 'exclude' && $namePt) {
+            $query->where(function ($q) use ($namePt) {
+                $q->where('nama_pt', '!=', $namePt)->orWhereNull('nama_pt');
+            });
+        } elseif ($mode === 'include' && $namePt) {
+            $query->where('nama_pt', $namePt);
+        }
     }
 }

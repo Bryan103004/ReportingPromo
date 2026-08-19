@@ -23,6 +23,10 @@ class Category extends Model
         return $this->hasMany(Loc::class);
     }
 
+    public function pwps(){
+        return $this->hasMany(Pwp::class);
+    }
+
     public function inbounds(){
         return $this->hasMany(Inbound::class);
     }

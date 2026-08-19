@@ -24,9 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot() :void
     {
-        \Illuminate\Database\Query\Builder::macro('customPaginate', function ($default = 10) {
+        $customPaginate = function ($default = 10) {
             $perPage = request()->input('number', $default);
-            
+
             if ($perPage == -1) {
                 $total = (clone $this)->count();
                 $perPage = $total > 0 ? $total : $default;
@@ -34,6 +34,16 @@ class AppServiceProvider extends ServiceProvider
 
             // Cukup panggil paginate standar tanpa memaksa input page manual
             return $this->paginate($perPage)->withQueryString();
-        });
+        };
+
+        \Illuminate\Database\Query\Builder::macro('customPaginate', $customPaginate);
+
+        // Also register on Eloquent\Builder directly (not just Query\Builder): when
+        // customPaginate() is called on a Model query (Rafaksi::..., Jsm::..., etc.),
+        // Eloquent\Builder::__call() forwards unknown methods to the underlying
+        // Query\Builder but discards the return value and returns $this instead —
+        // so without this, callers got back the Eloquent Builder, not a paginator,
+        // and ->appends()/->withQueryString() blew up with a BadMethodCallException.
+        \Illuminate\Database\Eloquent\Builder::macro('customPaginate', $customPaginate);
     }
 }

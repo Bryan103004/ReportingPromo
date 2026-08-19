@@ -9,6 +9,7 @@ class LocDashboard extends Component
 {
     use WithPagination;
     public $tokoId = null;
+    public $perPage = 10;
 
     protected $listeners = ['filterByToko', 'filterByPt'];
 
@@ -26,10 +27,14 @@ class LocDashboard extends Component
         $this->resetPage();
     }
 
+    public function updatedPerPage()
+    {
+        $this->resetPage();
+    }
 
     public function paginationView()
     {
-        return 'vendor.pagination.tailwind'; // Sesuaikan dengan nama file view pagination kamu sebelumnya
+        return 'vendor.pagination.livewire-tailwind';
     }
 
     public function placeholder()
@@ -44,7 +49,7 @@ class LocDashboard extends Component
 
     public function render()
     {
-        $data = DB::table('locs as lc')
+        $query = DB::table('locs as lc')
             ->join('locs_toko as lt', 'lc.id', '=', 'lt.loc_id')
             ->leftJoin('tokos as tk', 'lt.toko_id', '=', 'tk.id')
             ->leftJoin('regions as rg', 'tk.region_id', '=', 'rg.id')
@@ -81,8 +86,10 @@ class LocDashboard extends Component
                     $q->whereIn('lt.toko_id', $allowed);
                 }
             })
-            ->orderBy('lc.periode_bulan', 'asc') 
-            ->customPaginate();
+            ->orderBy('lc.periode_bulan', 'asc');
+
+        $perPage = $this->perPage == -1 ? max((clone $query)->count(), 1) : $this->perPage;
+        $data = $query->paginate($perPage);
 
         return view('livewire.loc-dashboard', compact('data'));
     }

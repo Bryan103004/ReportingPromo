@@ -200,7 +200,7 @@ class JsmController extends Controller
             if (empty($data['raf_sequence'])) {
                 $data['raf_sequence'] = $nextSeq;
             }
-            $data['no_raf'] = "JSM/{$padded}/{$month}/{$year}";
+            $data['no_raf'] = "RAFJSM/NF/{$padded}/{$month}/{$year}";
         }
 
         $jsm = Jsm::create($data);
@@ -301,11 +301,23 @@ class JsmController extends Controller
             
             $columns = ['No', 'No. RAF', 'Kode Supplier', 'Nama Supplier', 'Region', 'Store', 'Periode Awal', 'Periode Akhir', 'Nominal'];
             
-            $jsms = Jsm::whereYear('periode_bulan', $year)
+            $query = Jsm::whereYear('periode_bulan', $year)
                 ->whereMonth('periode_bulan', $month)
                 ->orderBy('periode_awal', 'asc')
-                ->orderBy('periode_akhir', 'asc')
-                ->get();
+                ->orderBy('periode_akhir', 'asc');
+
+            if (! auth()->user()->hasGlobalCompanyAccess()) {
+                $ids = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($ids)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->whereHas('tokos', function($q) use ($ids) {
+                        $q->whereIn('tokos.id', $ids);
+                    });
+                }
+            }
+
+            $jsms = $query->get();
 
             foreach ($jsms as $index => $row) {
                 $data[] = [
@@ -393,12 +405,24 @@ class JsmController extends Controller
         $month = $request->month;
 
         if($year && $month){
-            $data = Jsm::with(['tokos'])
+            $query = Jsm::with(['tokos'])
                     ->whereYear('periode_bulan', $year)
                     ->whereMonth('periode_bulan', $month)
                     ->orderBy('periode_awal', 'asc')
-                    ->orderBy('periode_akhir', 'asc')
-                    ->get();
+                    ->orderBy('periode_akhir', 'asc');
+
+            if (! auth()->user()->hasGlobalCompanyAccess()) {
+                $ids = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($ids)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->whereHas('tokos', function($q) use ($ids) {
+                        $q->whereIn('tokos.id', $ids);
+                    });
+                }
+            }
+
+            $data = $query->get();
                     $isDetail = true;
         }
         else {

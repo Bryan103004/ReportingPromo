@@ -35,17 +35,19 @@
             </div>
         </div>
 
-        <!-- Wadah Badge (Dibungkus Grid 3 Kolom agar sejajar dengan Card di bawahnya) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <!-- Wadah Badge (Dibungkus Grid 4 Kolom agar sejajar dengan Card di bawahnya) -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
             <livewire:rafaksi-badge lazy />
             <livewire:jsm-badge lazy />
+            <livewire:pwp-badge lazy />
             <livewire:loc-badge lazy />
         </div>
 
-        <!-- Wadah Cards (Dibungkus Grid 3 Kolom yang rapi) -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <!-- Wadah Cards (Dibungkus Grid 4 Kolom yang rapi) -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
             <livewire:rafaksi-card lazy />
             <livewire:jsm-card lazy />
+            <livewire:pwp-card lazy />
             <livewire:loc-card lazy />
         </div>
 
@@ -72,14 +74,22 @@
                         JSM
                     </button>
 
+                    <!-- Tab PWP -->
+                    <button @click="activeTab = 'pwp'"
+                        :class="activeTab === 'pwp' ? 'border-red-500 text-red-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'"
+                        class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition-colors flex items-center gap-2 outline-none">
+                        <span class="flex h-2.5 w-2.5 rounded-full transition-colors" :class="activeTab === 'pwp' ? 'bg-red-600' : 'bg-slate-300'"></span>
+                        PWP
+                    </button>
+
                     <!-- Tab LOC -->
-                    <button @click="activeTab = 'loc'" 
+                    <button @click="activeTab = 'loc'"
                         :class="activeTab === 'loc' ? 'border-green-500 text-green-600' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'"
                         class="whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm transition-colors flex items-center gap-2 outline-none">
                         <span class="flex h-2.5 w-2.5 rounded-full transition-colors" :class="activeTab === 'loc' ? 'bg-green-600' : 'bg-slate-300'"></span>
                         LOC
                     </button>
-                    
+
                 </nav>
             </div>
 
@@ -102,14 +112,22 @@
                     <livewire:jsm-dashboard lazy />
                 </div>
 
+                <!-- Konten PWP -->
+                <div x-show="activeTab === 'pwp'" x-cloak style="display: none;"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-2"
+                    x-transition:enter-end="opacity-100 translate-y-0">
+                    <livewire:pwp-dashboard lazy />
+                </div>
+
                 <!-- Konten LOC -->
                 <div x-show="activeTab === 'loc'" x-cloak style="display: none;"
-                    x-transition:enter="transition ease-out duration-300" 
-                    x-transition:enter-start="opacity-0 translate-y-2" 
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-2"
                     x-transition:enter-end="opacity-100 translate-y-0">
                     <livewire:loc-dashboard lazy />
                 </div>
-                
+
             </div>
         </div>
         

@@ -6,6 +6,7 @@
         'yellow' => 'bg-[#fffcf0] border-[#fdeeb9] text-amber-700',
         'blue'   => 'bg-[#f4f7ff] border-[#dce5ff] text-blue-700',
         'green'  => 'bg-[#f2fbf5] border-[#d1f4e0] text-emerald-700',
+        'red'    => 'bg-[#fff5f5] border-[#fbd5d5] text-red-700',
     ];
     $activeTheme = $themes[$theme] ?? $themes['yellow'];
 @endphp

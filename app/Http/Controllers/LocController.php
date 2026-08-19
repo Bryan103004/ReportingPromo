@@ -295,12 +295,24 @@ class LocController extends Controller
             
             $columns = ['No', 'No. RAF', 'Kode Supplier', 'Nama Supplier', 'Region', 'Store', 'Periode Awal', 'Periode Akhir', 'Nominal'];
             
-            $locs = Loc::with(['tokos'])
+            $query = Loc::with(['tokos'])
                 ->whereYear('periode_bulan', $year)
                 ->whereMonth('periode_bulan', $month)
                 ->orderBy('periode_awal', 'asc')
-                ->orderBy('periode_akhir', 'asc')
-                ->get();
+                ->orderBy('periode_akhir', 'asc');
+
+            if (! auth()->user()->hasGlobalCompanyAccess()) {
+                $ids = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($ids)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->whereHas('tokos', function($q) use ($ids) {
+                        $q->whereIn('tokos.id', $ids);
+                    });
+                }
+            }
+
+            $locs = $query->get();
 
             foreach ($locs as $index => $row) {
                 $data[] = [
@@ -454,13 +466,25 @@ class LocController extends Controller
         $month = $request->month;
 
         if($year && $month){
-            $data = Loc::with(['tokos','categories'])
+            $query = Loc::with(['tokos','categories'])
                     ->whereYear('periode_bulan', $year)
                     ->whereMonth('periode_bulan', $month)
                     ->orderBy('category_id')
                     ->orderBy('periode_awal', 'asc')
-                    ->orderBy('periode_akhir', 'asc')
-                    ->get();
+                    ->orderBy('periode_akhir', 'asc');
+
+            if (! auth()->user()->hasGlobalCompanyAccess()) {
+                $ids = auth()->user()->accessibleTokoIds()->toArray();
+                if (empty($ids)) {
+                    $query->whereRaw('0 = 1');
+                } else {
+                    $query->whereHas('tokos', function($q) use ($ids) {
+                        $q->whereIn('tokos.id', $ids);
+                    });
+                }
+            }
+
+            $data = $query->get();
                     $isDetail = true;
                     $stores = null;
         }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Rafaksi;
 use App\Models\Jsm;
+use App\Models\Pwp;
 use Carbon\Carbon;
 
 class UtilityController extends Controller
@@ -19,16 +20,20 @@ class UtilityController extends Controller
 
         if ($category === 'JSM') {
             $maxSeq = Jsm::where('no_raf', 'like', "%/{$year}")->max('raf_sequence');
+            $prefix = 'RAFJSM';
+        } elseif ($category === 'PWP') {
+            $maxSeq = Pwp::where('no_raf', 'like', "%/{$year}")->max('raf_sequence');
+            $prefix = 'RAFPWP';
         } else {
             $maxSeq = Rafaksi::where('no_raf', 'like', "%/{$year}")->max('raf_sequence');
+            $prefix = 'RAF';
         }
 
         $nextSeq = $maxSeq ? $maxSeq + 1 : 1;
         $padded = str_pad((string)$nextSeq, 4, '0', STR_PAD_LEFT);
-        $prefix = $category === 'JSM' ? 'JSM' : ($category === 'PWP' ? 'PWP' : 'RAF');
 
         return response()->json([
-            'no_raf' => "{$prefix}/{$padded}/{$month}/{$year}",
+            'no_raf' => "{$prefix}/NF/{$padded}/{$month}/{$year}",
             'sequence' => $nextSeq,
         ]);
     }

@@ -26,12 +26,24 @@
                     type="text"
                     name="name"
                     id="name"
-                    value="{{ old('name') }}"
                     required
                     class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                     placeholder="Contoh: create_tanda_terima"
                 >
                 <p class="mt-1 text-xs text-gray-500">Gunakan format konsisten, misalnya: `view_...`, `create_...`, `edit_...`, `delete_...`.</p>
+            </div>
+
+            <div>
+                <label for="label" class="mb-1.5 block text-sm font-medium text-gray-700">Nama Label <span class="font-bold text-red-600">*</span></label>
+                <input
+                    type="text"
+                    name="label"
+                    id="label"
+                    required
+                    class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    placeholder="Contoh: permissions"
+                >
+                <p class="mt-1 text-xs text-gray-500">Gunakan format konsisten, misalnya: `users`, `roles`, `others`.</p>
             </div>
 
             <div>

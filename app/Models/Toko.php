@@ -30,6 +30,11 @@ class Toko extends Model
         return $this->belongsToMany(Loc::class, 'locs_toko', 'toko_id', 'loc_id');
     }
 
+    public function pwp()
+    {
+        return $this->belongsToMany(Pwp::class, 'pwp_toko', 'toko_id', 'pwp_id');
+    }
+
     public function inbound()
     {
         return $this->belongsToMany(Inbound::class, 'inbound_toko', 'toko_id', 'inbound_id');
