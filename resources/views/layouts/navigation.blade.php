@@ -146,6 +146,12 @@
                             </x-nav-link>
                             @endcan
 
+                            @can('view_pwp')
+                            <x-nav-link :href="route('pwp.index')" :active="request()->routeIs('pwp.index')">
+                                {{ __('Data PWP') }}
+                            </x-nav-link>
+                            @endcan
+
                             @can('view_loc')
                             <x-nav-link :href="route('loc.index')" :active="request()->routeIs('loc.index')">
                                 {{ __('Data Loc') }}
@@ -419,7 +425,10 @@
 
             @can('view_jsm')
                 <x-responsive-nav-link :href="route('jsm.index')" :active="request()->routeIs('jsm.index')">Data Jsm</x-responsive-nav-link>
-
+            @endcan
+            
+            @can('view_pwp')
+                <x-responsive-nav-link :href="route('pwp.index')" :active="request()->routeIs('pwp.index')">Data Pwp</x-responsive-nav-link>
             @endcan
 
             @can('view_loc')

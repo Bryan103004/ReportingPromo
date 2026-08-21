@@ -44,10 +44,12 @@ class PermissionController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:permissions,name',
+            'label' => 'required|string',
         ]);
 
         $permission = Permission::create([
             'name' => $validatedData['name'],
+            'label' => $validatedData['label'],
             'guard_name' => 'web',
             'created_at' => now(),
             'updated_at' => now(),
@@ -83,10 +85,14 @@ class PermissionController extends Controller
 
         $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:permissions,name,' . $permission->id,
+            'label' => 'required|string',
         ]);
 
         $oldName = $permission->name;
-        $permission->update(['name' => $validatedData['name']]);
+        $permission->update([
+            'name' => $validatedData['name'],
+            'label' => $validatedData['label']
+        ]);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 

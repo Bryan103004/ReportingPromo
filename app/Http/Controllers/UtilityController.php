@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Models\Rafaksi;
 use App\Models\Jsm;
@@ -13,6 +14,8 @@ class UtilityController extends Controller
     public function nextNoRaf(Request $request)
     {
         $category = strtoupper($request->query('category', 'RAF'));
+        $cat = Category::find($request->query('category_id'));
+        $cat_init = $cat->initial_category;
         $periode = $request->query('periode');
         $date = $periode ? Carbon::parse($periode) : Carbon::now();
         $month = $date->format('m');
@@ -33,7 +36,7 @@ class UtilityController extends Controller
         $padded = str_pad((string)$nextSeq, 4, '0', STR_PAD_LEFT);
 
         return response()->json([
-            'no_raf' => "{$prefix}/NF/{$padded}/{$month}/{$year}",
+            'no_raf' => "{$prefix}/{$cat_init}/{$padded}/{$month}/{$year}",
             'sequence' => $nextSeq,
         ]);
     }

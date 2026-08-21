@@ -174,6 +174,11 @@ class RafaksiController extends Controller
             'toko_id.*' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
         ]);
+
+        $category = Category::find($request->category_id);
+
+        $cat_init = $category->initial_category;
+
         $data = $request->except('toko_id');
 
         // If frontend provided raf_sequence explicitly, prefer it
@@ -197,7 +202,7 @@ class RafaksiController extends Controller
             if (empty($data['raf_sequence'])) {
                 $data['raf_sequence'] = $nextSeq;
             }
-            $data['no_raf'] = "RAF/NF/{$padded}/{$month}/{$year}";
+            $data['no_raf'] = "RAF/{$cat_init}/{$padded}/{$month}/{$year}";
         }
 
         $rafaksi = Rafaksi::create($data);

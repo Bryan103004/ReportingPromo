@@ -368,10 +368,15 @@
 
     function getNextNoRaf(){
         const categorySelect = document.getElementById('category_id');
+        const cat_id = categorySelect.value;
         const periode = document.getElementById('periode_bulan') ? document.getElementById('periode_bulan').value : null;
-        if (!categorySelect || !categorySelect.value) return;
-        const prefix = categorySelect.options[categorySelect.selectedIndex].text.trim().toUpperCase();
-        const url = '{{ url('/next-no-raf') }}?category=' + encodeURIComponent(prefix) + (periode ? ('&periode=' + encodeURIComponent(periode)) : '');
+        if (!categorySelect || !cat_id) return;
+
+        const url = new URL('{{ url('/next-no-raf') }}', window.location.origin);
+        url.searchParams.set('category', 'RAF');
+        url.searchParams.set('category_id', cat_id);
+        if (periode) url.searchParams.set('periode', periode);
+
         fetch(url).then(r => r.json()).then(data => {
             if (data.no_raf) {
                 document.getElementById('no_raf').value = data.no_raf;
@@ -380,9 +385,10 @@
         }).catch(err => console.error(err));
     }
 
-    document.getElementById('category_id').addEventListener('change', getNextNoRaf);
-    const periodeInput = document.getElementById('periode_bulan');
-    if (periodeInput) periodeInput.addEventListener('change', getNextNoRaf);
+    const cat = document.getElementById('category_id');
+    if (cat) cat.addEventListener('change', getNextNoRaf);
+    const per = document.getElementById('periode_bulan');
+    if (per) per.addEventListener('change', getNextNoRaf);
 </script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {

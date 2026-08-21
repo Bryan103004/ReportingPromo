@@ -88,7 +88,7 @@
             </thead>
             <tbody class="divide-y divide-gray-200">
                 @forelse ($roles as $item)
-                @if ($item->name)
+                @if ($item->name != 'superadmin')
                     <tr>
                         <td class="px-4 py-3">
                             {{ ($roles->currentPage() - 1) * $roles->perPage() + $loop->iteration }}

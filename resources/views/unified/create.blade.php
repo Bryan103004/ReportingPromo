@@ -341,15 +341,18 @@
 
     // Auto-generate no_raf when category or periode_bulan changes
     const categoryEl = document.getElementById('category');
+    const categoryId = document.getElementById('category_id');
     const periodeBulanEl = document.getElementById('periode_bulan');
     const noRafEl = document.getElementById('no_raf');
     const rafSeqEl = document.getElementById('raf_sequence');
 
     async function refreshNoRaf(){
         const cat = categoryEl.value || 'RAF';
+        const cat_id = categoryId.value;
         const periode = periodeBulanEl.value;
         const url = new URL('{{ url('/next-no-raf') }}', window.location.origin);
         url.searchParams.set('category', cat);
+        url.searchParams.set('category_id', cat_id);
         if (periode) url.searchParams.set('periode', periode);
         try{
             const res = await fetch(url.toString());
@@ -358,6 +361,10 @@
             rafSeqEl.value = j.sequence;
         }catch(e){ console.error(e); }
     }
+
+    categoryId.addEventListener('change', function(){
+        refreshNoRaf();
+    });
 
     categoryEl.addEventListener('change', function(){
         // switch form action to the table that matches the chosen category

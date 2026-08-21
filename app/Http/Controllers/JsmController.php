@@ -178,6 +178,10 @@ class JsmController extends Controller
             'category_id' => 'exists:categories,id',
         ]);
 
+        $category = Category::find($request->category_id);
+
+        $cat_init = $category->initial_category;
+
         $data = $request->all();
 
         // Respect explicit raf_sequence if frontend provided
@@ -200,7 +204,7 @@ class JsmController extends Controller
             if (empty($data['raf_sequence'])) {
                 $data['raf_sequence'] = $nextSeq;
             }
-            $data['no_raf'] = "RAFJSM/NF/{$padded}/{$month}/{$year}";
+            $data['no_raf'] = "RAFJSM/{$cat_init}/{$padded}/{$month}/{$year}";
         }
 
         $jsm = Jsm::create($data);
