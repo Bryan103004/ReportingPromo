@@ -86,7 +86,8 @@ class LocDashboard extends Component
                     $q->whereIn('lt.toko_id', $allowed);
                 }
             })
-            ->orderBy('lc.periode_bulan', 'asc');
+            ->orderBy('lc.periode_bulan', 'asc')
+            ->orderBy('lc.periode_akhir', 'asc');
 
         $perPage = $this->perPage == -1 ? max((clone $query)->count(), 1) : $this->perPage;
         $data = $query->paginate($perPage);

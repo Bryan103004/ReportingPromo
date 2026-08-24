@@ -89,7 +89,8 @@ class RafaksiDashboard extends Component
                     $q->whereIn('rt.toko_id', $allowed);
                 }
             })
-            ->orderBy('r.periode_bulan', 'asc');
+            ->orderBy('r.periode_bulan', 'asc')
+            ->orderBy('r.periode_akhir', 'asc');
 
         $perPage = $this->perPage == -1 ? max((clone $query)->count(), 1) : $this->perPage;
         $data = $query->paginate($perPage);

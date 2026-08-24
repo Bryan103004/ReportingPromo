@@ -87,7 +87,9 @@ class JsmDashboard extends Component
                     $q->whereIn('jt.toko_id', $allowed);
                 }
             })
-            ->orderBy('j.periode_bulan', 'asc');
+            ->orderBy('j.periode_bulan', 'asc')
+            ->orderBy('j.periode_akhir', 'asc');
+            
 
         $perPage = $this->perPage == -1 ? max((clone $query)->count(), 1) : $this->perPage;
         $data = $query->paginate($perPage);
