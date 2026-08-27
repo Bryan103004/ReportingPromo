@@ -10,6 +10,7 @@
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">No. RAF</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Kode Supplier</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Nama Supplier</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">PT</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Region</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Store</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Periode Awal</th>
@@ -25,6 +26,7 @@
                 <td>{{ $row->no_raf }}</td>
                 <td>{{ $row->supplier_code }}</td>
                 <td>{{ $row->supplier_name }}</td>
+                <td>{{ $row->tokos()->pluck('nama_pt')->implode(', ') ?: '-' }}</td>
                 <td>{{ $row->store }}</td>
                 <td>{{ $row->daftar_toko_formatted }}</td>
                 
