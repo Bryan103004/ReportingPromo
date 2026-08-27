@@ -81,10 +81,10 @@
         <div>
             <label for="ttd" class="mb-1.5 block text-sm font-medium text-gray-700">Tanda Tangan (PDF/PNG/JPG)</label>
             <input id="ttd" name="ttd" type="file" accept="application/pdf,image/png,image/jpeg" class="mt-1 block w-full" />
-            @if($user->ttd)
+            @if($user->signature_path)
                 <p class="mt-2 text-sm text-gray-600">Tanda tangan saat ini:</p>
                 <div class="mt-2">
-                    <img src="{{ asset($user->ttd) }}" alt="Tanda Tangan" class="h-20 w-auto rounded border bg-white p-2" />
+                    <img src="{{ asset('storage/' . $user->signature_path) }}" alt="Tanda Tangan" />
                 </div>
             @endif
             <p class="mt-1 text-xs text-gray-500">Optional. Upload file untuk mengganti tanda tangan.</p>
