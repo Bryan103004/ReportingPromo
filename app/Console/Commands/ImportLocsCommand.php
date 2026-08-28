@@ -47,7 +47,7 @@ class ImportLocsCommand extends Command
             }
 
             // Lewati baris header jika ada
-            fgetcsv($fileHandle);
+            fgetcsv($fileHandle, 0, ';');
             
             $batchData = [];
             $rowCount = 0;
@@ -74,7 +74,7 @@ class ImportLocsCommand extends Command
             };
 
             // 2. Masukkan SEMUA data mentah ke tabel staging
-            while (($row = fgetcsv($fileHandle)) !== false) {
+            while (($row = fgetcsv($fileHandle, 0, ';')) !== false) {
                 $lineNumber++;
 
                 // Validasi: Jika no_raf (index 7) atau supplier_code (index 0) kosong, catat sebagai data gagal
@@ -97,8 +97,8 @@ class ImportLocsCommand extends Command
                     'periode_bulan'    => $formatDate($row[6]),
                     'no_raf'           => $row[7] ?? null,
                     'no_raf_referensi' => $row[8] ?? null,
-                    'toko_id'          => $row[9] ?? null,
-                    'store'            => $row[10] ?? null,   
+                    'store'          => $row[9] ?? null,
+                    'toko_id'            => $row[10] ?? null,   
                     'nominal'          => $row[11] ?? null,
                     'remarks'          => $row[12] ?? null,
                     'created_date'     => $formatDate($row[13]),

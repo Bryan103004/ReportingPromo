@@ -21,8 +21,8 @@ class Kernel extends ConsoleKernel
             ->withoutOverlapping()
             ->runInBackground();
 
-        $schedule->command('imports:locs')
-            ->hourlyAt(2)
+        $schedule->command('import:locs')
+            ->everyThreeHours()
             ->withoutOverlapping()
             ->runInBackground();
     }
