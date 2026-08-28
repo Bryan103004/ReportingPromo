@@ -59,7 +59,7 @@
                 {{-- Body Tabel --}}
                 <tbody class="divide-y divide-gray-100">
                     @forelse($pwps as $pwp)
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-gray-50 transition-colors" data-nominal="{{ $pwp->nominal }}">
                             <td class="px-6 py-4 text-center font-medium text-gray-500">
                                 {{ $loop->iteration }}
                             </td>
@@ -153,7 +153,7 @@
                             Grand Total:
                         </td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 text-base">
-                            Rp {{ number_format($pwps->sum('nominal'), 0, ',', '.') }}
+                            Rp <span id="pwpGrandTotal">{{ number_format($pwps->sum('nominal'), 0, ',', '.') }}</span>
                         </td>
                     </tr>
                 </tfoot>
@@ -168,4 +168,23 @@
     </div>
 
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.querySelector('.dynamic-search-bar[data-target="pwpDetail"]');
+        const totalEl = document.getElementById('pwpGrandTotal');
+        if (!searchInput || !totalEl) return;
+
+        function recalcGrandTotal() {
+            let total = 0;
+            document.querySelectorAll('#pwpDetail tbody tr').forEach(function (row) {
+                if (row.style.display === 'none') return;
+                total += parseFloat(row.dataset.nominal || 0);
+            });
+            totalEl.textContent = total.toLocaleString('id-ID');
+        }
+
+        searchInput.addEventListener('input', recalcGrandTotal);
+    });
+</script>
 @endsection

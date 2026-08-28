@@ -64,7 +64,7 @@
                 {{-- Body Tabel --}}
                 <tbody class="divide-y divide-gray-100">
                     @forelse($locs as $loc)
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-gray-50 transition-colors" data-nominal="{{ $loc->nominal }}">
                             {{-- Nomor Urut --}}
                             <td class="px-6 py-4 text-center font-medium text-gray-500">
                                 {{ $loop->iteration }}
@@ -190,7 +190,7 @@
                             Grand Total:
                         </td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 text-base">
-                            Rp {{ number_format($locs->sum('nominal'), 0, ',', '.') }}
+                            Rp <span id="locGrandTotal">{{ number_format($locs->sum('nominal'), 0, ',', '.') }}</span>
                         </td>
                         {{-- Tambahkan 1 <td> kosong di bawah ini JIKA kamu mengaktifkan kolom Aksi di atas --}}
                         {{-- <td></td> --}}
@@ -205,6 +205,25 @@
     <div class="my-2">
         {{ $locs->links() }}
     </div>
-    
+
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.querySelector('.dynamic-search-bar[data-target="locDetail"]');
+        const totalEl = document.getElementById('locGrandTotal');
+        if (!searchInput || !totalEl) return;
+
+        function recalcGrandTotal() {
+            let total = 0;
+            document.querySelectorAll('#locDetail tbody tr').forEach(function (row) {
+                if (row.style.display === 'none') return;
+                total += parseFloat(row.dataset.nominal || 0);
+            });
+            totalEl.textContent = total.toLocaleString('id-ID');
+        }
+
+        searchInput.addEventListener('input', recalcGrandTotal);
+    });
+</script>
 @endsection

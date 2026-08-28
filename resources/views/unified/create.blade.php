@@ -94,7 +94,7 @@
 
                 {{-- No. RAF --}}
                 <div>
-                    <label for="no_raf" class="block text-sm font-semibold text-gray-700 mb-1.5">No. RAF <span class="text-red-500">*</span></label>
+                    <label for="no_raf" class="block text-sm font-semibold text-gray-700 mb-1.5">No Dokumen<span class="text-red-500">*</span></label>
                     <input type="text" name="no_raf" id="no_raf" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" readonly placeholder="Otomatis terisi" required>
                 </div>
 
