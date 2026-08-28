@@ -51,7 +51,9 @@
                         <th class="px-6 py-4">Region</th>
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-right">Remarks</th>
+                        @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>
+                        @endcan
                         <th class="px-6 py-4 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -106,9 +108,11 @@
                                 </span>
                             </td>
 
+                            @can('see_nominal')
                             <td class="px-6 py-4 text-right font-bold text-green-600">
                                 Rp {{ number_format($pwp->nominal, 0, ',', '.') }}
                             </td>
+                            @endcan
 
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">

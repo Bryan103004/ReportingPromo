@@ -54,7 +54,9 @@
                         <th class="px-6 py-4">Region</th>
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-right">Remarks</th>
+                        @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>
+                        @endcan
                         <th class="px-6 py-4 text-right">Aksi</th>
 
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
@@ -118,11 +120,12 @@
                                     {{ $rafaksi->remarks }}
                                 </span>
                             </td>
-
+                            @can('see_nominal')
                             {{-- Nominal --}}
                             <td class="px-6 py-4 text-right font-bold text-green-600">
                                 Rp {{ number_format($rafaksi->nominal, 0, ',', '.') }}
                             </td>
+                            @endcan
 
                             {{-- Aksi (Opsional) --}}
                             <td class="px-6 py-4 text-center">

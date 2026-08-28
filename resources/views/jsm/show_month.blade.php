@@ -55,7 +55,9 @@
                         <th class="px-6 py-4">Region</th>
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-right">Remarks</th>
+                        @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>
+                        @endcan
                         <th class="px-6 py-4">Aksi</th>
 
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
@@ -118,10 +120,12 @@
                                 </span>
                             </td>
 
+                            @can('see_nominal')
                             {{-- Nominal --}}
                             <td class="px-6 py-4 text-right font-bold text-green-600">
                                 Rp {{ number_format($jsm->nominal, 0, ',', '.') }}
                             </td>
+                            @endcan
 
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">

@@ -70,7 +70,9 @@
                         <th class="px-6 py-4">Periode Bulan</th>
                         <!-- <th class="px-6 py-4">Region</th> -->
                         <th class="px-6 py-4 text-center">Total Transaksi</th>
+                        @can('see_nominal')
                         <th class="px-6 py-4 text-right">Total Nominal</th>
+                        @endcan
                         <th class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -98,9 +100,11 @@
                                     {{ $group->total_data }} Data
                                 </span>
                             </td>
+                            @can('see_nominal')
                             <td class="px-6 py-4 text-right font-semibold text-gray-700">
                                 Rp {{ number_format($group->total_nominal, 0, ',', '.') }}
                             </td>
+                            @endcan
                             <td class="px-6 py-4 text-center">
                                 {{-- Tombol menuju halaman detail per bulan --}}
                                 <a href="{{ route('rafaksi.show_month', ['year' => $group->year_kerja, 'month' => $group->month_kerja]) }}" 

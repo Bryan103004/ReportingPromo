@@ -66,7 +66,9 @@
                         <th class="hidden px-6 py-4">Periode PWP</th>
                         <th class="px-6 py-4">Periode Bulan</th>
                         <th class="px-6 py-4 text-center">Total Transaksi</th>
+                        @can('see_nominal')
                         <th class="px-6 py-4 text-right">Total Nominal</th>
+                        @endcan
                         <th class="px-6 py-4 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -84,11 +86,13 @@
                             <td class="px-6 py-4 font-bold text-gray-800">
                                 {{ \Carbon\Carbon::createFromDate($group->year_kerja, $group->month_kerja, 1)->translatedFormat('F Y') }}
                             </td>
+                            @can('see_nominal')
                             <td class="px-6 py-4 text-center">
                                 <span class="bg-blue-50 text-blue-700 font-bold px-2.5 py-1 rounded-full text-xs">
                                     {{ $group->total_data }} Data
                                 </span>
                             </td>
+                            @endcan
                             <td class="px-6 py-4 text-right font-semibold text-gray-700">
                                 Rp {{ number_format($group->total_nominal, 0, ',', '.') }}
                             </td>
