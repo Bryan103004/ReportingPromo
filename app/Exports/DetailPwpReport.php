@@ -172,7 +172,8 @@ class DetailPwpReport implements FromView, ShouldAutoSize, WithStyles, WithStric
             'isDetail' => $isDetail,
             'year' => $this->year,
             'month' => $this->month,
-            'stores' => $stores
+            'stores' => $stores,
+            'hideTotal' => (bool) $this->tokoId,
         ]);
     }
 

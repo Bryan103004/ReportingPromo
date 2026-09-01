@@ -172,7 +172,11 @@ class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles, WithS
             'isDetail' => $isDetail,
             'year' => $this->year,
             'month' => $this->month,
-            'stores' => $stores
+            'stores' => $stores,
+            // TOTAL cuma masuk akal kalau semua toko ditampilkan; kalau 1 toko spesifik
+            // dipilih, kolom TOTAL bakal beda dari kolom toko itu sendiri (karena TOTAL
+            // tetap menjumlahkan SEMUA toko), jadi disembunyikan supaya tidak membingungkan.
+            'hideTotal' => (bool) $this->tokoId,
         ]);
     }
 

@@ -172,7 +172,8 @@ class DetailJsmReport implements FromView, ShouldAutoSize, WithStyles, WithStric
             'year' => $this->year,
             'month' => $this->month,
             'stores' => $stores,
-            'isDetail' => $isDetail
+            'isDetail' => $isDetail,
+            'hideTotal' => (bool) $this->tokoId,
         ]);
     }
 

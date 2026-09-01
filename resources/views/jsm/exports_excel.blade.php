@@ -53,7 +53,9 @@
                 @foreach($stores as $store)
                     <th style="background-color: #FF4E73DF; color: #FFFFFF;">{{ $store->nama_toko }}</th>
                 @endforeach
+                @unless($hideTotal ?? false)
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">TOTAL</th>
+                @endunless
             </tr>
         </thead>
         <tbody>
@@ -75,9 +77,11 @@
                         
                         <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">{{ ($val === '' || $val === null) ? '' : $val }}</td>
                     @endforeach
+                    @unless($hideTotal ?? false)
                     <td align="right" style="background-color: #FF4E73DF; font-weight: bold;">
                         {{ ($row->TOTAL === '' || $row->TOTAL === null) ? '' : $row->TOTAL }}
                     </td>
+                    @endunless
                 </tr>
             @endforeach
         </tbody>
