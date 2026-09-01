@@ -48,7 +48,7 @@
                         <th class="px-6 py-4">Category</th>
                         <th class="px-6 py-4">Periode Promo</th>
                         <th class="px-6 py-4">No. RAF</th>
-                        <th class="px-6 py-4">Region</th>
+                        <!-- <th class="px-6 py-4">Region</th> -->
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-right">Remarks</th>
                         @can('see_nominal')
@@ -90,11 +90,12 @@
                                 {{ $pwp->no_raf ?? '-' }}
                             </td>
 
-                            <td class="px-6 py-4">
+                            <!-- Region -->
+                            <!-- <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
                                     {{ $pwp->store }}
                                 </span>
-                            </td>
+                            </td> -->
 
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
