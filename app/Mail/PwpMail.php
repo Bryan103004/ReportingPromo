@@ -8,11 +8,12 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
-class LocMail extends Mailable
+class PwpMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $locs;
+    public $pwps;
+
     public $user;
 
     /**
@@ -20,10 +21,9 @@ class LocMail extends Mailable
      *
      * @return void
      */
-    public function __construct($locs, $user)
+    public function __construct($pwps, $user)
     {
-        //
-        $this->locs = $locs;
+        $this->pwps = $pwps;
         $this->user = $user;
     }
 
@@ -34,6 +34,6 @@ class LocMail extends Mailable
      */
     public function build()
     {
-        return $this->subject('Pemberitahuan atau Reminder LOC')->view('emails.loc');
+        return $this->subject('Pemberitahuan atau Reminder PWP')->view('emails.pwp');
     }
 }

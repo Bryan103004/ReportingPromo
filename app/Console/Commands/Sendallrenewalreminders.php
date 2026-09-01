@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\Rafaksi;
 use App\Models\Loc;
 use App\Models\Jsm;
+use App\Models\Pwp;
 use App\Models\User;
 use App\Models\NotificationRecipient;
 
@@ -17,42 +18,65 @@ use App\Models\NotificationRecipient;
 use App\Mail\RafaksiMail;
 use App\Mail\LocMail;
 use App\Mail\JsmMail;
+use App\Mail\PwpMail;
 
 // Mailable Expired (Sudah Lewat Batas)
 use App\Mail\ExpiredRafaksiMail;
 use App\Mail\ExpiredLocMail;
 use App\Mail\ExpiredJsmMail;
+use App\Mail\ExpiredPwpMail;
 
 class SendAllRenewalReminders extends Command
 {
     protected $signature = 'reminder:send-all
-                            {--module= : Jalankan modul tertentu saja: rafaksi|loc|jsm}';
+                            {--module= : Jalankan modul tertentu saja: rafaksi|loc|jsm|pwp}';
 
     protected $description = 'Kirim semua email reminder renewal (Normal & Expired) ke user internal dan eksternal.';
+
+    /**
+     * Path file log (public/logs/log.txt), diinisialisasi sekali di awal handle().
+     */
+    private ?string $logPath = null;
 
     private function moduleConfig()
     {
         return [
             'rafaksi' => [
-                'label'      => 'Rafaksi',
-                'permission' => 'view_rafaksi',
-                'handler'    => 'handleRafaksi',
+                'label'        => 'Rafaksi',
+                'permission'   => 'view_rafaksi',
+                'model'        => Rafaksi::class,
+                'mail'         => RafaksiMail::class,
+                'expiredMail'  => ExpiredRafaksiMail::class,
             ],
             'loc' => [
-                'label'      => 'Loc',
-                'permission' => 'view_loc',
-                'handler'    => 'handleLoc',
+                'label'        => 'Loc',
+                'permission'   => 'view_loc',
+                'model'        => Loc::class,
+                'mail'         => LocMail::class,
+                'expiredMail'  => ExpiredLocMail::class,
             ],
             'jsm' => [
-                'label'      => 'Jsm',
-                'permission' => 'view_jsm',
-                'handler'    => 'handleJsm',
+                'label'        => 'Jsm',
+                'permission'   => 'view_jsm',
+                'model'        => Jsm::class,
+                'mail'         => JsmMail::class,
+                'expiredMail'  => ExpiredJsmMail::class,
+            ],
+            'pwp' => [
+                'label'        => 'Pwp',
+                'permission'   => 'view_pwp',
+                'model'        => Pwp::class,
+                'mail'         => PwpMail::class,
+                'expiredMail'  => ExpiredPwpMail::class,
             ],
         ];
     }
 
     public function handle()
     {
+        $this->initLog();
+        $this->log('==================== MULAI reminder:send-all ====================');
+
         $onlyModule = $this->option('module');
 
         foreach ($this->moduleConfig() as $key => $config) {
@@ -61,12 +85,44 @@ class SendAllRenewalReminders extends Command
             }
 
             $this->info("=== Memproses modul: {$config['label']} ===");
-            $this->{$config['handler']}($config['permission'], $key);
+            $this->log("[{$config['label']}] Mulai diproses.");
+
+            try {
+                $this->processModule($config, $key);
+            } catch (\Throwable $e) {
+                // Kalau ada error tak terduga di level modul, jangan sampai modul lain ikut gagal.
+                $this->error("  Modul {$config['label']} gagal diproses: " . $e->getMessage());
+                $this->log("[{$config['label']}] ERROR TIDAK TERDUGA di level modul: " . $e->getMessage());
+            }
+
             $this->newLine();
         }
 
+        $this->log('==================== SELESAI reminder:send-all ====================');
         $this->info('Selesai.');
         return 0;
+    }
+
+    // =========================================================================
+    // LOGGING — public/logs/log.txt
+    // =========================================================================
+
+    private function initLog(): void
+    {
+        $dir = public_path('logs');
+        if (! file_exists($dir)) {
+            mkdir($dir, 0755, true);
+        }
+        $this->logPath = $dir . '/log.txt';
+    }
+
+    private function log(string $message): void
+    {
+        if (! $this->logPath) {
+            $this->initLog();
+        }
+        $line = '[' . now()->format('Y-m-d H:i:s') . '] ' . $message . PHP_EOL;
+        file_put_contents($this->logPath, $line, FILE_APPEND | LOCK_EX);
     }
 
     // =========================================================================
@@ -108,295 +164,146 @@ class SendAllRenewalReminders extends Command
     }
 
     // =========================================================================
-    // MODUL: RAFAKSI
+    // PEMROSESAN MODUL (dipakai bareng oleh rafaksi/loc/jsm/pwp)
     // =========================================================================
 
-    private function handleRafaksi($permission, $moduleKey)
+    private function processModule(array $config, string $moduleKey): void
     {
-        $todayStr = now()->format('Y-m-d');
+        $label            = strtoupper($config['label']);
+        $modelClass       = $config['model'];
+        $mailClass        = $config['mail'];
+        $expiredMailClass = $config['expiredMail'];
+        $permission       = $config['permission'];
+
+        $todayStr    = now()->format('Y-m-d');
         $todayCarbon = Carbon::today();
 
-        // 1. Ambil data dengan eager loading relasi 'tokos'
-        $rafaksis = Rafaksi::with('tokos')
+        // 1. Ambil data dengan eager loading relasi 'tokos'.
+        // IFNULL(reminder_id, 0) supaya baris tanpa reminder_id tidak diam-diam ke-skip dari query.
+        $items = $modelClass::with('tokos')
             ->where('status_email', '!=', 'tidak_aktif')
             ->whereNotNull('periode_akhir')
             ->whereRaw(
-                '? >= DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH)',
+                '? >= DATE_SUB(periode_akhir, INTERVAL IFNULL(reminder_id, 0) MONTH)',
                 [$todayStr]
             )
             ->get();
 
-        if ($rafaksis->isEmpty()) {
-            $this->info('Tidak ada kendaraan Rafaksi yang memasuki periode notifikasi hari ini.');
+        if ($items->isEmpty()) {
+            $msg = "Tidak ada data {$config['label']} yang memasuki periode notifikasi hari ini.";
+            $this->info('  ' . $msg);
+            $this->log("[{$label}] {$msg}");
             return;
         }
 
-        // 2. Gunakan flatMap untuk memetakan ulang data agar bisa di-groupBy berdasarkan toko_id dari pivot
-        $groupedRafaksis = $rafaksis->flatMap(function ($rafaksi) {
-            return $rafaksi->tokos->map(function ($toko) use ($rafaksi) {
+        $this->log("[{$label}] Ditemukan {$items->count()} data yang masuk periode reminder hari ini.");
+
+        // 2. Kelompokkan berdasarkan toko_id dari pivot
+        $grouped = $items->flatMap(function ($item) {
+            return $item->tokos->map(function ($toko) use ($item) {
                 return [
-                    'toko_id' => $toko->id,
-                    'toko_obj' => $toko, 
-                    'rafaksi' => $rafaksi
+                    'toko_id'  => $toko->id,
+                    'toko_obj' => $toko,
+                    'item'     => $item,
                 ];
             });
         })->groupBy('toko_id');
 
-        // 3. Loop hasil pengelompokan
-        foreach ($groupedRafaksis as $tokoId => $items) {
-            
-            $toko = $items->first()['toko_obj']; 
-            if (! $toko) continue;
-
-            $tokoRafaksis = $items->pluck('rafaksi');
-
-            $users = $this->getUsersByPermissionAndRelation($permission, 'tokos', 'user_toko_accesses', $tokoId);
-            $externals = $this->getExternalRecipientsByModule($moduleKey);
-            $allRecipients = $this->mergeRecipients($users, $externals);
-
-            if ($allRecipients->isEmpty()) continue;
-
-            foreach ($allRecipients as $recipient) {
-                // --- VALIDASI KETAT AKSES TOKO ---
-                // Jika penerima adalah User Internal, pastikan dia benar-benar punya akses ke $tokoId ini
-                if ($recipient instanceof User) {
-                    $hasAccess = $recipient->tokos()->where('tokos.id', $tokoId)->exists();
-                    if (!$hasAccess) {
-                        continue; // Lewati jika user internal tidak punya akses ke toko ini
-                    }
-                }
-
-                // Jika penerima adalah Eksternal / memiliki pengaturan filter khusus
-                if (!empty($recipient->filters['rafaksi'])) {
-                    $f = $recipient->filters['rafaksi'];
-                    if (!empty($f['toko_id']) && !in_array($tokoId, $f['toko_id'])) {
-                        continue; // Lewati jika toko tidak sesuai dengan filter eksternal
-                    }
-                }
-                // ---------------------------------
-
-                $currentRafaksis = $tokoRafaksis;
-                if ($currentRafaksis->isEmpty()) continue; 
-
-                // SPLIT: Due vs Expired
-                $dueRafaksis = $currentRafaksis->filter(function($r) use ($todayCarbon) {
-                    return !is_null($r->periode_akhir) && 
-                        Carbon::parse($r->periode_akhir)->startOfDay()->greaterThanOrEqualTo($todayCarbon);
-                });
-
-                // Saring yang Expired (jika periode_akhirnya kosong/null ATAU tanggalnya sudah lewat)
-                $expiredRafaksis = $currentRafaksis->filter(function($r) use ($todayCarbon) {
-                    // Jika periode_akhir kosong ATAU tanggalnya sudah kurang dari hari ini
-                    return !is_null($r->periode_akhir) && 
-                        Carbon::parse($r->periode_akhir)->startOfDay()->lessThan($todayCarbon);
-                });
-
-                if ($dueRafaksis->isNotEmpty()) {
-                    Mail::to($recipient->email)->send(new RafaksiMail($dueRafaksis, $recipient));
-                    $this->info("  Email Rafaksi Due → {$recipient->email}");
-                }
-                
-                if ($expiredRafaksis->isNotEmpty()) {
-                    Mail::to($recipient->email)->send(new ExpiredRafaksiMail($expiredRafaksis, $recipient));
-                    $this->info("  Email Rafaksi Expired → {$recipient->email}");
-                }
-            }
-        }
-    }
-
-
-    // =========================================================================
-    // MODUL: LOC
-    // =========================================================================
-
-    private function handleLoc($permission, $moduleKey)
-    {
-        $todayStr = now()->format('Y-m-d');
-        $todayCarbon = Carbon::today();
-
-        // 1. Ambil data dengan eager loading relasi 'tokos'
-        $locs = Loc::with('tokos')
-            ->where('status_email', '!=', 'tidak_aktif')
-            ->whereNotNull('periode_akhir')
-            ->whereRaw(
-                '? >= DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH)',
-                [$todayStr]
-            )
-            ->get();
-
-        if ($locs->isEmpty()) {
-            $this->info('Tidak ada Loc yang memasuki periode notifikasi hari ini.');
-            return;
-        }
-
-        // 2. Gunakan flatMap untuk memetakan ulang data agar bisa di-groupBy berdasarkan toko_id dari pivot
-        $groupedLocs = $locs->flatMap(function ($loc) {
-            return $loc->tokos->map(function ($toko) use ($loc) {
-                return [
-                    'toko_id' => $toko->id,
-                    'toko_obj' => $toko, 
-                    'loc' => $loc
-                ];
-            });
-        })->groupBy('toko_id');
+        $tokoProcessed         = 0;
+        $emailSent             = 0;
+        $emailFailed           = 0;
+        $tokoSkippedNoRecipient = 0;
 
         // 3. Loop hasil pengelompokan
-        foreach ($groupedLocs as $tokoId => $items) {
-            
-            $toko = $items->first()['toko_obj']; 
-            if (! $toko) continue;
+        foreach ($grouped as $tokoId => $groupItems) {
+            try {
+                $toko = $groupItems->first()['toko_obj'];
+                if (! $toko) {
+                    continue;
+                }
 
-            $tokoLocs = $items->pluck('loc');
+                $tokoProcessed++;
+                $tokoItems = $groupItems->pluck('item');
 
-            $users = $this->getUsersByPermissionAndRelation($permission, 'tokos', 'user_toko_accesses', $tokoId);
-            $externals = $this->getExternalRecipientsByModule($moduleKey);
-            $allRecipients = $this->mergeRecipients($users, $externals);
+                $users         = $this->getUsersByPermissionAndRelation($permission, 'tokos', 'user_toko_accesses', $tokoId);
+                $externals     = $this->getExternalRecipientsByModule($moduleKey);
+                $allRecipients = $this->mergeRecipients($users, $externals);
 
-            if ($allRecipients->isEmpty()) continue;
+                if ($allRecipients->isEmpty()) {
+                    $tokoSkippedNoRecipient++;
+                    $this->log("[{$label}] Toko '{$toko->nama_toko}' (ID {$tokoId}): {$tokoItems->count()} data — TIDAK ADA PENERIMA (tidak ada user dengan akses toko ini & tidak ada notification recipient eksternal untuk modul {$moduleKey}) — DILEWATI.");
+                    continue;
+                }
 
-            foreach ($allRecipients as $recipient) {
-                // --- VALIDASI KETAT AKSES TOKO ---
-                // Jika penerima adalah User Internal, pastikan dia benar-benar punya akses ke $tokoId ini
-                if ($recipient instanceof \App\Models\User) {
-                    $hasAccess = $recipient->tokos()->where('tokos.id', $tokoId)->exists();
-                    if (!$hasAccess) {
-                        continue; // Lewati jika user internal tidak punya akses ke toko ini
+                foreach ($allRecipients as $recipient) {
+                    // --- VALIDASI KETAT AKSES TOKO ---
+                    if ($recipient instanceof User) {
+                        $hasAccess = $recipient->tokos()->where('tokos.id', $tokoId)->exists();
+                        if (! $hasAccess) {
+                            continue;
+                        }
+                    }
+
+                    // Filter khusus untuk penerima eksternal
+                    if (! empty($recipient->filters[$moduleKey])) {
+                        $f = $recipient->filters[$moduleKey];
+                        if (! empty($f['toko_id']) && ! in_array($tokoId, $f['toko_id'])) {
+                            continue;
+                        }
+                    }
+                    // ---------------------------------
+
+                    if ($tokoItems->isEmpty()) {
+                        continue;
+                    }
+
+                    // SPLIT: Due vs Expired
+                    $due = $tokoItems->filter(function ($r) use ($todayCarbon) {
+                        return ! is_null($r->periode_akhir) &&
+                            Carbon::parse($r->periode_akhir)->startOfDay()->greaterThanOrEqualTo($todayCarbon);
+                    });
+
+                    $expired = $tokoItems->filter(function ($r) use ($todayCarbon) {
+                        return ! is_null($r->periode_akhir) &&
+                            Carbon::parse($r->periode_akhir)->startOfDay()->lessThan($todayCarbon);
+                    });
+
+                    if ($due->isNotEmpty()) {
+                        $noRafList = $due->pluck('no_raf')->implode(', ');
+                        try {
+                            Mail::to($recipient->email)->send(new $mailClass($due, $recipient));
+                            $emailSent++;
+                            $this->info("  Email {$config['label']} Due → {$recipient->email}");
+                            $this->log("[{$label}] TERKIRIM (due) -> {$recipient->email} | Toko: {$toko->nama_toko} | Data: {$noRafList}");
+                        } catch (\Throwable $e) {
+                            $emailFailed++;
+                            $this->error("  Gagal kirim {$config['label']} Due -> {$recipient->email}: " . $e->getMessage());
+                            $this->log("[{$label}] GAGAL (due) -> {$recipient->email} | Toko: {$toko->nama_toko} | Data: {$noRafList} | Error: " . $e->getMessage());
+                        }
+                    }
+
+                    if ($expired->isNotEmpty()) {
+                        $noRafList = $expired->pluck('no_raf')->implode(', ');
+                        try {
+                            Mail::to($recipient->email)->send(new $expiredMailClass($expired, $recipient));
+                            $emailSent++;
+                            $this->info("  Email {$config['label']} Expired → {$recipient->email}");
+                            $this->log("[{$label}] TERKIRIM (expired) -> {$recipient->email} | Toko: {$toko->nama_toko} | Data: {$noRafList}");
+                        } catch (\Throwable $e) {
+                            $emailFailed++;
+                            $this->error("  Gagal kirim {$config['label']} Expired -> {$recipient->email}: " . $e->getMessage());
+                            $this->log("[{$label}] GAGAL (expired) -> {$recipient->email} | Toko: {$toko->nama_toko} | Data: {$noRafList} | Error: " . $e->getMessage());
+                        }
                     }
                 }
-
-                // Jika penerima adalah Eksternal / memiliki pengaturan filter khusus
-                if (!empty($recipient->filters['loc'])) {
-                    $f = $recipient->filters['loc'];
-                    if (!empty($f['toko_id']) && !in_array($tokoId, $f['toko_id'])) {
-                        continue; // Lewati jika toko tidak sesuai dengan filter eksternal
-                    }
-                }
-                // ---------------------------------
-
-                $currentLocs = $tokoLocs;
-                if ($currentLocs->isEmpty()) continue; 
-
-                // SPLIT: Due vs Expired
-                $dueLocs = $currentLocs->filter(function($l) use ($todayCarbon) {
-                    return !is_null($l->periode_akhir) && 
-                        Carbon::parse($l->periode_akhir)->startOfDay()->greaterThanOrEqualTo($todayCarbon);
-                });
-
-                // Saring yang Expired (jika periode_akhirnya kosong/null ATAU tanggalnya sudah lewat)
-                $expiredLocs = $currentLocs->filter(function($l) use ($todayCarbon) {
-                    // Jika periode_akhir kosong ATAU tanggalnya sudah kurang dari hari ini
-                    return !is_null($l->periode_akhir) && 
-                        Carbon::parse($l->periode_akhir)->startOfDay()->lessThan($todayCarbon);
-                });
-
-                if ($dueLocs->isNotEmpty()) {
-                    Mail::to($recipient->email)->send(new LocMail($recipient, $dueLocs));
-                    $this->info("  Email Loc Due → {$recipient->email}");
-                }
-                
-                if ($expiredLocs->isNotEmpty()) {
-                    Mail::to($recipient->email)->send(new ExpiredLocMail($recipient, $expiredLocs));
-                    $this->info("  Email Loc Expired → {$recipient->email}");
-                }
+            } catch (\Throwable $e) {
+                // Kalau ada 1 toko/baris yang errornya di luar dugaan, lewati saja, jangan hentikan modul lain.
+                $this->error('  Terjadi error saat memproses salah satu toko, dilewati: ' . $e->getMessage());
+                $this->log("[{$label}] ERROR saat memproses toko ID {$tokoId}, DILEWATI. Error: " . $e->getMessage());
+                continue;
             }
         }
+
+        $this->log("[{$label}] Selesai. Toko diproses: {$tokoProcessed}, Email terkirim: {$emailSent}, Gagal: {$emailFailed}, Dilewati (tanpa penerima): {$tokoSkippedNoRecipient}.");
     }
-
-    // =========================================================================
-    // MODUL: JSM
-    // =========================================================================
-
-    private function handleJsm($permission, $moduleKey)
-    {
-        $todayStr = now()->format('Y-m-d');
-        $todayCarbon = Carbon::today();
-
-        // 1. Ambil data dengan eager loading relasi 'tokos'
-        $jsms = Jsm::with('tokos')
-            ->where('status_email', '!=', 'tidak_aktif')
-            ->whereNotNull('periode_akhir')
-            ->whereRaw(
-                '? >= DATE_SUB(periode_akhir, INTERVAL reminder_id MONTH)',
-                [$todayStr]
-            )
-            ->get();
-
-        if ($jsms->isEmpty()) {
-            $this->info('Tidak ada Jsm yang memasuki periode notifikasi hari ini.');
-            return;
-        }
-
-        // 2. Gunakan flatMap untuk memetakan ulang data agar bisa di-groupBy berdasarkan toko_id dari pivot
-        $groupedJsms = $jsms->flatMap(function ($jsm) {
-            return $jsm->tokos->map(function ($toko) use ($jsm) {
-                return [
-                    'toko_id' => $toko->id,
-                    'toko_obj' => $toko, 
-                    'jsm' => $jsm
-                ];
-            });
-        })->groupBy('toko_id');
-
-        // 3. Loop hasil pengelompokan
-        foreach ($groupedJsms as $tokoId => $items) {
-            
-            $toko = $items->first()['toko_obj']; 
-            if (! $toko) continue;
-
-            $tokoJsms = $items->pluck('jsm');
-
-            $users = $this->getUsersByPermissionAndRelation($permission, 'tokos', 'user_toko_accesses', $tokoId);
-            $externals = $this->getExternalRecipientsByModule($moduleKey);
-            $allRecipients = $this->mergeRecipients($users, $externals);
-
-            if ($allRecipients->isEmpty()) continue;
-
-            foreach ($allRecipients as $recipient) {
-                // --- VALIDASI KETAT AKSES TOKO ---
-                // Jika penerima adalah User Internal, pastikan dia benar-benar punya akses ke $tokoId ini
-                if ($recipient instanceof \App\Models\User) {
-                    $hasAccess = $recipient->tokos()->where('tokos.id', $tokoId)->exists();
-                    if (!$hasAccess) {
-                        continue; // Lewati jika user internal tidak punya akses ke toko ini
-                    }
-                }
-
-                // Jika penerima adalah Eksternal / memiliki pengaturan filter khusus
-                if (!empty($recipient->filters['jsm'])) {
-                    $f = $recipient->filters['jsm'];
-                    if (!empty($f['toko_id']) && !in_array($tokoId, $f['toko_id'])) {
-                        continue; // Lewati jika toko tidak sesuai dengan filter eksternal
-                    }
-                }
-                // ---------------------------------
-
-                $currentJsms = $tokoJsms;
-                if ($currentJsms->isEmpty()) continue; 
-
-                // SPLIT: Due vs Expired
-                $dueJsms = $currentJsms->filter(function($j) use ($todayCarbon) {
-                    return !is_null($j->periode_akhir) && 
-                        Carbon::parse($j->periode_akhir)->startOfDay()->greaterThanOrEqualTo($todayCarbon);
-                });
-
-                // Saring yang Expired (jika periode_akhirnya kosong/null ATAU tanggalnya sudah lewat)
-                $expiredJsms = $currentJsms->filter(function($j) use ($todayCarbon) {
-                    // Jika periode_akhir kosong ATAU tanggalnya sudah kurang dari hari ini
-                    return !is_null($j->periode_akhir) && 
-                        Carbon::parse($j->periode_akhir)->startOfDay()->lessThan($todayCarbon);
-                });
-
-                if ($dueJsms->isNotEmpty()) {
-                    Mail::to($recipient->email)->send(new JsmMail($recipient, $dueJsms));
-                    $this->info("  Email Jsm Due → {$recipient->email}");
-                }
-                
-                if ($expiredJsms->isNotEmpty()) {
-                    Mail::to($recipient->email)->send(new ExpiredJsmMail($recipient, $expiredJsms));
-                    $this->info("  Email Jsm Expired → {$recipient->email}");
-                }
-            }
-        }
-    }
-
 }

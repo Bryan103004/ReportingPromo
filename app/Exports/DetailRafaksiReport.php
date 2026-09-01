@@ -4,6 +4,7 @@ namespace App\Exports;
 use App\Models\Category;
 use App\Models\Rafaksi;
 use App\Models\Toko;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromView;
@@ -53,9 +54,12 @@ class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles, WithS
         // MODE 1: Jika tahun dan bulan diisi (Export Detail)
         if ($this->year && $this->month) {
                 // Tambahkan with('tokos') di sini
+            $periodeStart = Carbon::createFromDate($this->year, $this->month, 1)->startOfDay();
+            $periodeEnd = (clone $periodeStart)->addMonth();
+
             $query = Rafaksi::with(['tokos','categories'])
-                ->whereYear('periode_bulan', $this->year)
-                ->whereMonth('periode_bulan', $this->month)
+                ->where('periode_bulan', '>=', $periodeStart)
+                ->where('periode_bulan', '<', $periodeEnd)
                 ->orderBy('category_id')
                 ->orderBy('periode_awal', 'asc')
                 ->orderBy('periode_akhir', 'asc');

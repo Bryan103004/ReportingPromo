@@ -132,12 +132,16 @@ class JsmController extends Controller
         }
 
         // 2. Siapkan Query Builder Dasar (JANGAN panggil customPaginate di sini)
+        // Pakai range tanggal (bukan whereYear/whereMonth) supaya index periode_bulan kepakai
+        $periodeStart = Carbon::createFromDate($year, $month, 1)->startOfDay();
+        $periodeEnd = (clone $periodeStart)->addMonth();
+
         $query = Jsm::with(['tokos'])
-            ->whereYear('periode_bulan', $year)
-            ->whereMonth('periode_bulan', $month)
+            ->where('periode_bulan', '>=', $periodeStart)
+            ->where('periode_bulan', '<', $periodeEnd)
             ->orderBy('periode_akhir', 'desc');
 
-        $periodeTitle = Carbon::createFromDate($year, $month, 1)->translatedFormat('F Y');
+        $periodeTitle = $periodeStart->translatedFormat('F Y');
 
         // 3. Terapkan Filter Jika Ada
         if ($request->filled('supplier_code')) {
@@ -335,8 +339,11 @@ class JsmController extends Controller
             
             $columns = ['No', 'No. RAF', 'Kode Supplier', 'Nama Supplier', 'Region', 'Store', 'Periode Awal', 'Periode Akhir', 'Nominal'];
             
-            $query = Jsm::whereYear('periode_bulan', $year)
-                ->whereMonth('periode_bulan', $month)
+            $periodeStart = Carbon::createFromDate($year, $month, 1)->startOfDay();
+            $periodeEnd = (clone $periodeStart)->addMonth();
+
+            $query = Jsm::where('periode_bulan', '>=', $periodeStart)
+                ->where('periode_bulan', '<', $periodeEnd)
                 ->orderBy('periode_awal', 'asc')
                 ->orderBy('periode_akhir', 'asc');
 
@@ -448,9 +455,12 @@ class JsmController extends Controller
         $month = $request->month;
 
         if($year && $month){
+            $periodeStart = Carbon::createFromDate($year, $month, 1)->startOfDay();
+            $periodeEnd = (clone $periodeStart)->addMonth();
+
             $query = Jsm::with(['tokos'])
-                    ->whereYear('periode_bulan', $year)
-                    ->whereMonth('periode_bulan', $month)
+                    ->where('periode_bulan', '>=', $periodeStart)
+                    ->where('periode_bulan', '<', $periodeEnd)
                     ->orderBy('periode_awal', 'asc')
                     ->orderBy('periode_akhir', 'asc');
 

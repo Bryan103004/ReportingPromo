@@ -12,19 +12,19 @@ class JsmMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $user;
     public $jsms;
+    public $user;
 
     /**
      * Create a new message instance.
      *
      * @return void
      */
-    public function __construct($user, $jsms)
+    public function __construct($jsms, $user)
     {
         //
-        $this->user = $user;
         $this->jsms = $jsms;
+        $this->user = $user;
     }
 
     /**
