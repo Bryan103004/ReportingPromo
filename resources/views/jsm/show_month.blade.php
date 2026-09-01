@@ -29,7 +29,7 @@
     </div>
 
     {{--  KOMPONEN FILTER --}}
-    <x-filter-bar :suppliers="$suppliers" />
+    <x-filter-bar :suppliers="$suppliers" :tokos="$tokos" :categories="$categories" />
 
     <x-search-bar 
         placeholder="Masukkan user atau aksi..." 

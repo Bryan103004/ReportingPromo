@@ -70,8 +70,18 @@ class PwpController extends Controller
 
     public function showMonth(Request $request, $year, $month)
     {
-        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        // 1. Ambil data supplier & category untuk dikirim ke komponen filter dropdown
         $suppliers = SupplierRafaksi::all();
+        $categories = Category::all();
+
+        // Daftar toko yang boleh dilihat user (dibatasi kalau bukan admin/superadmin)
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $tokos = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get(['id', 'nama_toko']);
+        } else {
+            $tokos = $tokoQuery->get(['id', 'nama_toko']);
+        }
 
         // 2. Siapkan Query Builder Dasar (JANGAN panggil customPaginate di sini)
         $query = Pwp::with(['tokos'])
@@ -84,6 +94,16 @@ class PwpController extends Controller
         // 3. Terapkan Filter Jika Ada
         if ($request->filled('supplier_code')) {
             $query->where('supplier_code', $request->supplier_code);
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->filled('toko_id')) {
+            $query->whereHas('tokos', function($q) use ($request) {
+                $q->where('tokos.id', $request->toko_id);
+            });
         }
 
         if ($request->filled('start_date')) {
@@ -112,7 +132,7 @@ class PwpController extends Controller
         // 5. Appends Request (SANGAT PENTING!)
         $pwps->appends($request->all());
 
-        return view('pwp.show_month', compact('pwps', 'periodeTitle', 'year', 'month', 'suppliers'));
+        return view('pwp.show_month', compact('pwps', 'periodeTitle', 'year', 'month', 'suppliers', 'tokos', 'categories'));
     }
 
     public function create(){
