@@ -19,13 +19,18 @@ class DetailLocReport implements FromView, ShouldAutoSize, WithStyles, WithStric
     protected $year;
     protected $month;
     protected $stores;
+    protected $categoryId;
+    protected $tokoId;
 
     // Terima parameter dari Controller
-    public function __construct($year = null, $month = null, $stores)
+    public function __construct($year = null, $month = null, $stores, $categoryId = null, $tokoId = null)
     {
         $this->year = $year;
         $this->month = $month;
-        $this->stores = $stores;
+        $this->categoryId = $categoryId;
+        $this->tokoId = $tokoId;
+        // Kalau toko dipilih, kolom store di rekap matrix cukup 1 kolom itu saja
+        $this->stores = $tokoId ? $stores->where('id', $tokoId)->values() : $stores;
     }
 
     public function columnFormats(): array
@@ -48,23 +53,34 @@ class DetailLocReport implements FromView, ShouldAutoSize, WithStyles, WithStric
         // MODE 1: Jika tahun dan bulan diisi (Export Detail)
         if ($this->year && $this->month) {
                 // Tambahkan with('tokos') di sini
-            $data = Loc::with(['tokos','categories'])
+            $query = Loc::with(['tokos','categories'])
                 ->whereYear('periode_bulan', $this->year)
                 ->whereMonth('periode_bulan', $this->month)
                 ->orderBy('category_id')
                 ->orderBy('periode_awal', 'asc')
-                ->orderBy('periode_akhir', 'asc')
-                ->get();
-                
+                ->orderBy('periode_akhir', 'asc');
+
+            if ($this->categoryId) {
+                $query->where('category_id', $this->categoryId);
+            }
+
+            if ($this->tokoId) {
+                $query->whereHas('tokos', function ($q) {
+                    $q->where('tokos.id', $this->tokoId);
+                });
+            }
+
+            $data = $query->get();
+
             $isDetail = true;
             $stores = null;
-        } 
+        }
         // MODE 2: Jika kosong (Export Rekap All)
         else {
             $year = $this->year ?? date('Y');
             $isDetail = false;
-            $allStores = Toko::all();
-            $allCategories = Category::all();
+            $allStores = $this->stores;
+            $allCategories = $this->categoryId ? Category::where('id', $this->categoryId)->get() : Category::all();
 
             // 1. Bangun Subquery Bulan Statis
             $bulanSubquery = "(SELECT 1 AS id_bulan, 'JANUARI' AS nama_bulan 

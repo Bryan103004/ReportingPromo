@@ -19,8 +19,18 @@ class PwpController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        // 1. Ambil data supplier & category untuk dikirim ke komponen filter dropdown
         $suppliers = SupplierRafaksi::all();
+        $categories = Category::all();
+
+        // Daftar toko yang boleh dilihat user (dibatasi kalau bukan admin/superadmin)
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $tokos = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get(['id', 'nama_toko']);
+        } else {
+            $tokos = $tokoQuery->get(['id', 'nama_toko']);
+        }
 
         // 2. Siapkan Query Dasar
         $query = Pwp::selectRaw('
@@ -65,7 +75,7 @@ class PwpController extends Controller
         // 5. Appends Request (SANGAT PENTING!)
         $pwpGroups->appends($request->all());
 
-        return view('pwp.index', compact('pwpGroups', 'suppliers'));
+        return view('pwp.index', compact('pwpGroups', 'suppliers', 'tokos', 'categories'));
     }
 
     public function showMonth(Request $request, $year, $month)
@@ -439,9 +449,19 @@ class PwpController extends Controller
     public function exportExcel(Request $request)
     {
         // Tangkap parameter dari URL (bisa ada isinya, bisa juga kosong)
-        $stores = Toko::all();
         $year = $request->year;
         $month = $request->month;
+        $categoryId = $request->category_id;
+        $tokoId = $request->toko_id;
+
+        // Toko yang boleh dipakai untuk export dibatasi sesuai akses user
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $stores = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get();
+        } else {
+            $stores = $tokoQuery->get();
+        }
 
         // Tentukan nama file secara dinamis berdasarkan parameter
         if ($year && $month) {
@@ -453,7 +473,7 @@ class PwpController extends Controller
         }
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
-        return Excel::download(new DetailPwpReport($year, $month, $stores), $fileName);
+        return Excel::download(new DetailPwpReport($year, $month, $stores, $categoryId, $tokoId), $fileName);
     }
 
     public function printPdf(Request $request){

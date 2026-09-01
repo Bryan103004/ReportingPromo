@@ -40,8 +40,18 @@ class RafaksiController extends Controller
 
     public function index(Request $request)
     {
-        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        // 1. Ambil data supplier & category untuk dikirim ke komponen filter dropdown
         $suppliers = SupplierRafaksi::all();
+        $categories = Category::all();
+
+        // Daftar toko yang boleh dilihat user (dibatasi kalau bukan admin/superadmin)
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $tokos = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get(['id', 'nama_toko']);
+        } else {
+            $tokos = $tokoQuery->get(['id', 'nama_toko']);
+        }
 
         // 2. Siapkan Query Dasar
         $query = Rafaksi::selectRaw('
@@ -87,7 +97,7 @@ class RafaksiController extends Controller
         // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
         $rafaksiGroups->appends($request->all());
 
-        return view('rafaksi.index', compact('rafaksiGroups', 'suppliers'));
+        return view('rafaksi.index', compact('rafaksiGroups', 'suppliers', 'tokos', 'categories'));
     }
 
     // public function showMonth($year, $month)
@@ -477,21 +487,31 @@ class RafaksiController extends Controller
     public function exportExcel(Request $request)
     {
         // Tangkap parameter dari URL (bisa ada isinya, bisa juga kosong)
-        $stores = Toko::all();
         $year = $request->year;
         $month = $request->month;
+        $categoryId = $request->category_id;
+        $tokoId = $request->toko_id;
+
+        // Toko yang boleh dipakai untuk export dibatasi sesuai akses user
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $stores = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get();
+        } else {
+            $stores = $tokoQuery->get();
+        }
 
         // Tentukan nama file secara dinamis berdasarkan parameter
         if ($year && $month) {
             $fileName = 'Detail_Rafaksi_Report_'. $year . '_' . $month . '.xlsx';
         } elseif ($year) {
-            $fileName = 'Rekap_Rafaksi_Report_'. $year . '.xlsx'; 
+            $fileName = 'Rekap_Rafaksi_Report_'. $year . '.xlsx';
         } else {
             $fileName = 'Rekap_Rafaksi_Report_All.xlsx';
         }
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
-        return Excel::download(new DetailRafaksiReport($year, $month, $stores), $fileName);
+        return Excel::download(new DetailRafaksiReport($year, $month, $stores, $categoryId, $tokoId), $fileName);
     }
 
     public function printPdf(Request $request){

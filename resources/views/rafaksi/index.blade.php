@@ -27,13 +27,31 @@
        <!-- Modal -->
         <div id="exportModal" class="fixed inset-0 z-50 hidden bg-gray-100 bg-opacity-50 flex items-center justify-center p-4">
             <div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
-                <h3 class="text-lg font-bold mb-4">Pilih Tahun Export</h3>
+                <h3 class="text-lg font-bold mb-4">Export Rekap</h3>
                 <form action="{{ route('rafaksi.export.excel') }}" method="GET">
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Tahun</label>
                     <select name="year" class="w-full border-gray-300 rounded-md mb-4" required>
                         @for ($y = date('Y'); $y >= 2020; $y--)
                             <option value="{{ $y }}">{{ $y }}</option>
                         @endfor
                     </select>
+
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Category (kosongkan untuk semua)</label>
+                    <select name="category_id" class="w-full border-gray-300 rounded-md mb-4">
+                        <option value="">Semua Category</option>
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->nama_kategori }}</option>
+                        @endforeach
+                    </select>
+
+                    <label class="block text-xs font-semibold text-gray-500 mb-1">Store (kosongkan untuk semua)</label>
+                    <select name="toko_id" class="w-full border-gray-300 rounded-md mb-4">
+                        <option value="">Semua Store</option>
+                        @foreach ($tokos as $toko)
+                            <option value="{{ $toko->id }}">{{ $toko->nama_toko }}</option>
+                        @endforeach
+                    </select>
+
                     <div class="flex justify-end gap-2">
                         <button type="button" onclick="closeExportModal()" class="px-4 py-2 text-gray-600">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Download</button>

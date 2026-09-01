@@ -43,8 +43,18 @@ class JsmController extends Controller
     // Pastikan kamu meng-inject (Request $request) di parameternya
     public function index(Request $request)
     {
-        // 1. Ambil data supplier untuk dikirim ke komponen filter dropdown
+        // 1. Ambil data supplier & category untuk dikirim ke komponen filter dropdown
         $suppliers = SupplierRafaksi::all();
+        $categories = Category::all();
+
+        // Daftar toko yang boleh dilihat user (dibatasi kalau bukan admin/superadmin)
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $tokos = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get(['id', 'nama_toko']);
+        } else {
+            $tokos = $tokoQuery->get(['id', 'nama_toko']);
+        }
 
         // 2. Siapkan Query Dasar
         $query = Jsm::selectRaw(' 
@@ -90,7 +100,7 @@ class JsmController extends Controller
         // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
         $jsmGroups->appends($request->all());
 
-        return view('jsm.index', compact('jsmGroups', 'suppliers'));
+        return view('jsm.index', compact('jsmGroups', 'suppliers', 'tokos', 'categories'));
     }
 
     // public function showMonth($year, $month)
@@ -408,8 +418,17 @@ class JsmController extends Controller
         // Tangkap parameter dari URL (bisa ada isinya, bisa juga kosong)
         $year = $request->year;
         $month = $request->month;
+        $categoryId = $request->category_id;
+        $tokoId = $request->toko_id;
 
-        $stores = Toko::all();
+        // Toko yang boleh dipakai untuk export dibatasi sesuai akses user
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $stores = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get();
+        } else {
+            $stores = $tokoQuery->get();
+        }
 
         // Tentukan nama file secara dinamis berdasarkan parameter
         if ($year && $month) {
@@ -421,7 +440,7 @@ class JsmController extends Controller
         }
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
-        return Excel::download(new DetailJsmReport($year, $month, $stores), $fileName);
+        return Excel::download(new DetailJsmReport($year, $month, $stores, $categoryId, $tokoId), $fileName);
     }
 
     public function printPdf(Request $request){
