@@ -15,8 +15,8 @@ class UtilityController extends Controller
     {
         $category = strtoupper($request->query('category', 'RAF'));
         $cat = Category::find($request->query('category_id'));
-        $cat_init = $cat?->initial_category ?? '';
-        $categoryId = $cat->id ?? $request->query('category_id');
+        $cat_init = $cat ? $cat->initial_category : '';
+        $categoryId = $cat ? $cat->id : $request->query('category_id');
         $periode = $request->query('periode');
         $date = $periode ? Carbon::parse($periode) : Carbon::now();
         $month = $date->format('m');

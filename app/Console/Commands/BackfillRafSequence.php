@@ -6,6 +6,7 @@ use App\Models\Jsm;
 use App\Models\Pwp;
 use App\Models\Rafaksi;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 class BackfillRafSequence extends Command
 {
@@ -30,14 +31,16 @@ class BackfillRafSequence extends Command
     protected function backfillModel(string $modelClass, bool $dryRun): void
     {
         $label = class_basename($modelClass);
-        $rows = $modelClass::whereNull('raf_sequence')->whereNotNull('no_raf')->get();
+        $table = (new $modelClass())->getTable();
+        $rows = $modelClass::whereNull('raf_sequence')->whereNotNull('no_raf')->get(['id', 'no_raf']);
 
         if ($rows->isEmpty()) {
             $this->info("{$label}: nothing to backfill.");
             return;
         }
 
-        $updated = 0;
+        // id => parsed sequence, for every row we can confidently parse
+        $toUpdate = [];
         $skipped = 0;
 
         foreach ($rows as $row) {
@@ -58,17 +61,41 @@ class BackfillRafSequence extends Command
                 continue;
             }
 
-            $sequence = (int) $seqPart;
-
-            if (! $dryRun) {
-                $row->raf_sequence = $sequence;
-                $row->save();
-            }
-
-            $updated++;
+            $toUpdate[$row->id] = (int) $seqPart;
         }
 
         $verb = $dryRun ? 'would update' : 'updated';
-        $this->info("{$label}: {$verb} {$updated} row(s), skipped {$skipped} (couldn't parse no_raf).");
+
+        if ($dryRun) {
+            $this->info("{$label}: {$verb} " . count($toUpdate) . " row(s), skipped {$skipped} (couldn't parse no_raf).");
+            return;
+        }
+
+        // Batch into single CASE-WHEN UPDATE statements instead of one query per row —
+        // saving 25k+ rows one at a time (Eloquent ->save() per row) is what made this
+        // command look "frozen" for minutes: it prints nothing until the whole loop ends.
+        $bar = $this->output->createProgressBar(count($toUpdate));
+        $bar->start();
+
+        foreach (array_chunk($toUpdate, 500, true) as $chunk) {
+            $cases = [];
+            $ids = [];
+            foreach ($chunk as $id => $sequence) {
+                $id = (int) $id;
+                $sequence = (int) $sequence;
+                $cases[] = "WHEN {$id} THEN {$sequence}";
+                $ids[] = $id;
+            }
+
+            DB::statement(
+                "UPDATE `{$table}` SET raf_sequence = CASE id " . implode(' ', $cases) . " END WHERE id IN (" . implode(',', $ids) . ")"
+            );
+
+            $bar->advance(count($chunk));
+        }
+
+        $bar->finish();
+        $this->newLine();
+        $this->info("{$label}: {$verb} " . count($toUpdate) . " row(s), skipped {$skipped} (couldn't parse no_raf).");
     }
 }
