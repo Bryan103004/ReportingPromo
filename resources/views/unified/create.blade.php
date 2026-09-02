@@ -116,8 +116,15 @@
                     </select>
                         <select id="pt_filter_mode" class="block w-full md:w-auto rounded-md border-gray-300 shadow-sm text-sm">
                             <option value="all">Semua Toko</option>
-                            <option value="include">Hanya PT. MITRA BELANJA ANDA</option>
-                            <option value="exclude">Selain PT. MITRA BELANJA ANDA</option>
+                            <option value="include|PT. MITRA BELANJA ANDA">Hanya PT. MITRA BELANJA ANDA</option>
+                            <option value="exclude|PT. MITRA BELANJA ANDA">Selain PT. MITRA BELANJA ANDA</option>
+                            <optgroup label="Detail per PT (selain MBA)">
+                                @foreach($ptOptions as $pt)
+                                    @if($pt !== 'PT. MITRA BELANJA ANDA')
+                                        <option value="include|{{ $pt }}">{{ $pt }}</option>
+                                    @endif
+                                @endforeach
+                            </optgroup>
                         </select>
                     </div>
                 </div>
@@ -307,10 +314,12 @@
 
         container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Memuat...</div>';
 
-        const ptMode = document.getElementById('pt_filter_mode').value;
-        const ptParam = ptMode !== 'all'
-            ? '&name_pt=' + encodeURIComponent('PT. MITRA BELANJA ANDA') + '&name_pt_mode=' + ptMode
-            : '';
+        const ptValue = document.getElementById('pt_filter_mode').value;
+        let ptParam = '';
+        if (ptValue !== 'all') {
+            const [ptMode, ptName] = ptValue.split('|');
+            ptParam = '&name_pt=' + encodeURIComponent(ptName) + '&name_pt_mode=' + ptMode;
+        }
 
         try {
             const results = await Promise.all(regionIds.map(id =>

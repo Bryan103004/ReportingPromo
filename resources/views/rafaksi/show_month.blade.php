@@ -19,12 +19,44 @@
         <!-- <a href="{{ route('rafaksi.export', ['year' => $year, 'month' => $month]) }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
             Export Rekap CSV
         </a> -->
-        <a href="{{ route('rafaksi.export.excel', ['year' => $year, 'month' => $month]) }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+        <button type="button" onclick="openExportModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
             Export Rekap XLS
-        </a>
-        <a href="{{ route('rafaksi.print', ['year' => $year, 'month' => $month]) }}" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+        </button>
+        <a href="{{ route('rafaksi.print', array_merge(['year' => $year, 'month' => $month], request()->only(['category_id', 'toko_id']))) }}" class="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
             Print
         </a>
+    </div>
+
+    {{-- Modal Export --}}
+    <div id="exportModal" class="fixed inset-0 z-50 hidden bg-gray-100 bg-opacity-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-sm p-6">
+            <h3 class="text-lg font-bold mb-4">Export Rekap Detail</h3>
+            <form action="{{ route('rafaksi.export.excel') }}" method="GET">
+                <input type="hidden" name="year" value="{{ $year }}">
+                <input type="hidden" name="month" value="{{ $month }}">
+
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Category (kosongkan untuk semua)</label>
+                <select name="category_id" class="w-full border-gray-300 rounded-md mb-4">
+                    <option value="">Semua Category</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}" {{ request('category_id') == $category->id ? 'selected' : '' }}>{{ $category->nama_kategori }}</option>
+                    @endforeach
+                </select>
+
+                <label class="block text-xs font-semibold text-gray-500 mb-1">Store (kosongkan untuk semua)</label>
+                <select name="toko_id" class="w-full border-gray-300 rounded-md mb-4">
+                    <option value="">Semua Store</option>
+                    @foreach ($tokos as $toko)
+                        <option value="{{ $toko->id }}" {{ request('toko_id') == $toko->id ? 'selected' : '' }}>{{ $toko->nama_toko }}</option>
+                    @endforeach
+                </select>
+
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeExportModal()" class="px-4 py-2 text-gray-600">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Download</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     {{--  KOMPONEN FILTER --}}
@@ -231,5 +263,8 @@
         // this listener recalculates the total from whatever ends up visible.
         searchInput.addEventListener('input', recalcGrandTotal);
     });
+
+    function openExportModal() { document.getElementById('exportModal').classList.remove('hidden'); }
+    function closeExportModal() { document.getElementById('exportModal').classList.add('hidden'); }
 </script>
 @endsection

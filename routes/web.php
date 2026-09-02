@@ -107,7 +107,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $supplierRafaksi = \App\Models\SupplierRafaksi::all();
         $regions = \App\Models\Region::whereNotIn('status',['nonaktif'])->get();
         $categories = \App\Models\Category::all();
-        return view('unified.create', compact('supplierRafaksi', 'regions', 'categories'));
+        $ptOptions = \App\Models\Toko::whereNotNull('nama_pt')->where('nama_pt', '!=', '')->distinct()->orderBy('nama_pt')->pluck('nama_pt');
+        return view('unified.create', compact('supplierRafaksi', 'regions', 'categories', 'ptOptions'));
     })->name('create.document');
     
     Route::resource('toko', TokoController::class);

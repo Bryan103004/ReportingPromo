@@ -230,6 +230,7 @@ class JsmController extends Controller
             $year = $periode->format('Y');
 
             $maxSeq = Jsm::where('no_raf', 'like', "%/{$year}")
+                ->where('category_id', $request->category_id)
                 ->max('raf_sequence');
 
             $nextSeq = $maxSeq ? $maxSeq + 1 : 1;
@@ -347,6 +348,16 @@ class JsmController extends Controller
                 ->orderBy('periode_awal', 'asc')
                 ->orderBy('periode_akhir', 'asc');
 
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('toko_id')) {
+                $query->whereHas('tokos', function($q) use ($request) {
+                    $q->where('tokos.id', $request->toko_id);
+                });
+            }
+
             if (! auth()->user()->hasGlobalCompanyAccess()) {
                 $ids = auth()->user()->accessibleTokoIds()->toArray();
                 if (empty($ids)) {
@@ -463,6 +474,16 @@ class JsmController extends Controller
                     ->where('periode_bulan', '<', $periodeEnd)
                     ->orderBy('periode_awal', 'asc')
                     ->orderBy('periode_akhir', 'asc');
+
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('toko_id')) {
+                $query->whereHas('tokos', function($q) use ($request) {
+                    $q->where('tokos.id', $request->toko_id);
+                });
+            }
 
             if (! auth()->user()->hasGlobalCompanyAccess()) {
                 $ids = auth()->user()->accessibleTokoIds()->toArray();

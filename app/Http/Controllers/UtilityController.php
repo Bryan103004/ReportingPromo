@@ -15,20 +15,21 @@ class UtilityController extends Controller
     {
         $category = strtoupper($request->query('category', 'RAF'));
         $cat = Category::find($request->query('category_id'));
-        $cat_init = $cat->initial_category;
+        $cat_init = $cat?->initial_category ?? '';
+        $categoryId = $cat->id ?? $request->query('category_id');
         $periode = $request->query('periode');
         $date = $periode ? Carbon::parse($periode) : Carbon::now();
         $month = $date->format('m');
         $year = $date->format('Y');
 
         if ($category === 'JSM') {
-            $maxSeq = Jsm::where('no_raf', 'like', "%/{$year}")->max('raf_sequence');
+            $maxSeq = Jsm::where('no_raf', 'like', "%/{$year}")->where('category_id', $categoryId)->max('raf_sequence');
             $prefix = 'RAFJSM';
         } elseif ($category === 'PWP') {
-            $maxSeq = Pwp::where('no_raf', 'like', "%/{$year}")->max('raf_sequence');
+            $maxSeq = Pwp::where('no_raf', 'like', "%/{$year}")->where('category_id', $categoryId)->max('raf_sequence');
             $prefix = 'RAFPWP';
         } else {
-            $maxSeq = Rafaksi::where('no_raf', 'like', "%/{$year}")->max('raf_sequence');
+            $maxSeq = Rafaksi::where('no_raf', 'like', "%/{$year}")->where('category_id', $categoryId)->max('raf_sequence');
             $prefix = 'RAF';
         }
 

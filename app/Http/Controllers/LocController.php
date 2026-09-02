@@ -338,6 +338,16 @@ class LocController extends Controller
                 ->orderBy('periode_awal', 'asc')
                 ->orderBy('periode_akhir', 'asc');
 
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('toko_id')) {
+                $query->whereHas('tokos', function($q) use ($request) {
+                    $q->where('tokos.id', $request->toko_id);
+                });
+            }
+
             if (! auth()->user()->hasGlobalCompanyAccess()) {
                 $ids = auth()->user()->accessibleTokoIds()->toArray();
                 if (empty($ids)) {
@@ -522,6 +532,16 @@ class LocController extends Controller
                     ->orderBy('category_id')
                     ->orderBy('periode_awal', 'asc')
                     ->orderBy('periode_akhir', 'asc');
+
+            if ($request->filled('category_id')) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('toko_id')) {
+                $query->whereHas('tokos', function($q) use ($request) {
+                    $q->where('tokos.id', $request->toko_id);
+                });
+            }
 
             if (! auth()->user()->hasGlobalCompanyAccess()) {
                 $ids = auth()->user()->accessibleTokoIds()->toArray();
