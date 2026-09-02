@@ -322,8 +322,9 @@
         }
 
         try {
+            const getTokosBaseUrl = '{{ url('/get-tokos') }}';
             const results = await Promise.all(regionIds.map(id =>
-                fetch('/get-tokos/' + id + '?_=1' + ptParam).then(r => r.json())
+                fetch(getTokosBaseUrl + '/' + id + '?_=1' + ptParam).then(r => r.json())
             ));
 
             const seen = new Map();

@@ -36,15 +36,15 @@
         </div>
 
         <!-- Wadah Badge (Dibungkus Grid 4 Kolom agar sejajar dengan Card di bawahnya) -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
             <livewire:rafaksi-badge lazy />
             <livewire:jsm-badge lazy />
             <livewire:pwp-badge lazy />
             <livewire:loc-badge lazy />
         </div>
 
-        <!-- Wadah Cards (Dibungkus Grid 4 Kolom yang rapi) -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <!-- Wadah Cards (Dibungkus Grid 2 Kolom yang rapi) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-10">
             <livewire:rafaksi-card lazy />
             <livewire:jsm-card lazy />
             <livewire:pwp-card lazy />

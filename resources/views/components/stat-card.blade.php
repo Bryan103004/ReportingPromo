@@ -29,25 +29,25 @@
                 $monthName = \Carbon\Carbon::create()->month($item->month)->translatedFormat('M');
             @endphp
             
-            <a href="{{ isset($route) ? route($route, ['year' => $item->year, 'month' => $item->month]) : '#' }}" 
-            class="flex flex-col p-4 rounded-xl border transition-all duration-200 {{ $activeTheme }} hover:shadow-sm block group">
-                
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-extrabold uppercase tracking-wider opacity-90 group-hover:opacity-100">
+            <a href="{{ isset($route) ? route($route, ['year' => $item->year, 'month' => $item->month]) : '#' }}"
+            class="min-w-0 flex flex-col p-4 rounded-xl border transition-all duration-200 {{ $activeTheme }} hover:shadow-sm block group">
+
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <span class="text-xs font-extrabold uppercase tracking-wider opacity-90 group-hover:opacity-100 whitespace-nowrap">
                         {{ $monthName }} {{ $item->year }}
                     </span>
-                    
-                    <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold bg-white/90 border border-white/60 shadow-sm">
+
+                    <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/90 border border-white/60 shadow-sm text-center">
                         {{ $item->total_dokumen }} Dokumen
                     </span>
                 </div>
 
-                <div class="w-full pt-1 border-t border-black/5">
-                    <span class="text-base font-black tracking-tight">
-                        Rp {{ number_format($item->nominal, 0, ',', '.') }}
+                <div class="w-full pt-1 border-t border-black/5 min-w-0">
+                    <span class="block text-sm font-black tracking-tight break-words">
+                        Rp&nbsp;{{ number_format($item->nominal, 0, ',', '.') }}
                     </span>
                 </div>
-                
+
             </a>
         @empty
             <div class="col-span-full text-center py-6 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
