@@ -40,9 +40,8 @@ class LocBadge extends Component
 
         $data = DB::table('locs as lc')
                 ->select([
-                    DB::raw("SUM(CASE WHEN periode_akhir > '" . Carbon::now() . "' AND periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `aktif`"),
-                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' AND periode_bulan IS NULL THEN 1 ELSE 0 END) as `expired`"),
-                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' AND periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `done`")
+                    DB::raw("SUM(CASE WHEN periode_akhir > '" . Carbon::now() . "' THEN 1 ELSE 0 END) as `aktif`"),
+                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' THEN 1 ELSE 0 END) as `expired`")
                 ])
                 ->leftJoin('locs_toko as lt', 'lc.id', '=', 'lt.loc_id')
                 ->leftJoin('tokos as tk', 'lt.toko_id', '=', 'tk.id')

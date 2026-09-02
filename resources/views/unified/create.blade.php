@@ -164,7 +164,7 @@
             <div class="m-4 flex items-center justify-end gap-3 pt-5 border-t border-gray-100">
                 <a href="{{ url()->previous() }}" class="px-5 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg">Batal</a>
                 
-                <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg">
+                <button type="submit" id="btnSubmitUnifiedForm" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed">
                     Simpan Data
                 </button>
             </div>
@@ -401,6 +401,18 @@
 
     window.addEventListener('load', function(){
         refreshNoRaf();
+    });
+
+    // Cegah submit dobel kalau tombol "Simpan Data" di-klik/tekan-Enter lebih dari sekali
+    // sebelum halaman sempat pindah (misal koneksi lambat) — tanpa ini bisa kebuat 2 dokumen.
+    document.getElementById('unifiedForm').addEventListener('submit', function(e){
+        const btn = document.getElementById('btnSubmitUnifiedForm');
+        if (btn.disabled) {
+            e.preventDefault();
+            return;
+        }
+        btn.disabled = true;
+        btn.textContent = 'Menyimpan...';
     });
 </script>
 

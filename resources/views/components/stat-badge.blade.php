@@ -46,11 +46,6 @@
                     Expired: {{ $items->expired ?? 0 }}
                 </span>
 
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide bg-blue-100 text-blue-800 border border-blue-200/80 shadow-sm">
-                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                    Done: {{ $items->done ?? 0 }}
-                </span>
-                
             </div>
             
         </div>

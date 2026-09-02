@@ -39,9 +39,8 @@ class JsmBadge extends Component
     {
         $data = DB::table('jsm as j')
                 ->select([
-                    DB::raw("SUM(CASE WHEN periode_akhir > '" . Carbon::now() . "' AND periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `aktif`"),
-                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' AND periode_bulan IS NULL THEN 1 ELSE 0 END) as `expired`"),
-                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' AND periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `done`")
+                    DB::raw("SUM(CASE WHEN periode_akhir > '" . Carbon::now() . "' THEN 1 ELSE 0 END) as `aktif`"),
+                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' THEN 1 ELSE 0 END) as `expired`")
                 ])
                 ->leftJoin('jsm_toko as jt', 'j.id', '=', 'jt.jsm_id')
                 ->leftJoin('tokos as tk', 'jt.toko_id', '=', 'tk.id')

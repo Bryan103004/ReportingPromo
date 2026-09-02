@@ -41,9 +41,8 @@ class RafaksiBadge extends Component
 
         $data = DB::table('rafaksis as r')
             ->select([
-                DB::raw("SUM(CASE WHEN r.periode_akhir > '{$today}' AND r.periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `aktif`"),
-                DB::raw("SUM(CASE WHEN r.periode_akhir <= '{$today}' AND r.periode_bulan IS NULL THEN 1 ELSE 0 END) as `expired`"),
-                DB::raw("SUM(CASE WHEN r.periode_akhir <= '{$today}' AND r.periode_bulan IS NOT NULL THEN 1 ELSE 0 END) as `done`")
+                DB::raw("SUM(CASE WHEN r.periode_akhir > '{$today}' THEN 1 ELSE 0 END) as `aktif`"),
+                DB::raw("SUM(CASE WHEN r.periode_akhir <= '{$today}' THEN 1 ELSE 0 END) as `expired`")
             ])
             ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')
             ->leftJoin('tokos as tk', 'rt.toko_id', '=', 'tk.id')
