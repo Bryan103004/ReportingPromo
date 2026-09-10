@@ -10,7 +10,7 @@
             <p class="text-sm text-gray-500 mt-1">Silakan lengkapi data supplier dan detail jsm di bawah ini.</p>
         </div>
 
-        <form action="{{route('jsm.store')}}" method="POST" class="p-6">
+        <form action="{{route('jsm.store')}}" method="POST" class="p-6" enctype="multipart/form-data">
             @csrf
             
             {{-- Grid 2 Kolom --}}
@@ -159,7 +159,16 @@
             <div class="mb-8 mx-6">
                 <label for="remarks" class="block text-sm font-semibold text-gray-700 mb-1.5">Remarks</label>  
                 <textarea name="remarks" id="remarks"  rows="3" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('remarks') border-red-500 focus:ring-red-500 focus:border-red-500 @enderror" placeholder="Masukkan catatan di sini..."></textarea>
-            </div> 
+            </div>
+
+            <div class="mb-8 mx-6">
+                <label for="document_file" class="block text-sm font-semibold text-gray-700 mb-1.5">Upload Dokumen (PDF)</label>
+                <input type="file" name="document_file[]" id="document_file" accept="application/pdf" multiple class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('document_file.*') border-red-500 @enderror">
+                <p class="text-xs text-gray-500 mt-2">Format PDF, maksimal 5MB per file. Bisa pilih lebih dari satu file.</p>
+                @error('document_file.*')
+                    <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
 
             {{-- Action Buttons --}}
             <div class="flex items-center justify-end gap-3 pt-5 border-t border-gray-100">

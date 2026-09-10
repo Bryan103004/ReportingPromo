@@ -86,6 +86,7 @@
                         @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>
                         @endcan
+                        <th class="px-6 py-4 text-right">Status</th>
                         <th class="px-6 py-4 text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -147,6 +148,12 @@
                             </td>
                             @endcan
 
+                            <td class="px-6 py-4">
+                                <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                    {{ $pwp->status_email === 'aktif' ? 'Aktif' : 'Nonaktif' }}
+                                </span>
+                            </td>
+
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
                                     <a href="{{ route('pwp.edit', ['pwp' => $pwp->id, 'page' => request('page')]) }}" title="Edit Data">
@@ -159,6 +166,20 @@
 
                                     @if (!is_null($pwp->periode_akhir) && now()->greaterThan($periodeAkhir))
                                         <a href="{{ route('pwp.renew.index', ['id' => $pwp->id]) }}" title="Renew Data">🆕</a>
+                                    @endif
+
+                                    <a href="{{ route('document.select-stores', ['type' => 'pwp', 'id' => $pwp->id]) }}" title="Print Dokumen">
+                                        🖨️
+                                    </a>
+
+                                    @if($pwp->status_email == 'aktif')
+                                        <a href="{{ route('pwp.status-tidak-aktif', $pwp->id) }}" title="Tandai Tidak Aktif">
+                                            ❌
+                                        </a>
+                                    @else
+                                        <a href="{{ route('pwp.status-aktif', $pwp->id) }}" title="Tandai Selesai">
+                                            ✅
+                                        </a>
                                     @endif
 
                                     <form action="{{ route('pwp.destroy', $pwp->id) }}" method="POST" class="inline">

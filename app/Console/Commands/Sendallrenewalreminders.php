@@ -181,7 +181,7 @@ class SendAllRenewalReminders extends Command
         // 1. Ambil data dengan eager loading relasi 'tokos'.
         // IFNULL(reminder_id, 0) supaya baris tanpa reminder_id tidak diam-diam ke-skip dari query.
         $items = $modelClass::with('tokos')
-            ->where('status_email', '!=', 'tidak_aktif')
+            ->where('status_email', 'aktif')
             ->whereNotNull('periode_akhir')
             ->whereRaw(
                 '? >= DATE_SUB(periode_akhir, INTERVAL IFNULL(reminder_id, 0) MONTH)',

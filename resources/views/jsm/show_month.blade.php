@@ -90,6 +90,7 @@
                         @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>
                         @endcan
+                        <th class="px-6 py-4 text-right">Status</th>
                         <th class="px-6 py-4">Aksi</th>
 
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
@@ -159,6 +160,12 @@
                             </td>
                             @endcan
 
+                            <td class="px-6 py-4">
+                                <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                    {{ $jsm->status_email === 'aktif' ? 'Aktif' : 'Nonaktif' }}
+                                </span>
+                            </td>
+                            
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
                                     {{-- Tombol Edit --}}
@@ -193,6 +200,20 @@
                                         <a href="{{ route('jsm.renew.index', ['id' => $jsm->id]) }}" title="Renew Data">🆕</a>
                                     @endif
                                     
+                                    <a href="{{ route('document.select-stores', ['type' => 'jsm', 'id' => $jsm->id]) }}" title="Print Dokumen">
+                                        🖨️
+                                    </a>
+
+                                    @if($jsm->status_email == 'aktif')
+                                        <a href="{{ route('jsm.status-tidak-aktif', $jsm->id) }}" title="Tandai Tidak Aktif">
+                                            ❌
+                                        </a>
+                                    @else
+                                        <a href="{{ route('jsm.status-aktif', $jsm->id) }}" title="Tandai Selesai">
+                                            ✅
+                                        </a>
+                                    @endif
+
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('jsm.destroy', $jsm->id) }}" method="POST" class="inline">
                                         @csrf 

@@ -5,13 +5,18 @@ namespace App\Http\Controllers;
 use App\Exports\DetailJsmReport;
 use App\Models\Category;
 use App\Models\Jsm;
+use App\Models\JsmDocument;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Models\Toko;
 use App\Services\ActivityLogger;
+use App\Services\ClaimCalculator;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\DetailJmsReport;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -202,21 +207,26 @@ class JsmController extends Controller
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',
+            'no_shiji' => 'nullable|string',
             'status_email' => 'aktif',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
-            'nominal' => 'numeric|min:0|required',
+            'nominal' => 'required_without:items|nullable|numeric|min:0',
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
             'category_id' => 'exists:categories,id',
+            ...$this->itemValidationRules(),
         ]);
+
+        $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
 
         $category = Category::find($request->category_id);
 
         $cat_init = $category->initial_category;
 
-        $data = $request->all();
+        $data = $request->except(['toko_id', 'items', 'document_file']);
 
         // Respect explicit raf_sequence if frontend provided
         if ($request->filled('raf_sequence')) {
@@ -242,14 +252,26 @@ class JsmController extends Controller
             $data['no_raf'] = "RAFJSM/{$cat_init}/{$padded}/{$month}/{$year}";
         }
 
-        $jsm = Jsm::create($data);
         $tokoIds = $request->input('toko_id', []);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowed = auth()->user()->accessibleTokoIds()->toArray();
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
-        $jsm->tokos()->sync($tokoIds);
-       
+
+        $jsm = DB::transaction(function () use ($data, $tokoIds, $request) {
+            $jsm = Jsm::create($data);
+            $jsm->tokos()->sync($tokoIds);
+
+            $nominal = $this->persistItems($jsm, $request->input('items', []), $tokoIds);
+            if ($nominal !== null) {
+                $jsm->update(['nominal' => $nominal]);
+            }
+
+            $this->storeDocuments($jsm, $request);
+
+            return $jsm;
+        });
+
         ActivityLogger::logCreate(
             $jsm,
             $jsm->id,
@@ -260,6 +282,144 @@ class JsmController extends Controller
         return redirect()->route('jsm.index')->with('success', 'Data JSM berhasil disimpan.');
     }
 
+    /**
+     * Simpan file dokumen PDF yang di-upload (nambah, bukan mengganti/menghapus
+     * dokumen yang sudah ada -- hapus dokumen dilakukan lewat tombol hapus
+     * per-file di halaman edit, bukan otomatis pas submit form).
+     */
+    private function storeDocuments(Jsm $jsm, Request $request): void
+    {
+        if (! $request->hasFile('document_file')) {
+            return;
+        }
+
+        $dir = 'jsm_documents/' . $jsm->id;
+
+        foreach ($request->file('document_file') as $file) {
+            if (! $file->isValid()) {
+                continue;
+            }
+
+            $originalName = $file->getClientOriginalName();
+            $storedName = $originalName;
+            $path = $file->storeAs($dir, $storedName);
+
+            $jsm->documents()->create([
+                'filename' => $originalName,
+                'filepath' => $path,
+            ]);
+        }
+    }
+
+    /**
+     * Aturan validasi baris item (dipakai bareng store() & update()).
+     */
+    private function itemValidationRules(): array
+    {
+        return [
+            'items' => 'nullable|array',
+            'items.*.article' => 'required_with:items|string|max:100',
+            'items.*.shiji_code' => 'nullable|string|max:100',
+            'items.*.description' => 'nullable|string',
+            'items.*.disc_nominal' => 'nullable|numeric|min:0',
+            'items.*.promo_disc' => 'nullable|numeric|min:0|max:100',
+            'items.*.reg' => 'required_with:items|numeric|min:0',
+            'items.*.promo' => 'nullable|numeric|min:0',
+            'items.*.sales' => 'nullable|array',
+            'items.*.sales.*' => 'nullable|numeric|min:0',
+        ];
+    }
+
+    /**
+     * DISC NOMINAL dan PROMO DISC saling eksklusif per baris item.
+     */
+    private function assertItemsDiscMutuallyExclusive(array $items): void
+    {
+        foreach ($items as $index => $item) {
+            $discNominal = $item['disc_nominal'] ?? null;
+            $promoDisc = $item['promo_disc'] ?? null;
+            $hasDisc = $discNominal !== null && $discNominal !== '' && (float) $discNominal > 0;
+            $hasPromo = $promoDisc !== null && $promoDisc !== '' && (float) $promoDisc > 0;
+
+            if ($hasDisc && $hasPromo) {
+                $baris = $index + 1;
+                throw ValidationException::withMessages([
+                    "items.{$index}.disc_nominal" => "Baris item #{$baris}: DISC NOMINAL dan PROMO DISC tidak boleh diisi bersamaan.",
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Simpan ulang seluruh baris item (hapus lalu insert ulang) beserta
+     * breakdown Sales/Value per toko, dan kembalikan total nominal dokumen
+     * (SUM value_total semua item). Null kalau tidak ada item sama sekali,
+     * supaya nominal manual yang sudah diposting tetap dipakai apa adanya.
+     */
+    private function persistItems(Jsm $jsm, array $itemsInput, array $tokoIds): ?float
+    {
+        if (empty($itemsInput)) {
+            return null;
+        }
+
+        $jsm->items()->delete();
+
+        $total = 0;
+
+        foreach ($itemsInput as $index => $itemInput) {
+            $discNominal = $itemInput['disc_nominal'] ?? null;
+            $promoDisc = $itemInput['promo_disc'] ?? null;
+            $reg = (float) ($itemInput['reg'] ?? 0);
+
+            $claim = ClaimCalculator::claim(
+                ($discNominal !== null && $discNominal !== '') ? (float) $discNominal : null,
+                ($promoDisc !== null && $promoDisc !== '') ? (float) $promoDisc : null,
+                $reg
+            );
+
+            $item = $jsm->items()->create([
+                'line_no' => $itemInput['line_no'] ?? ($index + 1),
+                'article' => $itemInput['article'],
+                'shiji_code' => $itemInput['shiji_code'] ?? null,
+                'description' => $itemInput['description'] ?? null,
+                'disc_nominal' => ($discNominal !== null && $discNominal !== '') ? $discNominal : null,
+                'promo_disc' => ($promoDisc !== null && $promoDisc !== '') ? $promoDisc : null,
+                'reg' => $reg,
+                'promo' => $itemInput['promo'] ?? null,
+                'claim' => $claim,
+                'sales_total' => 0,
+                'value_total' => 0,
+            ]);
+
+            $salesTotal = 0;
+            $valueTotal = 0;
+
+            foreach ($tokoIds as $tokoId) {
+                $salesQty = $itemInput['sales'][$tokoId] ?? null;
+                if ($salesQty === null || $salesQty === '') {
+                    continue;
+                }
+
+                $salesQty = (float) $salesQty;
+                $value = ClaimCalculator::value($claim, $salesQty);
+
+                $item->stores()->create([
+                    'toko_id' => $tokoId,
+                    'sales_qty' => $salesQty,
+                    'value' => $value,
+                ]);
+
+                $salesTotal += $salesQty;
+                $valueTotal += $value;
+            }
+
+            $item->update(['sales_total' => $salesTotal, 'value_total' => $valueTotal]);
+            $total += $valueTotal;
+        }
+
+        return $total;
+    }
+
     public function edit(Request $request, Jsm $jsm){
         $year = Carbon::parse($jsm->periode_bulan)->year;
         $month = Carbon::parse($jsm->periode_bulan)->month;
@@ -267,6 +427,7 @@ class JsmController extends Controller
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
         $categories = Category::all();
         $tokos = Toko::all();
+        $jsm->load('items.stores', 'documents');
         return view('jsm.edit', compact('jsm', 'supplierRafaksi', 'regions', 'tokos', 'categories', 'year', 'month'));
     }
 
@@ -277,23 +438,38 @@ class JsmController extends Controller
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',
+            'no_shiji' => 'nullable|string',
             'status_email' => 'in:aktif,tidak_aktif|required',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
-            'nominal' => 'numeric|min:0|required',
+            'nominal' => 'required_without:items|nullable|numeric|min:0',
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
             'category_id' => 'exists:categories,id',
+            ...$this->itemValidationRules(),
         ]);
 
-        $jsm->update($request->all());
+        $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
+
         $tokoIds = $request->input('toko_id', []);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowed = auth()->user()->accessibleTokoIds()->toArray();
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
-        $jsm->tokos()->sync($tokoIds);
+
+        DB::transaction(function () use ($request, $jsm, $tokoIds) {
+            $jsm->update($request->except(['toko_id', 'items', 'document_file']));
+            $jsm->tokos()->sync($tokoIds);
+
+            $nominal = $this->persistItems($jsm, $request->input('items', []), $tokoIds);
+            if ($nominal !== null) {
+                $jsm->update(['nominal' => $nominal]);
+            }
+
+            $this->storeDocuments($jsm, $request);
+        });
 
         ActivityLogger::logUpdate(
             $jsm,
@@ -516,6 +692,10 @@ class JsmController extends Controller
 
             $finalData = collect();
 
+            $combinedStoreValues = \App\Services\RekapMatrixQueryBuilder::combinedStoreValuesSql(
+                'jsm', 'jsm_id', 'jsm_items', 'jsm_item_stores', 'jsm_item_id', 'jsm_toko'
+            );
+
             // 2. Loop per Kategori
             foreach ($allCategories as $category) {
             // 1. Bangun SELECT Fields
@@ -529,24 +709,21 @@ class JsmController extends Controller
             foreach ($allStores as $store) {
                 $aliasToko = str_replace('GL ', '', $store->nama_toko);
                 // Tambahkan filter category_id langsung di dalam CASE
-                $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' AND j.category_id = {$category->id} THEN j.nominal ELSE 0 END) AS `{$aliasToko}`";
+                $selectFields[] = "SUM(CASE WHEN csv.toko_nama = '{$store->nama_toko}' AND csv.category_id = {$category->id} THEN csv.val ELSE 0 END) AS `{$aliasToko}`";
             }
             // Filter total juga harus spesifik kategori
-            $selectFields[] = "SUM(CASE WHEN j.category_id = {$category->id} THEN IFNULL(j.nominal, 0) ELSE 0 END) AS TOTAL";
+            $selectFields[] = "SUM(CASE WHEN csv.category_id = {$category->id} THEN IFNULL(csv.val, 0) ELSE 0 END) AS TOTAL";
 
-            // 2. Query Utama
+            // 2. Query Utama -- csv = nilai per-toko gabungan (item riil kalau ada,
+            // fallback ke nominal lama buat dokumen yang belum punya baris item)
             $categoryData = DB::table(DB::raw($bulanSubquery))
                 ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM jsm WHERE periode_bulan IS NOT NULL) AS m_tahun"))
-                // JOIN transaksi (j) dengan kondisi filter kategori sudah dilakukan di sini
-                ->leftJoin('jsm as j', function($join) use ($category) {
-                    $join->on(DB::raw('MONTH(j.periode_bulan)'), '=', 'm_bulan.id_bulan')
-                        ->on(DB::raw('YEAR(j.periode_bulan)'), '=', 'm_tahun.tahun')
-                        ->where('j.category_id', '=', $category->id); // <--- FILTER KATEGORI HARUS DI SINI
+                ->leftJoin(DB::raw($combinedStoreValues), function($join) {
+                    $join->on(DB::raw('csv.mo'), '=', 'm_bulan.id_bulan')
+                        ->on(DB::raw('csv.yr'), '=', 'm_tahun.tahun');
                 })
-                ->leftJoin('jsm_toko as jt', 'j.id', '=', 'jt.jsm_id')
-                ->leftJoin('tokos as tk', 'jt.toko_id', '=', 'tk.id')
                 ->selectRaw(implode(', ', $selectFields))
-                ->where('m_tahun.tahun', $year) 
+                ->where('m_tahun.tahun', $year)
                 ->groupBy('m_tahun.tahun', 'm_bulan.id_bulan', 'm_bulan.nama_bulan')
                 ->orderBy('m_bulan.id_bulan', 'ASC')
                 ->get();
@@ -630,5 +807,52 @@ class JsmController extends Controller
 
         $jsm = Jsm::findOrFail($id);
         return view('jsm.renew_index', compact('jsm'));
+    }
+
+    public function downloadDocument(JsmDocument $document)
+    {
+        if (! Storage::exists($document->filepath)) {
+            abort(404, 'Dokumen tidak ditemukan.');
+        }
+
+        return Storage::download($document->filepath, $document->filename);
+    }
+
+    public function deleteDocument(JsmDocument $document)
+    {
+        Storage::delete($document->filepath);
+        $document->delete();
+
+        return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
+    }
+
+    public function statusAktif(Jsm $jsm){
+        $jsm->update([
+            'status_email' => 'aktif',
+        ]);
+
+        ActivityLogger::logUpdate(
+            $jsm,
+            $jsm->id,
+            ['status_email' => 'aktif'],
+            "Updated Jsm #{$jsm->id}: status_email set to aktif"
+        );
+
+        return redirect()->back()->with('success', 'Status email berhasil diubah menjadi aktif.');
+    }
+
+    public function statusTidakAktif(Jsm $jsm){
+        $jsm->update([
+            'status_email' => 'tidak_aktif',
+        ]);
+        
+        ActivityLogger::logUpdate(
+            $jsm,
+            $jsm->id,
+            ['status_email' => 'tidak_aktif'],
+            "Updated Jsm #{$jsm->id}: status_email set to tidak_aktif"
+        );
+
+        return redirect()->back()->with('success', 'Status email berhasil diubah menjadi tidak aktif.');
     }
 }

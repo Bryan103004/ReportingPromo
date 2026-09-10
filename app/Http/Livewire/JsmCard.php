@@ -49,7 +49,7 @@ class JsmCard extends Component
                     DB::raw('YEAR(j.periode_bulan) as year'),
                     DB::raw('MONTH(j.periode_bulan) as month'),
                     DB::raw('SUM(j.nominal) as nominal'),
-                    DB::raw('COUNT(j.id) as total_dokumen')
+                    DB::raw('COUNT(DISTINCT j.id) as total_dokumen')
                 )
                 // 1. Join ke tabel pivot jsm_toko dulu
                 ->leftJoin('jsm_toko as jt', 'j.id', '=', 'jt.jsm_id')

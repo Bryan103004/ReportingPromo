@@ -50,7 +50,7 @@ class RafaksiCard extends Component
                 DB::raw('YEAR(r.periode_bulan) as year'),
                 DB::raw('MONTH(r.periode_bulan) as month'),
                 DB::raw('SUM(r.nominal) as nominal'),
-                DB::raw('COUNT(r.id) as total_dokumen') 
+                DB::raw('COUNT(DISTINCT r.id) as total_dokumen')
             )
             // 1. Join ke tabel pivot rafaksi_toko dulu
             ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')

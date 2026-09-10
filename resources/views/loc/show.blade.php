@@ -66,7 +66,7 @@
                     @endif
                 </dd>
             </div>
-            <div class="grid grid-cols-3 gap-4 px-6 py-4">
+            <!-- <div class="grid grid-cols-3 gap-4 px-6 py-4">
                 <dt class="text-sm font-semibold text-gray-500">Status Approval</dt>
                 <dd class="col-span-2 text-sm">
                     @if($loc->approved_at)
@@ -85,7 +85,7 @@
                         @endif
                     @endif
                 </dd>
-            </div>
+            </div> -->
         </dl>
     </div>
 </div>

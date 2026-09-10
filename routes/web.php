@@ -14,6 +14,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SupplierRafaksiController;
 use App\Http\Controllers\TokoController;
+use App\Http\Controllers\UnifiedDocumentController;
 use App\Http\Controllers\UtilityController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -69,6 +70,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/jsm/rekap/{year}/{month}', [JsmController::class, 'showMonth'])->name('jsm.show_month');
     Route::get('/jsm/export_excel', [JsmController::class, 'exportExcel'])->name('jsm.export.excel');
     Route::get('/jsm/export_csv', [JsmController::class, 'exportCSV'])->name('jsm.export');
+    Route::get('/jsm/documents/{document}/download', [JsmController::class, 'downloadDocument'])->name('jsm.documents.download');
+    Route::delete('/jsm/documents/{document}', [JsmController::class, 'deleteDocument'])->name('jsm.documents.destroy');
+    Route::get('/jsm/{jsm}/status-tidak-aktif', [JsmController::class, 'statusTidakAktif'])->name('jsm.status-tidak-aktif');
+    Route::get('/jsm/{jsm}/status-aktif', [JsmController::class, 'statusAktif'])->name('jsm.status-aktif');
 
     Route::resource('jsm', JsmController::class);
 
@@ -78,6 +83,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/rafaksi/rekap/{year}/{month}', [RafaksiController::class, 'showMonth'])->name('rafaksi.show_month');
     Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->name('rafaksi.export.excel');
     Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');
+    Route::get('/rafaksi/documents/{document}/download', [RafaksiController::class, 'downloadDocument'])->name('rafaksi.documents.download');
+    Route::delete('/rafaksi/documents/{document}', [RafaksiController::class, 'deleteDocument'])->name('rafaksi.documents.destroy');
+    Route::get('/rafaksi/{rafaksi}/status-tidak-aktif', [RafaksiController::class, 'statusTidakAktif'])->name('rafaksi.status-tidak-aktif');
+    Route::get('/rafaksi/{rafaksi}/status-aktif', [RafaksiController::class, 'statusAktif'])->name('rafaksi.status-aktif');
     Route::resource('rafaksi', RafaksiController::class);
 
     Route::get('/pwp/renew', [PwpController::class, 'renewIndex'])->name('pwp.renew.index');
@@ -86,6 +95,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pwp/rekap/{year}/{month}', [PwpController::class, 'showMonth'])->name('pwp.show_month');
     Route::get('/pwp/export_excel', [PwpController::class, 'exportExcel'])->name('pwp.export.excel');
     Route::get('/pwp/export_csv', [PwpController::class, 'exportCSV'])->name('pwp.export');
+    Route::get('/pwp/documents/{document}/download', [PwpController::class, 'downloadDocument'])->name('pwp.documents.download');
+    Route::delete('/pwp/documents/{document}', [PwpController::class, 'deleteDocument'])->name('pwp.documents.destroy');
+    Route::get('/pwp/{pwp}/status-tidak-aktif', [PwpController::class, 'statusTidakAktif'])->name('pwp.status-tidak-aktif');
+    Route::get('/pwp/{pwp}/status-aktif', [PwpController::class, 'statusAktif'])->name('pwp.status-aktif');
+
     Route::resource('pwp', PwpController::class);
 
     Route::get('/loc/renew', [LocController::class, 'renewIndex'])->name('loc.renew.index');
@@ -96,6 +110,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/loc/export_csv', [LocController::class, 'exportCSV'])->name('loc.export');
     Route::post('/loc/{loc}/approve', [LocController::class, 'approve'])->name('loc.approve');
     Route::get('/loc/{loc}/download', [LocController::class, 'downloadDocument'])->name('loc.download');
+    Route::get('/loc/documents/{document}/download', [LocController::class, 'downloadDocumentFile'])->name('loc.documents.download');
+    Route::delete('/loc/documents/{document}', [LocController::class, 'deleteDocumentFile'])->name('loc.documents.destroy');
     Route::resource('loc', LocController::class);
 
     Route::resource('region', RegionController::class);
@@ -103,13 +119,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/get-tokos/{region_id}',[TokoController::class, 'getByRegion']);
     Route::get('/get-tokos-all',[TokoController::class, 'getAll']);
     Route::get('/next-no-raf',[UtilityController::class, 'nextNoRaf']);
-    Route::get('/create-document', function(){
-        $supplierRafaksi = \App\Models\SupplierRafaksi::all();
-        $regions = \App\Models\Region::whereNotIn('status',['nonaktif'])->get();
-        $categories = \App\Models\Category::all();
-        $ptOptions = \App\Models\Toko::whereNotNull('nama_pt')->where('nama_pt', '!=', '')->distinct()->orderBy('nama_pt')->pluck('nama_pt');
-        return view('unified.create', compact('supplierRafaksi', 'regions', 'categories', 'ptOptions'));
-    })->name('create.document');
+    Route::get('/create-document', [UnifiedDocumentController::class, 'create'])->name('create.document');
+    Route::post('/create-document/import-preview', [UnifiedDocumentController::class, 'importPreview'])->name('create.document.import');
     
     Route::resource('toko', TokoController::class);
 
@@ -118,6 +129,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::resource('notification-recipients', NotificationRecipientController::class);
+
+    // Rute untuk menampilkan form centang toko sebelum print
+    Route::get('/document/{type}/{id}/select-stores', [UtilityController::class, 'selectStoresForPrint'])->name('document.select-stores');
+
+    // Rute proses cetak sesungguhnya (menerima parameter toko_ids[] dari form di atas)
+    Route::get('/document/{type}/{id}/print', [UtilityController::class, 'printDocument'])->name('document.print');
 });
 
 require __DIR__.'/auth.php';

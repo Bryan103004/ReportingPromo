@@ -97,6 +97,10 @@ class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles, WithS
 
             $finalData = collect();
 
+            $combinedStoreValues = \App\Services\RekapMatrixQueryBuilder::combinedStoreValuesSql(
+                'rafaksis', 'rafaksi_id', 'rafaksi_items', 'rafaksi_item_stores', 'rafaksi_item_id', 'rafaksi_toko'
+            );
+
             // 2. Loop per Kategori
             foreach ($allCategories as $category) {
             // 1. Bangun SELECT Fields
@@ -110,24 +114,21 @@ class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles, WithS
             foreach ($allStores as $store) {
                 $aliasToko = str_replace('GL ', '', $store->nama_toko);
                 // Tambahkan filter category_id langsung di dalam CASE
-                $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' AND r.category_id = {$category->id} THEN r.nominal ELSE 0 END) AS `{$aliasToko}`";
+                $selectFields[] = "SUM(CASE WHEN csv.toko_nama = '{$store->nama_toko}' AND csv.category_id = {$category->id} THEN csv.val ELSE 0 END) AS `{$aliasToko}`";
             }
             // Filter total juga harus spesifik kategori
-            $selectFields[] = "SUM(CASE WHEN r.category_id = {$category->id} THEN IFNULL(r.nominal, 0) ELSE 0 END) AS TOTAL";
+            $selectFields[] = "SUM(CASE WHEN csv.category_id = {$category->id} THEN IFNULL(csv.val, 0) ELSE 0 END) AS TOTAL";
 
-            // 2. Query Utama
+            // 2. Query Utama -- csv = nilai per-toko gabungan (item riil kalau ada,
+            // fallback ke nominal lama buat dokumen yang belum punya baris item)
             $categoryData = DB::table(DB::raw($bulanSubquery))
                 ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM rafaksis WHERE periode_bulan IS NOT NULL) AS m_tahun"))
-                // JOIN transaksi (r) dengan kondisi filter kategori sudah dilakukan di sini
-                ->leftJoin('rafaksis as r', function($join) use ($category) {
-                    $join->on(DB::raw('MONTH(r.periode_bulan)'), '=', 'm_bulan.id_bulan')
-                        ->on(DB::raw('YEAR(r.periode_bulan)'), '=', 'm_tahun.tahun')
-                        ->where('r.category_id', '=', $category->id); // <--- FILTER KATEGORI HARUS DI SINI
+                ->leftJoin(DB::raw($combinedStoreValues), function($join) {
+                    $join->on(DB::raw('csv.mo'), '=', 'm_bulan.id_bulan')
+                        ->on(DB::raw('csv.yr'), '=', 'm_tahun.tahun');
                 })
-                ->leftJoin('rafaksi_toko as rt', 'r.id', '=', 'rt.rafaksi_id')
-                ->leftJoin('tokos as tk', 'rt.toko_id', '=', 'tk.id')
                 ->selectRaw(implode(', ', $selectFields))
-                ->where('m_tahun.tahun', $year) 
+                ->where('m_tahun.tahun', $year)
                 ->groupBy('m_tahun.tahun', 'm_bulan.id_bulan', 'm_bulan.nama_bulan')
                 ->orderBy('m_bulan.id_bulan', 'ASC')
                 ->get();

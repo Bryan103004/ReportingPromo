@@ -171,14 +171,28 @@
                 <textarea name="remarks" id="remarks" rows="3" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('remarks') border-red-500 focus:ring-red-500 focus:border-red-500 @enderror" placeholder="Masukkan catatan di sini...">{{ old('remarks', $loc->remarks) }}</textarea>
             </div> 
 
-            <div class="mb-4 mx-6">
-                <label for="document" class="block text-sm font-semibold text-gray-700 mb-1.5">Dokumen (PDF)</label>
-                <input type="file" name="document" id="document" accept="application/pdf" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
-                @if($loc->document_path)
-                    <div class="mt-2">
-                        <a href="{{ route('loc.download', $loc->id) }}" class="text-sm text-blue-600 hover:underline">Download dokumen saat ini</a>
-                    </div>
+            <div class="mb-8 mx-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Dokumen (PDF)</label>
+
+                @if ($loc->documents->isNotEmpty())
+                    <ul class="mb-3 divide-y divide-gray-200 rounded-md border border-gray-200">
+                        @foreach ($loc->documents as $doc)
+                            <li class="flex items-center justify-between gap-3 px-4 py-2 text-sm">
+                                <a href="{{ route('loc.documents.download', $doc->id) }}" class="text-blue-600 hover:underline truncate" target="_blank">
+                                    {{ $doc->filename }}
+                                </a>
+                                <button type="button" onclick="submitDocumentDelete('{{ route('loc.documents.destroy', $doc->id) }}')" class="text-red-500 hover:text-red-700 text-xs font-semibold shrink-0">Hapus</button>
+                            </li>
+                        @endforeach
+                    </ul>
                 @endif
+
+                <label for="document_file" class="block text-xs font-medium text-gray-500 mb-1.5">Tambah Dokumen Baru</label>
+                <input type="file" name="document_file[]" id="document_file" accept="application/pdf" multiple class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('document_file.*') border-red-500 @enderror">
+                <p class="text-xs text-gray-500 mt-2">Format PDF, maksimal 5MB per file. Bisa pilih lebih dari satu file.</p>
+                @error('document_file.*')
+                    <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             {{-- approve button moved below to avoid nested form --}}
@@ -193,7 +207,7 @@
             </div>
         </form>
 
-        @if(!$loc->approved_at)
+        <!-- @if(!$loc->approved_at)
             <div class="mb-6 mx-6">
                 <form action="{{ route('loc.approve', $loc->id) }}" method="POST">
                     @csrf
@@ -201,14 +215,28 @@
                 </form>
             </div>
         @else
-            <div class="mb-6 mx-6 text-sm text-gray-600">Approved by: {{ $loc->approvedBy?->name ?? '-' }} at {{ $loc->approved_at }}</div>
-        @endif
+            <div class="mb-6 mx-6 text-sm text-gray-600">Approved by: {{ $loc->approvedBy->name ?? '-' }} at {{ $loc->approved_at }}</div>
+        @endif -->
 
         </div>
     </div>
 </div>
 
 <script>
+    // Form dokumen dibuat lewat JS (bukan <form> bersarang di dalam form utama --
+    // <form> nested tidak valid HTML dan browser akan "menaikkan" field-nya ke
+    // form terluar, yang bisa bikin update dokumen malah men-trigger delete data utama).
+    function submitDocumentDelete(url) {
+        if (!confirm('Hapus dokumen ini?')) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        form.style.display = 'none';
+        form.innerHTML = `@csrf @method('DELETE')`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+
     let supplierList = @json($supplierRafaksi);
     // Selected toko ids for edit
     window.selectedTokos = @json($loc->tokos->pluck('id'));

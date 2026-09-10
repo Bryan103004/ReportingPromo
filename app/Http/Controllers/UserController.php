@@ -58,6 +58,10 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'username' => 'required|string|max:255|alpha_dash|unique:users,username',
             'email' => 'required|email|max:255|unique:users,email',
+            'is_type' => 'nullable|boolean',
+            'is_rafaksi_spv' => 'nullable|boolean',
+            'is_jsm_spv' => 'nullable|boolean',
+            'is_pwp_spv' => 'nullable|boolean',
             'password' => 'required|string|min:8|confirmed',
             'roles' => 'nullable|array',
             'roles.*' => 'exists:roles,id',
@@ -73,7 +77,8 @@ class UserController extends Controller
 
         if ($request->hasFile('ttd')) {
             $file = $request->file('ttd');
-            $path = $file->store('signatures', 'public');
+            $filename = $file->getClientOriginalName();
+            $path = $file->storeAs('signatures', $filename, 'local');
             $userPayload['signature_path'] = $path;
             $userPayload['ttd'] = 'storage/' . $path;
         }
@@ -112,6 +117,10 @@ class UserController extends Controller
         $validatedData = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'is_type' => 'nullable|boolean',
+            'is_rafaksi_spv' => 'nullable|boolean',
+            'is_jsm_spv' => 'nullable|boolean',
+            'is_pwp_spv' => 'nullable|boolean',
             'username' => 'required|string|max:255|alpha_dash|unique:users,username,' . $user->id,
             'password' => 'nullable|string|min:8|confirmed',
             'roles' => 'nullable|array',
@@ -145,10 +154,11 @@ class UserController extends Controller
 
         if ($request->hasFile('ttd')) {
             $file = $request->file('ttd');
-            $path = $file->store('signatures', 'public');
+            $filename = $file->getClientOriginalName();
+            $path = $file->storeAs('signatures', $filename, 'local');
             // delete old signature file from storage disk
             if ($user->signature_path) {
-                Storage::disk('public')->delete($user->signature_path);
+                Storage::delete($user->signature_path);
             }
             $userPayload['signature_path'] = $path;
             $userPayload['ttd'] = 'storage/' . $path;
@@ -180,6 +190,7 @@ class UserController extends Controller
             );
 
             $user->delete();
+
 
             return redirect()->route('user.index')->with('success', 'User deleted successfully.');
         } else {

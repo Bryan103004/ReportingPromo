@@ -41,8 +41,8 @@ class PwpBadge extends Component
 
         $data = DB::table('pwps as p')
             ->select([
-                DB::raw("SUM(CASE WHEN p.periode_akhir > '{$today}' THEN 1 ELSE 0 END) as `aktif`"),
-                DB::raw("SUM(CASE WHEN p.periode_akhir <= '{$today}' THEN 1 ELSE 0 END) as `expired`")
+                DB::raw("COUNT(DISTINCT CASE WHEN p.periode_akhir > '{$today}' THEN p.id END) as `aktif`"),
+                DB::raw("COUNT(DISTINCT CASE WHEN p.periode_akhir <= '{$today}' THEN p.id END) as `expired`")
             ])
             ->leftJoin('pwp_toko as pt', 'p.id', '=', 'pt.pwp_id')
             ->leftJoin('tokos as tk', 'pt.toko_id', '=', 'tk.id')

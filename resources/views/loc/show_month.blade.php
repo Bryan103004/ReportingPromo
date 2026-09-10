@@ -195,6 +195,7 @@
                                         <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
                                         <a href="{{ route('loc.renew.index', ['id' => $loc->id]) }}" title="Renew Data">🆕</a>
                                     @endif
+
                                     
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('loc.destroy', $loc->id) }}" method="POST" class="inline">

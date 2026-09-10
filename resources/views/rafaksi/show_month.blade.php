@@ -88,6 +88,7 @@
                         <th class="px-6 py-4 text-right">Remarks</th>
                         @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>
+                        <th class="px-6 py-4 text-right">Status</th>
                         @endcan
                         <th class="px-6 py-4 text-right">Aksi</th>
 
@@ -152,12 +153,19 @@
                                     {{ $rafaksi->remarks }}
                                 </span>
                             </td>
+
                             @can('see_nominal')
                             {{-- Nominal --}}
                             <td class="px-6 py-4 text-right font-bold text-green-600">
                                 Rp {{ number_format($rafaksi->nominal, 0, ',', '.') }}
                             </td>
                             @endcan
+
+                            <td class="px-6 py-4">
+                                <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                    {{ $rafaksi->status_email === 'aktif' ? 'Aktif' : 'Nonaktif' }}
+                                </span>
+                            </td>
 
                             {{-- Aksi (Opsional) --}}
                             <td class="px-6 py-4 text-center">
@@ -195,7 +203,20 @@
                                         <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">🆕</a>
                                     @endif
 
-                    
+                                    <a href="{{ route('document.select-stores', ['type' => 'rafaksi', 'id' => $rafaksi->id]) }}" title="Print Dokumen">
+                                        🖨️
+                                    </a>
+                                    
+                                    @if($rafaksi->status_email == 'aktif')
+                                        <a href="{{ route('rafaksi.status-tidak-aktif', $rafaksi->id) }}" title="Tandai Tidak Aktif">
+                                            ❌
+                                        </a>
+                                    @else
+                                        <a href="{{ route('rafaksi.status-aktif', $rafaksi->id) }}" title="Tandai Selesai">
+                                            ✅
+                                        </a>
+                                    @endif
+
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('rafaksi.destroy', $rafaksi->id) }}" method="POST" class="inline">
                                         @csrf 

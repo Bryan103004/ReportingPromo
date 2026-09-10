@@ -45,7 +45,7 @@ Date: 2026-08-13
 
 - Storage & security:
   - Store uploaded PDFs under `storage/app/public/loc_documents` and run `php artisan storage:link`.
-  - Validate uploads: `mimes:pdf|max:10240` (example 10MB limit).
+  - Validate uploads: `mimes:pdf|max:5120` (example 5MB limit).
 
 - Query scoping / permissions:
   - Scope every query that lists `Toko` data and reminders by the current user's assigned tokos (via the pivot). Implement via a policy or repository layer, or add a global scope on the models used for user-facing lists.

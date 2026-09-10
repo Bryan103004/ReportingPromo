@@ -41,17 +41,18 @@ class ProfileController extends Controller
             }
 
             if ($user->signature_path) {
-                Storage::disk('public')->delete($user->signature_path);
+                Storage::disk('local')->delete($user->signature_path);
             }
 
             $validated['ttd'] = null;
             $validated['signature_path'] = null;
         } elseif ($request->hasFile('ttd')) {
             $validated['ttd'] = $this->storePublicUploadedFile($request->file('ttd'), 'ttd');
-            // Also store under the 'public' disk as signature_path — this is the field
+            // Also store under the 'local' disk as signature_path — this is the field
             // LocController::approve() reads (via User::signature_url) to stamp documents,
             // so a self-uploaded signature needs to land here too, not just in ttd.
-            $validated['signature_path'] = $request->file('ttd')->store('signatures', 'public');
+            $filename = $request->file('ttd')->getClientOriginalName();
+            $validated['signature_path'] = $request->file('ttd')->storeAs('signatures', $filename, 'local');
         } else {
             unset($validated['ttd']);
         }
@@ -61,7 +62,7 @@ class ProfileController extends Controller
         $user->save();
 
         if ($request->hasFile('ttd') && $oldSignaturePath) {
-            Storage::disk('public')->delete($oldSignaturePath);
+            Storage::disk('local')->delete($oldSignaturePath);
         }
 
         if ($request->hasFile('ttd') && $oldTtd && $oldTtd !== $validated['ttd']) {
@@ -86,7 +87,7 @@ class ProfileController extends Controller
 
         $this->deletePublicFile($user->ttd);
         if ($user->signature_path) {
-            Storage::disk('public')->delete($user->signature_path);
+            Storage::disk('local')->delete($user->signature_path);
         }
         $user->delete();
 

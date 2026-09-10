@@ -21,6 +21,16 @@ class Rafaksi extends Model
         return $this->belongsToMany(Toko::class, 'rafaksi_toko', 'rafaksi_id', 'toko_id');
     }
 
+    public function items()
+    {
+        return $this->hasMany(RafaksiItem::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(RafaksiDocument::class);
+    }
+
     public function getDaftarTokoFormattedAttribute()
     {
         // Jika tidak ada toko yang berelasi, kembalikan strip

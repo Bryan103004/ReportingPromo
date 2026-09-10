@@ -161,9 +161,12 @@
             </div> 
 
             <div class="mb-8 mx-6">
-                <label for="document" class="block text-sm font-semibold text-gray-700 mb-1.5">Upload Dokumen (PDF)</label>
-                <input type="file" name="document" id="document" accept="application/pdf" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors">
-                <p class="text-xs text-gray-500 mt-2">Format PDF, maksimal 10MB.</p>
+                <label for="document_file" class="block text-sm font-semibold text-gray-700 mb-1.5">Dokumen (PDF)</label>
+                <input type="file" name="document_file[]" id="document_file" accept="application/pdf" multiple class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('document_file.*') border-red-500 @enderror">
+                <p class="text-xs text-gray-500 mt-2">Format PDF, maksimal 5MB per file. Bisa pilih lebih dari satu file.</p>
+                @error('document_file.*')
+                    <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             {{-- Action Buttons --}}

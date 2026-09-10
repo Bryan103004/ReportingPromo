@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Exports\DetailLocReport;
 use App\Models\Category;
 use App\Models\Loc;
+use App\Models\LocDocument;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Models\Toko;
@@ -14,6 +15,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class LocController extends Controller
 {
@@ -206,18 +208,11 @@ class LocController extends Controller
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
-            'document' => 'nullable|mimes:pdf|max:10240',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
         ]);
 
-        $loc = Loc::create($request->except('toko_id'));
-        // handle document upload
-        if ($request->hasFile('document')) {
-            $file = $request->file('document');
-            $path = $file->store('loc_documents', 'public');
-            $loc->document_path = $path;
-            $loc->document_original_name = $file->getClientOriginalName();
-            $loc->save();
-        }
+        $loc = Loc::create($request->except(['toko_id', 'document_file']));
+        $this->storeDocuments($loc, $request);
         $tokoIds = is_array($request->input('toko_id')) ? $request->input('toko_id') : [$request->input('toko_id')];
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowed = auth()->user()->accessibleTokoIds()->toArray();
@@ -242,6 +237,7 @@ class LocController extends Controller
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
         $categories = Category::all();
         $tokos = Toko::all();
+        $loc->load('documents');
 
         return view('loc.edit', compact('loc', 'supplierRafaksi', 'regions', 'categories', 'tokos', 'year', 'month'));
     }
@@ -261,18 +257,11 @@ class LocController extends Controller
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
-            'document' => 'nullable|mimes:pdf|max:10240',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
         ]);
 
-        $loc->update($request->except('toko_id'));
-        // handle document upload (replace existing)
-        if ($request->hasFile('document')) {
-            $file = $request->file('document');
-            $path = $file->store('loc_documents', 'public');
-            $loc->document_path = $path;
-            $loc->document_original_name = $file->getClientOriginalName();
-            $loc->save();
-        }
+        $loc->update($request->except(['toko_id', 'document_file']));
+        $this->storeDocuments($loc, $request);
         $tokoIds = is_array($request->input('toko_id')) ? $request->input('toko_id') : [$request->input('toko_id')];
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowed = auth()->user()->accessibleTokoIds()->toArray();
@@ -764,5 +753,52 @@ class LocController extends Controller
         }
 
         return Storage::disk('public')->download($loc->document_path, $loc->document_original_name ?? basename($loc->document_path));
+    }
+
+    /**
+     * Simpan file dokumen tambahan (nambah, bukan mengganti/menghapus dokumen
+     * yang sudah ada -- hapus dokumen dilakukan lewat tombol hapus per-file
+     * di halaman edit, bukan otomatis pas submit form). Terpisah dari field
+     * "document" lama yang dipakai fitur approve/stamp tanda tangan.
+     */
+    private function storeDocuments(Loc $loc, Request $request): void
+    {
+        if (! $request->hasFile('document_file')) {
+            return;
+        }
+
+        $dir = 'loc_documents/' . $loc->id;
+
+        foreach ($request->file('document_file') as $file) {
+            if (! $file->isValid()) {
+                continue;
+            }
+
+            $originalName = $file->getClientOriginalName();
+            $storedName = $originalName;
+            $path = $file->storeAs($dir, $storedName);
+
+            $loc->documents()->create([
+                'filename' => $originalName,
+                'filepath' => $path,
+            ]);
+        }
+    }
+
+    public function downloadDocumentFile(LocDocument $document)
+    {
+        if (! Storage::exists($document->filepath)) {
+            abort(404, 'Dokumen tidak ditemukan.');
+        }
+
+        return Storage::download($document->filepath, $document->filename);
+    }
+
+    public function deleteDocumentFile(LocDocument $document)
+    {
+        Storage::delete($document->filepath);
+        $document->delete();
+
+        return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
     }
 }

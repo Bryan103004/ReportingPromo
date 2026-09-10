@@ -25,7 +25,7 @@
                 <td>{{ $row->no_raf }}</td>
                 <td>{{ $row->supplier_code }}</td>
                 <td>{{ $row->supplier_name }}</td>
-                <td>{{ $row->tokos()->pluck('nama_pt')->implode(', ') ?: '-' }}</td>
+                <td>{{ $row->tokos()->pluck('nama_pt')->unique()->implode(', ') ?: '-' }}</td>
                 <td>{{ $row->store }}</td>
                 <td>{{ $row->daftar_toko_formatted }}</td>
 
@@ -38,7 +38,7 @@
         @if($data->count() > 0)
         <tfoot>
             <tr>
-                <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="9" align="right"><b>Grand Total:</b></td>
+                <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="10" align="right"><b>Grand Total:</b></td>
                 <td style="background-color: #FF4E73DF; color: #FFFFFF;" align="right"><b>{{ $data->sum('nominal') }}</b></td>
             </tr>
         </tfoot>

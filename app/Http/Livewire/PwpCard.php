@@ -49,7 +49,7 @@ class PwpCard extends Component
                 DB::raw('YEAR(p.periode_bulan) as year'),
                 DB::raw('MONTH(p.periode_bulan) as month'),
                 DB::raw('SUM(p.nominal) as nominal'),
-                DB::raw('COUNT(p.id) as total_dokumen')
+                DB::raw('COUNT(DISTINCT p.id) as total_dokumen')
             )
             ->leftJoin('pwp_toko as pt', 'p.id', '=', 'pt.pwp_id')
             ->leftJoin('tokos as tk', 'pt.toko_id', '=', 'tk.id')

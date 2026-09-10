@@ -5,14 +5,19 @@ namespace App\Http\Controllers;
 use App\Exports\DetailPwpReport;
 use App\Models\Category;
 use App\Models\Pwp;
+use App\Models\PwpDocument;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Models\Toko;
 use App\Services\ActivityLogger;
+use App\Services\ClaimCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
 
 class PwpController extends Controller
@@ -163,22 +168,27 @@ class PwpController extends Controller
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',
+            'no_shiji' => 'nullable|string',
             'status_email' => 'aktif',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
-            'nominal' => 'numeric|min:0|required',
+            'nominal' => 'required_without:items|nullable|numeric|min:0',
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
             'category_id' => 'exists:categories,id',
+            ...$this->itemValidationRules(),
         ]);
+
+        $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
 
         $category = Category::find($request->category_id);
 
         $cat_init = $category->initial_category;
 
 
-        $data = $request->except('toko_id');
+        $data = $request->except(['toko_id', 'items', 'document_file']);
 
         // If frontend provided raf_sequence explicitly, prefer it
         if ($request->filled('raf_sequence')) {
@@ -205,14 +215,26 @@ class PwpController extends Controller
             $data['no_raf'] = "RAFPWP/{$cat_init}/{$padded}/{$month}/{$year}";
         }
 
-        $pwp = Pwp::create($data);
         // ensure user can only assign tokos they have access to
         $tokoIds = $request->input('toko_id', []);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowed = auth()->user()->accessibleTokoIds()->toArray();
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
-        $pwp->tokos()->sync($tokoIds);
+
+        $pwp = DB::transaction(function () use ($data, $tokoIds, $request) {
+            $pwp = Pwp::create($data);
+            $pwp->tokos()->sync($tokoIds);
+
+            $nominal = $this->persistItems($pwp, $request->input('items', []), $tokoIds);
+            if ($nominal !== null) {
+                $pwp->update(['nominal' => $nominal]);
+            }
+
+            $this->storeDocuments($pwp, $request);
+
+            return $pwp;
+        });
 
         ActivityLogger::logCreate(
             $pwp,
@@ -224,6 +246,144 @@ class PwpController extends Controller
         return redirect()->route('pwp.index')->with('success', 'Data PWP berhasil disimpan.');
     }
 
+    /**
+     * Simpan file dokumen PDF yang di-upload (nambah, bukan mengganti/menghapus
+     * dokumen yang sudah ada -- hapus dokumen dilakukan lewat tombol hapus
+     * per-file di halaman edit, bukan otomatis pas submit form).
+     */
+    private function storeDocuments(Pwp $pwp, Request $request): void
+    {
+        if (! $request->hasFile('document_file')) {
+            return;
+        }
+
+        $dir = 'pwp_documents/' . $pwp->id;
+
+        foreach ($request->file('document_file') as $file) {
+            if (! $file->isValid()) {
+                continue;
+            }
+
+            $originalName = $file->getClientOriginalName();
+            $storedName = $originalName;
+            $path = $file->storeAs($dir, $storedName);
+
+            $pwp->documents()->create([
+                'filename' => $originalName,
+                'filepath' => $path,
+            ]);
+        }
+    }
+
+    /**
+     * Aturan validasi baris item (dipakai bareng store() & update()).
+     */
+    private function itemValidationRules(): array
+    {
+        return [
+            'items' => 'nullable|array',
+            'items.*.article' => 'required_with:items|string|max:100',
+            'items.*.shiji_code' => 'nullable|string|max:100',
+            'items.*.description' => 'nullable|string',
+            'items.*.disc_nominal' => 'nullable|numeric|min:0',
+            'items.*.promo_disc' => 'nullable|numeric|min:0|max:100',
+            'items.*.reg' => 'required_with:items|numeric|min:0',
+            'items.*.promo' => 'nullable|numeric|min:0',
+            'items.*.sales' => 'nullable|array',
+            'items.*.sales.*' => 'nullable|numeric|min:0',
+        ];
+    }
+
+    /**
+     * DISC NOMINAL dan PROMO DISC saling eksklusif per baris item.
+     */
+    private function assertItemsDiscMutuallyExclusive(array $items): void
+    {
+        foreach ($items as $index => $item) {
+            $discNominal = $item['disc_nominal'] ?? null;
+            $promoDisc = $item['promo_disc'] ?? null;
+            $hasDisc = $discNominal !== null && $discNominal !== '' && (float) $discNominal > 0;
+            $hasPromo = $promoDisc !== null && $promoDisc !== '' && (float) $promoDisc > 0;
+
+            if ($hasDisc && $hasPromo) {
+                $baris = $index + 1;
+                throw ValidationException::withMessages([
+                    "items.{$index}.disc_nominal" => "Baris item #{$baris}: DISC NOMINAL dan PROMO DISC tidak boleh diisi bersamaan.",
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Simpan ulang seluruh baris item (hapus lalu insert ulang) beserta
+     * breakdown Sales/Value per toko, dan kembalikan total nominal dokumen
+     * (SUM value_total semua item). Null kalau tidak ada item sama sekali,
+     * supaya nominal manual yang sudah diposting tetap dipakai apa adanya.
+     */
+    private function persistItems(Pwp $pwp, array $itemsInput, array $tokoIds): ?float
+    {
+        if (empty($itemsInput)) {
+            return null;
+        }
+
+        $pwp->items()->delete();
+
+        $total = 0;
+
+        foreach ($itemsInput as $index => $itemInput) {
+            $discNominal = $itemInput['disc_nominal'] ?? null;
+            $promoDisc = $itemInput['promo_disc'] ?? null;
+            $reg = (float) ($itemInput['reg'] ?? 0);
+
+            $claim = ClaimCalculator::claim(
+                ($discNominal !== null && $discNominal !== '') ? (float) $discNominal : null,
+                ($promoDisc !== null && $promoDisc !== '') ? (float) $promoDisc : null,
+                $reg
+            );
+
+            $item = $pwp->items()->create([
+                'line_no' => $itemInput['line_no'] ?? ($index + 1),
+                'article' => $itemInput['article'],
+                'shiji_code' => $itemInput['shiji_code'] ?? null,
+                'description' => $itemInput['description'] ?? null,
+                'disc_nominal' => ($discNominal !== null && $discNominal !== '') ? $discNominal : null,
+                'promo_disc' => ($promoDisc !== null && $promoDisc !== '') ? $promoDisc : null,
+                'reg' => $reg,
+                'promo' => $itemInput['promo'] ?? null,
+                'claim' => $claim,
+                'sales_total' => 0,
+                'value_total' => 0,
+            ]);
+
+            $salesTotal = 0;
+            $valueTotal = 0;
+
+            foreach ($tokoIds as $tokoId) {
+                $salesQty = $itemInput['sales'][$tokoId] ?? null;
+                if ($salesQty === null || $salesQty === '') {
+                    continue;
+                }
+
+                $salesQty = (float) $salesQty;
+                $value = ClaimCalculator::value($claim, $salesQty);
+
+                $item->stores()->create([
+                    'toko_id' => $tokoId,
+                    'sales_qty' => $salesQty,
+                    'value' => $value,
+                ]);
+
+                $salesTotal += $salesQty;
+                $valueTotal += $value;
+            }
+
+            $item->update(['sales_total' => $salesTotal, 'value_total' => $valueTotal]);
+            $total += $valueTotal;
+        }
+
+        return $total;
+    }
+
     public function edit(Request $request, Pwp $pwp) {
         $year = Carbon::parse($pwp->periode_bulan)->year;
         $month = Carbon::parse($pwp->periode_bulan)->month;
@@ -231,6 +391,7 @@ class PwpController extends Controller
         $supplierRafaksi = SupplierRafaksi::all();
         $regions = Region::whereNotIn('status',['nonaktif'])->get();
         $categories = Category::all();
+        $pwp->load('items.stores', 'documents');
 
         return view('pwp.edit', compact('pwp', 'tokos', 'categories', 'supplierRafaksi', 'regions', 'year', 'month'));
     }
@@ -242,23 +403,38 @@ class PwpController extends Controller
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',
+            'no_shiji' => 'nullable|string',
             'status_email' => 'in:aktif,tidak_aktif|required',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
-            'nominal' => 'numeric|min:0|required',
+            'nominal' => 'required_without:items|nullable|numeric|min:0',
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
             'category_id' => 'exists:categories,id',
+            ...$this->itemValidationRules(),
         ]);
 
-        $pwp->update($request->except('toko_id'));
+        $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
+
         $tokoIds = $request->input('toko_id', []);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowed = auth()->user()->accessibleTokoIds()->toArray();
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
-        $pwp->tokos()->sync($tokoIds);
+
+        DB::transaction(function () use ($request, $pwp, $tokoIds) {
+            $pwp->update($request->except(['toko_id', 'items', 'document_file']));
+            $pwp->tokos()->sync($tokoIds);
+
+            $nominal = $this->persistItems($pwp, $request->input('items', []), $tokoIds);
+            if ($nominal !== null) {
+                $pwp->update(['nominal' => $nominal]);
+            }
+
+            $this->storeDocuments($pwp, $request);
+        });
 
         ActivityLogger::logUpdate(
             $pwp,
@@ -373,6 +549,10 @@ class PwpController extends Controller
 
             $finalData = collect();
 
+            $combinedStoreValues = \App\Services\RekapMatrixQueryBuilder::combinedStoreValuesSql(
+                'pwps', 'pwp_id', 'pwp_items', 'pwp_item_stores', 'pwp_item_id', 'pwp_toko'
+            );
+
             // 2. Loop per Kategori
             foreach ($allCategories as $category) {
             // 1. Bangun SELECT Fields
@@ -386,22 +566,19 @@ class PwpController extends Controller
             foreach ($allStores as $store) {
                 $aliasToko = str_replace('GL ', '', $store->nama_toko);
                 // Tambahkan filter category_id langsung di dalam CASE
-                $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' AND p.category_id = {$category->id} THEN p.nominal ELSE 0 END) AS `{$aliasToko}`";
+                $selectFields[] = "SUM(CASE WHEN csv.toko_nama = '{$store->nama_toko}' AND csv.category_id = {$category->id} THEN csv.val ELSE 0 END) AS `{$aliasToko}`";
             }
             // Filter total juga harus spesifik kategori
-            $selectFields[] = "SUM(CASE WHEN p.category_id = {$category->id} THEN IFNULL(p.nominal, 0) ELSE 0 END) AS TOTAL";
+            $selectFields[] = "SUM(CASE WHEN csv.category_id = {$category->id} THEN IFNULL(csv.val, 0) ELSE 0 END) AS TOTAL";
 
-            // 2. Query Utama
+            // 2. Query Utama -- csv = nilai per-toko gabungan (item riil kalau ada,
+            // fallback ke nominal lama buat dokumen yang belum punya baris item)
             $categoryData = DB::table(DB::raw($bulanSubquery))
                 ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM pwps WHERE periode_bulan IS NOT NULL) AS m_tahun"))
-                // JOIN transaksi (p) dengan kondisi filter kategori sudah dilakukan di sini
-                ->leftJoin('pwps as p', function($join) use ($category) {
-                    $join->on(DB::raw('MONTH(p.periode_bulan)'), '=', 'm_bulan.id_bulan')
-                        ->on(DB::raw('YEAR(p.periode_bulan)'), '=', 'm_tahun.tahun')
-                        ->where('p.category_id', '=', $category->id); // <--- FILTER KATEGORI HARUS DI SINI
+                ->leftJoin(DB::raw($combinedStoreValues), function($join) {
+                    $join->on(DB::raw('csv.mo'), '=', 'm_bulan.id_bulan')
+                        ->on(DB::raw('csv.yr'), '=', 'm_tahun.tahun');
                 })
-                ->leftJoin('pwp_toko as pt', 'p.id', '=', 'pt.pwp_id')
-                ->leftJoin('tokos as tk', 'pt.toko_id', '=', 'tk.id')
                 ->selectRaw(implode(', ', $selectFields))
                 ->where('m_tahun.tahun', $year)
                 ->groupBy('m_tahun.tahun', 'm_bulan.id_bulan', 'm_bulan.nama_bulan')
@@ -552,6 +729,10 @@ class PwpController extends Controller
 
             $finalData = collect();
 
+            $combinedStoreValues = \App\Services\RekapMatrixQueryBuilder::combinedStoreValuesSql(
+                'pwps', 'pwp_id', 'pwp_items', 'pwp_item_stores', 'pwp_item_id', 'pwp_toko'
+            );
+
             // 2. Loop per Kategori
             foreach ($allCategories as $category) {
                 $selectFields = [
@@ -563,21 +744,15 @@ class PwpController extends Controller
 
                 foreach ($allStores as $store) {
                     $aliasToko = str_replace('GL ', '', $store->nama_toko);
-                    $selectFields[] = "SUM(CASE WHEN tk.nama_toko = '{$store->nama_toko}' THEN p.nominal ELSE 0 END) AS `{$aliasToko}`";
+                    $selectFields[] = "SUM(CASE WHEN csv.toko_nama = '{$store->nama_toko}' AND csv.category_id = {$category->id} THEN csv.val ELSE 0 END) AS `{$aliasToko}`";
                 }
-                $selectFields[] = "SUM(IFNULL(p.nominal, 0)) AS TOTAL";
+                $selectFields[] = "SUM(CASE WHEN csv.category_id = {$category->id} THEN IFNULL(csv.val, 0) ELSE 0 END) AS TOTAL";
 
                 $categoryData = DB::table(DB::raw($bulanSubquery))
                     ->crossJoin(DB::raw("(SELECT DISTINCT YEAR(periode_bulan) AS tahun FROM pwps WHERE periode_bulan IS NOT NULL) AS m_tahun"))
-                    ->leftJoin('pwps as p', function($join) {
-                        $join->on(DB::raw('MONTH(p.periode_bulan)'), '=', 'm_bulan.id_bulan')
-                            ->on(DB::raw('YEAR(p.periode_bulan)'), '=', 'm_tahun.tahun');
-                    })
-                    ->leftJoin('pwp_toko as pt', 'p.id', '=', 'pt.pwp_id')
-                    ->leftJoin('tokos as tk', 'pt.toko_id', '=', 'tk.id')
-                    ->leftJoin('categories as ct', function($join) use ($category) {
-                        $join->on('p.category_id', '=', 'ct.id')
-                            ->where('ct.nama_kategori', '=', $category->nama_kategori);
+                    ->leftJoin(DB::raw($combinedStoreValues), function($join) {
+                        $join->on(DB::raw('csv.mo'), '=', 'm_bulan.id_bulan')
+                            ->on(DB::raw('csv.yr'), '=', 'm_tahun.tahun');
                     })
                     ->selectRaw(implode(', ', $selectFields))
                     ->where('m_tahun.tahun', $year)
@@ -663,5 +838,52 @@ class PwpController extends Controller
 
         $pwp = Pwp::findOrFail($id);
         return view('pwp.renew_index', compact('pwp'));
+    }
+
+    public function downloadDocument(PwpDocument $document)
+    {
+        if (! Storage::exists($document->filepath)) {
+            abort(404, 'Dokumen tidak ditemukan.');
+        }
+
+        return Storage::download($document->filepath, $document->filename);
+    }
+
+    public function deleteDocument(PwpDocument $document)
+    {
+        Storage::delete($document->filepath);
+        $document->delete();
+
+        return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
+    }
+
+    public function statusAktif(Pwp $pwp){
+        $pwp->update([
+            'status_email' => 'aktif',
+        ]);
+
+        ActivityLogger::logUpdate(
+            $pwp,
+            $pwp->id,
+            ['status_email' => 'aktif'],
+            "Updated Pwp #{$pwp->id}: status_email set to aktif"
+        );
+
+        return redirect()->back()->with('success', 'Status email berhasil diubah menjadi aktif.');
+    }
+
+    public function statusTidakAktif(Pwp $pwp){
+        $pwp->update([
+            'status_email' => 'tidak_aktif',
+        ]);
+        
+        ActivityLogger::logUpdate(
+            $pwp,
+            $pwp->id,
+            ['status_email' => 'tidak_aktif'],
+            "Updated Pwp #{$pwp->id}: status_email set to tidak_aktif"
+        );
+
+        return redirect()->back()->with('success', 'Status email berhasil diubah menjadi tidak aktif.');
     }
 }

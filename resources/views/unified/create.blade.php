@@ -7,18 +7,27 @@
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {{-- Header Form --}}
-        <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 flex items-center justify-between">
+        <div class="border-b border-gray-200 bg-gray-50 px-6 py-4 flex items-center justify-between gap-4">
             <div>
                 <h2 class="text-lg font-bold text-gray-800">Formulir Tambah Dokumen</h2>
                 <p class="text-sm text-gray-500 mt-1">Pilih tipe (RAF / JSM / PWP) dan lengkapi data di bawah ini.</p>
             </div>
-            <div class="w-56">
-                <label class="block text-sm font-medium text-gray-700">Tipe Dokumen</label>
-                <select id="category" name="category" class="mt-1 block w-full rounded-md border-gray-300" required>
-                    <option value="RAF">Rafaksi</option>
-                    <option value="JSM">JSM</option>
-                    <option value="PWP">PWP</option>
-                </select>
+            <div class="flex items-end gap-3">
+                <div>
+                    <button type="button" onclick="document.getElementById('excelFileInput').click()" class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
+                        Import dari Excel
+                    </button>
+                    <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden">
+                </div>
+                <div class="w-56">
+                    <label class="block text-sm font-medium text-gray-700">Tipe Dokumen</label>
+                    <select id="category" name="category" class="mt-1 block w-full rounded-md border-gray-300" required>
+                        <option value="RAF">Rafaksi</option>
+                        <option value="JSM">JSM</option>
+                        <option value="PWP">PWP</option>
+                    </select>
+                </div>
             </div>
         </div>
 
@@ -98,6 +107,12 @@
                     <input type="text" name="no_raf" id="no_raf" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" readonly placeholder="Otomatis terisi" required>
                 </div>
 
+                {{-- No. Shiji --}}
+                <div>
+                    <label for="no_shiji" class="block text-sm font-semibold text-gray-700 mb-1.5">No. Shiji</label>
+                    <input type="text" name="no_shiji" id="no_shiji" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" placeholder="Nomor dokumen Shiji (opsional)">
+                </div>
+
                 {{-- Periode Bulan --}}
                 <div>
                     <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Rekap<span class="text-red-500">*</span></label>
@@ -143,6 +158,26 @@
                 <input type="hidden" name="raf_sequence" id="raf_sequence" value="">
             </div>
 
+            {{-- Baris Item (Detail per Artikel) --}}
+            <div class="mx-6 mb-8">
+                <div class="flex items-center justify-between border-b pb-2 mb-3">
+                    <span class="text-lg font-semibold text-gray-700">Baris Item (Opsional)</span>
+                    <button type="button" onclick="addItemRow()" class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Baris
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Kosongkan kalau dokumen ini cuma butuh 1 nominal manual (tanpa detail per artikel). Kolom Sales per toko mengikuti toko yang dicentang di atas.</p>
+
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="w-full text-xs" id="itemsTable">
+                        <thead id="itemsTableHead" class="bg-gray-100"></thead>
+                        <tbody id="itemsTableBody"></tbody>
+                    </table>
+                    <div id="itemsTableEmpty" class="text-center text-gray-400 text-sm py-4 bg-gray-50">Belum ada baris item.</div>
+                </div>
+            </div>
+
             {{-- Nominal (Full Width di bawah) --}}
             <div class="mb-8 mx-6">
                 <label for="nominal" class="block text-sm font-semibold text-gray-700 mb-1.5">Nominal <span class="text-red-500">*</span></label>
@@ -152,7 +187,8 @@
                     </div>
                     <input type="number" name="nominal" id="nominal" class="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2.5 text-sm" placeholder="0" required>
                 </div>
-            </div> 
+                <p id="nominalComputedHint" class="text-xs text-gray-500 mt-1 hidden">Otomatis dari total Value semua baris item.</p>
+            </div>
 
             <!-- Remark -->
             <div class="mb-8 mx-6">
@@ -168,8 +204,56 @@
                     Simpan Data
                 </button>
             </div>
-        </form> 
+        </form>
 
+        {{-- ================= MODAL PREVIEW IMPORT EXCEL ================= --}}
+        <div id="importPreviewModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
+                    <h3 class="text-lg font-bold text-gray-800">Preview Import Excel</h3>
+                    <button type="button" onclick="closeImportPreview()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-6 overflow-y-auto">
+                    <div id="importPreviewLoading" class="text-center text-gray-500 py-8">Membaca file...</div>
+                    <div id="importPreviewContent" class="hidden">
+                        <div id="importPreviewErrors" class="hidden bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-md text-sm text-red-700"></div>
+                        <div id="importPreviewWarnings" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded-md text-sm text-amber-800"></div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
+                            <div><span class="text-gray-500">Periode Awal:</span> <span id="pvPeriodeAwal" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">Periode Akhir:</span> <span id="pvPeriodeAkhir" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">No. Shiji:</span> <span id="pvNoShiji" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">Vendor:</span> <span id="pvVendor" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">No. RAF di file:</span> <span id="pvNoRaf" class="font-semibold text-gray-400"></span></div>
+                            <div><span class="text-gray-500">Toko:</span> <span id="pvStores" class="font-semibold"></span></div>
+                        </div>
+
+                        <div class="overflow-x-auto border rounded-lg">
+                            <table class="w-full text-xs">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-2 py-2 text-left">ARTICLE</th>
+                                        <th class="px-2 py-2 text-left">DESCRIPTION</th>
+                                        <th class="px-2 py-2 text-right">REG</th>
+                                        <th class="px-2 py-2 text-right">DISC NOMINAL</th>
+                                        <th class="px-2 py-2 text-right">PROMO DISC</th>
+                                        <th class="px-2 py-2 text-right bg-amber-50">CLAIM</th>
+                                        <th class="px-2 py-2 text-right">Total Sales</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="importPreviewItemsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                    <button type="button" onclick="closeImportPreview()" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg">Batal</button>
+                    <button type="button" id="btnApproveImport" onclick="approveImportPreview()" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed">Gunakan Data Ini</button>
+                </div>
+            </div>
+        </div>
 
         {{-- ================= MODAL TAMBAH SUPPLIER ================= --}}
         <div id="supplierModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm">
@@ -298,9 +382,14 @@
         });
     }
 
-    async function fetchTokos(){
+    async function fetchTokos(skipRemember){
         const container = document.getElementById('toko_container');
-        rememberCheckedTokos();
+        // skipRemember: dipakai pas approve import Excel, karena checkedTokoIds sudah
+        // di-set eksplisit dari hasil parse -- kalau tetap "diingat" dari DOM lama,
+        // toko yang belum sempat dirender bakal ke-hapus lagi dari Set-nya.
+        if (!skipRemember) {
+            rememberCheckedTokos();
+        }
 
         const regionSelect = document.getElementById('region_filter');
         const regionIds = Array.from(regionSelect.selectedOptions).map(o => o.value);
@@ -347,7 +436,184 @@
             container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Gagal memuat toko.</div>';
             console.error(e);
         }
+
+        renderItemsTable();
     }
+
+    // ===================== BARIS ITEM (DETAIL PER ARTIKEL) =====================
+    window.itemRows = [];
+    window.itemStores = [];
+
+    function getCheckedStores(){
+        return Array.from(document.querySelectorAll('#toko_container input[type=checkbox]:checked'))
+            .map(cb => ({ id: cb.value, name: cb.nextElementSibling ? cb.nextElementSibling.textContent.trim() : cb.value }));
+    }
+
+    function fmtNum(n){
+        n = Number(n) || 0;
+        return n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    }
+
+    function escAttr(v){
+        return String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+
+    function computeClaim(discNominal, promoDisc, reg){
+        discNominal = parseFloat(discNominal) || 0;
+        promoDisc = parseFloat(promoDisc) || 0;
+        reg = parseFloat(reg) || 0;
+        if (discNominal > 0) return Math.round(discNominal * 100) / 100;
+        return Math.round((promoDisc / 100) * reg * 100) / 100;
+    }
+
+    function addItemRow(){
+        window.itemRows.push({
+            article: '', shiji_code: '', description: '',
+            disc_nominal: '', promo_disc: '', reg: '', promo: '',
+            sales: {},
+        });
+        renderItemsTable();
+    }
+
+    function removeItemRow(index){
+        window.itemRows.splice(index, 1);
+        renderItemsTable();
+    }
+
+    function renderItemsTable(){
+        const stores = getCheckedStores();
+        window.itemStores = stores;
+
+        const thead = document.getElementById('itemsTableHead');
+        const tbody = document.getElementById('itemsTableBody');
+        const empty = document.getElementById('itemsTableEmpty');
+        const table = document.getElementById('itemsTable');
+
+        if (!window.itemRows.length) {
+            table.classList.add('hidden');
+            empty.classList.remove('hidden');
+        } else {
+            table.classList.remove('hidden');
+            empty.classList.add('hidden');
+        }
+
+        let headHtml = '<tr>';
+        headHtml += '<th class="px-2 py-2 text-left">NO</th>';
+        headHtml += '<th class="px-2 py-2 text-left">ARTICLE</th>';
+        headHtml += '<th class="px-2 py-2 text-left">SHIJI CODE</th>';
+        headHtml += '<th class="px-2 py-2 text-left">DESCRIPTION</th>';
+        headHtml += '<th class="px-2 py-2 text-right">DISC NOMINAL</th>';
+        headHtml += '<th class="px-2 py-2 text-right">PROMO DISC (%)</th>';
+        headHtml += '<th class="px-2 py-2 text-right">REG</th>';
+        headHtml += '<th class="px-2 py-2 text-right">PROMO</th>';
+        headHtml += '<th class="px-2 py-2 text-right bg-amber-50">CLAIM</th>';
+        stores.forEach(s => { headHtml += `<th class="px-2 py-2 text-right whitespace-nowrap">Sales ${s.name}</th>`; });
+        headHtml += '<th class="px-2 py-2 text-right bg-amber-50">Sales TOTAL</th>';
+        stores.forEach(s => { headHtml += `<th class="px-2 py-2 text-right whitespace-nowrap">Value ${s.name}</th>`; });
+        headHtml += '<th class="px-2 py-2 text-right bg-amber-50">Value TOTAL</th>';
+        headHtml += '<th class="px-2 py-2"></th>';
+        headHtml += '</tr>';
+        thead.innerHTML = headHtml;
+
+        let bodyHtml = '';
+        window.itemRows.forEach((row, i) => {
+            bodyHtml += `<tr class="border-t">`;
+            bodyHtml += `<td class="px-2 py-1 text-gray-500">${i + 1}</td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][article]" class="w-28 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="article" data-row="${i}" value="${escAttr(row.article)}" required></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][shiji_code]" class="w-24 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="shiji_code" data-row="${i}" value="${escAttr(row.shiji_code)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][description]" class="w-32 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="description" data-row="${i}" value="${escAttr(row.description)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][disc_nominal]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="disc_nominal" data-row="${i}" value="${escAttr(row.disc_nominal)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][promo_disc]" class="w-16 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="promo_disc" data-row="${i}" value="${escAttr(row.promo_disc)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][reg]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="reg" data-row="${i}" value="${escAttr(row.reg)}" required></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][promo]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="promo" data-row="${i}" value="${escAttr(row.promo)}"></td>`;
+            bodyHtml += `<td class="px-2 py-1 text-right font-semibold bg-amber-50" data-claim-cell="${i}">0</td>`;
+            stores.forEach(s => {
+                const val = row.sales[s.id] ?? '';
+                bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][sales][${s.id}]" class="w-16 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="sales" data-store="${s.id}" data-row="${i}" value="${escAttr(val)}"></td>`;
+            });
+            bodyHtml += `<td class="px-2 py-1 text-right font-semibold bg-amber-50" data-salestotal-cell="${i}">0</td>`;
+            stores.forEach(s => {
+                bodyHtml += `<td class="px-2 py-1 text-right" data-value-cell="${i}-${s.id}">0</td>`;
+            });
+            bodyHtml += `<td class="px-2 py-1 text-right font-semibold bg-amber-50" data-valuetotal-cell="${i}">0</td>`;
+            bodyHtml += `<td class="px-1 py-1 text-center"><button type="button" onclick="removeItemRow(${i})" class="text-red-500 hover:text-red-700 font-bold" title="Hapus baris">&times;</button></td>`;
+            bodyHtml += '</tr>';
+        });
+        tbody.innerHTML = bodyHtml;
+
+        tbody.querySelectorAll('input[data-field]').forEach(input => {
+            input.addEventListener('input', onItemFieldInput);
+        });
+
+        recomputeAllRows();
+    }
+
+    function onItemFieldInput(e){
+        const row = parseInt(e.target.dataset.row, 10);
+        const field = e.target.dataset.field;
+        if (field === 'sales') {
+            window.itemRows[row].sales[e.target.dataset.store] = e.target.value;
+        } else {
+            window.itemRows[row][field] = e.target.value;
+        }
+        recomputeRow(row);
+        recomputeGrandNominal();
+    }
+
+    function recomputeRow(i){
+        const row = window.itemRows[i];
+        if (!row) return;
+        const claim = computeClaim(row.disc_nominal, row.promo_disc, row.reg);
+        const claimCell = document.querySelector(`[data-claim-cell="${i}"]`);
+        if (claimCell) claimCell.textContent = fmtNum(claim);
+
+        let salesTotal = 0, valueTotal = 0;
+        window.itemStores.forEach(s => {
+            const qty = parseFloat(row.sales[s.id]) || 0;
+            const value = Math.round(claim * qty * 100) / 100;
+            salesTotal += qty;
+            valueTotal += value;
+            const cell = document.querySelector(`[data-value-cell="${i}-${s.id}"]`);
+            if (cell) cell.textContent = fmtNum(value);
+        });
+        const salesTotalCell = document.querySelector(`[data-salestotal-cell="${i}"]`);
+        if (salesTotalCell) salesTotalCell.textContent = fmtNum(salesTotal);
+        const valueTotalCell = document.querySelector(`[data-valuetotal-cell="${i}"]`);
+        if (valueTotalCell) valueTotalCell.textContent = fmtNum(valueTotal);
+    }
+
+    function recomputeAllRows(){
+        window.itemRows.forEach((_, i) => recomputeRow(i));
+        recomputeGrandNominal();
+    }
+
+    function recomputeGrandNominal(){
+        const nominalInput = document.getElementById('nominal');
+        const hint = document.getElementById('nominalComputedHint');
+        if (!window.itemRows.length) {
+            nominalInput.readOnly = false;
+            hint.classList.add('hidden');
+            return;
+        }
+        let total = 0;
+        window.itemRows.forEach(row => {
+            const claim = computeClaim(row.disc_nominal, row.promo_disc, row.reg);
+            window.itemStores.forEach(s => {
+                const qty = parseFloat(row.sales[s.id]) || 0;
+                total += Math.round(claim * qty * 100) / 100;
+            });
+        });
+        nominalInput.value = total;
+        nominalInput.readOnly = true;
+        hint.classList.remove('hidden');
+    }
+
+    // Toggle toko checkbox (bukan cuma ganti region) juga harus update kolom per-toko di tabel item
+    document.getElementById('toko_container').addEventListener('change', function(e){
+        if (e.target.matches('input[type=checkbox]')) {
+            renderItemsTable();
+        }
+    });
 
     // Auto-generate no_raf when category or periode_bulan changes
     const categoryEl = document.getElementById('category');
@@ -388,13 +654,14 @@
     periodeBulanEl.addEventListener('change', refreshNoRaf);
 
     document.addEventListener('DOMContentLoaded', function(){
-        new TomSelect('#region_filter', {
+        window.regionTomSelect = new TomSelect('#region_filter', {
             plugins: ['remove_button'],
             create: false,
             maxItems: null,
             placeholder: '-- Pilih Region (bisa lebih dari satu) --',
             onChange: fetchTokos,
         });
+        renderItemsTable();
     });
 
     document.getElementById('pt_filter_mode').addEventListener('change', fetchTokos);
@@ -414,6 +681,132 @@
         btn.disabled = true;
         btn.textContent = 'Menyimpan...';
     });
+
+    // ===================== IMPORT DARI EXCEL =====================
+    window.importPreviewResult = null;
+
+    document.getElementById('excelFileInput').addEventListener('change', async function(e){
+        const file = e.target.files[0];
+        if (!file) return;
+
+        document.getElementById('importPreviewModal').classList.remove('hidden');
+        document.getElementById('importPreviewLoading').classList.remove('hidden');
+        document.getElementById('importPreviewContent').classList.add('hidden');
+        document.getElementById('btnApproveImport').disabled = true;
+
+        const formData = new FormData();
+        formData.append('excel_file', file);
+
+        try {
+            const res = await fetch('{{ route('create.document.import') }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                body: formData,
+            });
+            const data = await res.json();
+            renderImportPreview(data, res.ok);
+        } catch (err) {
+            console.error(err);
+            renderImportPreview({ errors: ['Gagal membaca file: ' + err.message], warnings: [], items: [], stores: [], header: {} }, false);
+        } finally {
+            e.target.value = '';
+        }
+    });
+
+    function renderImportPreview(data, ok){
+        window.importPreviewResult = ok ? data : null;
+
+        document.getElementById('importPreviewLoading').classList.add('hidden');
+        document.getElementById('importPreviewContent').classList.remove('hidden');
+        document.getElementById('btnApproveImport').disabled = !ok;
+
+        const errBox = document.getElementById('importPreviewErrors');
+        if (data.errors && data.errors.length) {
+            errBox.innerHTML = '<strong>File tidak bisa diimport:</strong><ul class="list-disc list-inside mt-1">' + data.errors.map(m => `<li>${m}</li>`).join('') + '</ul>';
+            errBox.classList.remove('hidden');
+        } else {
+            errBox.classList.add('hidden');
+        }
+
+        const warnBox = document.getElementById('importPreviewWarnings');
+        if (data.warnings && data.warnings.length) {
+            warnBox.innerHTML = '<strong>Perhatian:</strong><ul class="list-disc list-inside mt-1">' + data.warnings.map(m => `<li>${m}</li>`).join('') + '</ul>';
+            warnBox.classList.remove('hidden');
+        } else {
+            warnBox.classList.add('hidden');
+        }
+
+        const h = data.header || {};
+        document.getElementById('pvPeriodeAwal').textContent = h.periode_awal || '(gagal dibaca, isi manual)';
+        document.getElementById('pvPeriodeAkhir').textContent = h.periode_akhir || '(gagal dibaca, isi manual)';
+        document.getElementById('pvNoShiji').textContent = h.no_shiji || '-';
+        document.getElementById('pvNoRaf').textContent = (h.no_raf || '-') + ' (nomor baru akan digenerate otomatis)';
+        document.getElementById('pvVendor').textContent = h.supplier_match ? h.supplier_match.nama_supplier : (h.supplier_name_hint ? h.supplier_name_hint + ' (belum ketemu di database)' : '-');
+        document.getElementById('pvStores').textContent = (data.stores || []).map(s => s.nama_toko).join(', ') || '-';
+
+        const tbody = document.getElementById('importPreviewItemsBody');
+        tbody.innerHTML = (data.items || []).map(item => {
+            const totalSales = Object.values(item.sales || {}).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+            return `<tr class="border-t">
+                <td class="px-2 py-1">${escAttr(item.article)}</td>
+                <td class="px-2 py-1">${escAttr(item.description)}</td>
+                <td class="px-2 py-1 text-right">${fmtNum(item.reg)}</td>
+                <td class="px-2 py-1 text-right">${fmtNum(item.disc_nominal)}</td>
+                <td class="px-2 py-1 text-right">${item.promo_disc ? fmtNum(item.promo_disc) + '%' : '-'}</td>
+                <td class="px-2 py-1 text-right font-semibold bg-amber-50">${fmtNum(item.claim)}</td>
+                <td class="px-2 py-1 text-right">${fmtNum(totalSales)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function closeImportPreview(){
+        document.getElementById('importPreviewModal').classList.add('hidden');
+        window.importPreviewResult = null;
+    }
+
+    async function approveImportPreview(){
+        const data = window.importPreviewResult;
+        if (!data) return;
+
+        const h = data.header || {};
+        if (h.periode_awal) document.getElementById('periode_awal').value = h.periode_awal;
+        if (h.periode_akhir) document.getElementById('periode_akhir').value = h.periode_akhir;
+        if (h.no_shiji) document.getElementById('no_shiji').value = h.no_shiji;
+
+        if (h.supplier_match) {
+            const supplierSelect = document.getElementById('choices-supplier');
+            supplierSelect.value = h.supplier_match.kode_supplier;
+            supplierSelect.dispatchEvent(new Event('change'));
+        } else if (h.supplier_name_hint) {
+            document.getElementById('new_nama_supplier').value = h.supplier_name_hint;
+            openModal();
+        }
+
+        window.itemRows = (data.items || []).map(function (i) {
+            return {
+                article: i.article || '',
+                shiji_code: i.shiji_code || '',
+                description: i.description || '',
+                disc_nominal: i.disc_nominal ?? '',
+                promo_disc: i.promo_disc ?? '',
+                reg: i.reg ?? '',
+                promo: i.promo ?? '',
+                sales: i.sales || {},
+            };
+        });
+
+        window.checkedTokoIds = new Set((data.stores || []).map(s => String(s.toko_id)));
+
+        const regionIds = [...new Set((data.stores || []).map(s => String(s.region_id)))];
+        if (window.regionTomSelect) {
+            window.regionTomSelect.setValue(regionIds, true);
+        }
+
+        await fetchTokos(true);
+        renderItemsTable();
+
+        closeImportPreview();
+    }
 </script>
 
 @endsection

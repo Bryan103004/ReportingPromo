@@ -23,6 +23,16 @@ class Jsm extends Model
         return $this->belongsToMany(Toko::class, 'jsm_toko', 'jsm_id', 'toko_id');
     }
 
+    public function items()
+    {
+        return $this->hasMany(JsmItem::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(JsmDocument::class);
+    }
+
     public function getDaftarTokoFormattedAttribute()
     {
         // Jika tidak ada toko yang berelasi, kembalikan strip

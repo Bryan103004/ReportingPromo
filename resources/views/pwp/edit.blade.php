@@ -1,14 +1,23 @@
 @extends('layouts.app')
 
 @section('content')
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <div class="mx-auto max-w-7xl px-4 py-8">
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <!-- Header -->
         <div class="bg-blue-600 px-6 py-4 flex justify-between items-center">
             <h5 class="text-lg font-bold text-white m-0">Edit Data PWP</h5>
-            <a href="{{ route('pwp.index') }}" class="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors shadow-sm">
-                Kembali
-            </a>
+            <div class="flex items-center gap-2">
+                <button type="button" onclick="document.getElementById('excelFileInput').click()" class="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path></svg>
+                    Import dari Excel
+                </button>
+                <input type="file" id="excelFileInput" accept=".xlsx,.xls" class="hidden">
+                <a href="{{ route('pwp.index') }}" class="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-50 transition-colors shadow-sm">
+                    Kembali
+                </a>
+            </div>
         </div>
 
         <div class="p-6 md:p-8">
@@ -23,7 +32,7 @@
                 </div>
             @endif
 
-        <form action="{{route('pwp.update', $pwp->id)}}" method="POST" class="p-6">
+        <form action="{{route('pwp.update', $pwp->id)}}" method="POST" class="p-6" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -109,6 +118,12 @@
                     <input type="text" name="no_raf" id="no_raf" value="{{ old('no_raf', $pwp->no_raf) }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="Contoh: RAFPWP/NF/0001/08/2026" required>
                 </div>
 
+                {{-- No. Shiji --}}
+                <div>
+                    <label for="no_shiji" class="block text-sm font-semibold text-gray-700 mb-1.5">No. Shiji</label>
+                    <input type="text" name="no_shiji" id="no_shiji" value="{{ old('no_shiji', $pwp->no_shiji) }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="Nomor dokumen Shiji (opsional)">
+                </div>
+
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Status Email<span class="font-bold text-red-600">*</span></label>
                     <select name="status_email" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>                        <option value="aktif" {{ old('status_email', $pwp->status_email) == 'aktif' ? 'selected' : '' }}>Aktif</option>
@@ -125,10 +140,9 @@
                 <div class="md:col-span-2 text-lg font-semibold text-gray-700 border-b pb-2 mt-4">Pemilihan Toko (Store)</div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter Berdasarkan Region</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Filter Berdasarkan Region (bisa pilih lebih dari satu)</label>
                     <div class="flex items-center gap-4">
-                        <select id="region_filter" onchange="fetchTokos(this.value)" class="block w-full md:w-1/2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                        <option value="">-- Pilih Region untuk memunculkan Toko --</option>
+                        <select id="region_filter" multiple class="tom-select block w-full md:w-1/2 rounded-md border-gray-300 shadow-sm sm:text-sm">
                         @foreach($regions as $region)
                             <option value="{{ $region->id }}">{{ $region->nama_region }}</option>
                         @endforeach
@@ -153,6 +167,26 @@
                 <input type="hidden" name="raf_sequence" id="raf_sequence" value="{{ old('raf_sequence', $pwp->raf_sequence) }}">
             </div>
 
+            {{-- Baris Item (Detail per Artikel) --}}
+            <div class="mx-6 mb-8">
+                <div class="flex items-center justify-between border-b pb-2 mb-3">
+                    <span class="text-lg font-semibold text-gray-700">Baris Item (Opsional)</span>
+                    <button type="button" onclick="addItemRow()" class="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                        Tambah Baris
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mb-3">Kosongkan kalau dokumen ini cuma butuh 1 nominal manual (tanpa detail per artikel). Kolom Sales per toko mengikuti toko yang dicentang di atas.</p>
+
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="w-full text-xs" id="itemsTable">
+                        <thead id="itemsTableHead" class="bg-gray-100"></thead>
+                        <tbody id="itemsTableBody"></tbody>
+                    </table>
+                    <div id="itemsTableEmpty" class="text-center text-gray-400 text-sm py-4 bg-gray-50">Belum ada baris item.</div>
+                </div>
+            </div>
+
             {{-- Nominal (Full Width di bawah) --}}
             <div class="mb-8 mx-6">
                 <label for="nominal" class="block text-sm font-semibold text-gray-700 mb-1.5">Nominal <span class="text-red-500">*</span></label>
@@ -162,12 +196,37 @@
                     </div>
                     <input type="number" name="nominal" id="nominal" min="0" step="any" value="{{ old('nominal', $pwp->nominal) }}" class="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="0" required>
                 </div>
+                <p id="nominalComputedHint" class="text-xs text-gray-500 mt-1 hidden">Otomatis dari total Value semua baris item.</p>
             </div>
 
             <!-- Remark -->
             <div class="mb-8 mx-6">
                 <label for="remarks" class="block text-sm font-semibold text-gray-700 mb-1.5">Remarks</label>
                 <textarea name="remarks" id="remarks" rows="3" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('remarks') border-red-500 focus:ring-red-500 focus:border-red-500 @enderror" placeholder="Masukkan catatan di sini...">{{ old('remarks', $pwp->remarks) }}</textarea>
+            </div>
+
+            <div class="mb-8 mx-6">
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Dokumen (PDF)</label>
+
+                @if ($pwp->documents->isNotEmpty())
+                    <ul class="mb-3 divide-y divide-gray-200 rounded-md border border-gray-200">
+                        @foreach ($pwp->documents as $doc)
+                            <li class="flex items-center justify-between gap-3 px-4 py-2 text-sm">
+                                <a href="{{ route('pwp.documents.download', $doc->id) }}" class="text-blue-600 hover:underline truncate" target="_blank">
+                                    {{ $doc->filename }}
+                                </a>
+                                <button type="button" onclick="submitDocumentDelete('{{ route('pwp.documents.destroy', $doc->id) }}')" class="text-red-500 hover:text-red-700 text-xs font-semibold shrink-0">Hapus</button>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                <label for="document_file" class="block text-xs font-medium text-gray-500 mb-1.5">Tambah Dokumen Baru</label>
+                <input type="file" name="document_file[]" id="document_file" accept="application/pdf" multiple class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('document_file.*') border-red-500 @enderror">
+                <p class="text-xs text-gray-500 mt-2">Format PDF, maksimal 5MB per file. Bisa pilih lebih dari satu file.</p>
+                @error('document_file.*')
+                    <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                @enderror
             </div>
 
             {{-- Action Buttons --}}
@@ -182,14 +241,125 @@
             </div>
         </form>
 
+        {{-- ================= MODAL TAMBAH SUPPLIER ================= --}}
+        <div id="supplierModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden transform">
+                <div class="p-3">
+                    <div class="px-6 py-4 w-full border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                        <h3 class="text-lg font-bold text-gray-800">Tambah Supplier Baru</h3>
+                        <button type="button" onclick="closeModal()" class="text-gray-400 hover:text-gray-600 focus:outline-none">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+
+                    <form id="addSupplierForm" class="p-6">
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Kode Supplier <span class="text-red-500">*</span></label>
+                            <input type="text" id="new_kode_supplier" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required placeholder="Contoh: SUP-001">
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Supplier <span class="text-red-500">*</span></label>
+                            <input type="text" id="new_nama_supplier" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required placeholder="Contoh: PT. Sumber Makmur">
+                        </div>
+
+                        <div class="flex justify-end gap-3">
+                            <button type="button" onclick="closeModal()" id="btnCancelSupplier" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg">Batal</button>
+                            <button type="button" onclick="saveNewSupplier()" id="btnSaveSupplier" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg">Simpan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {{-- ================= MODAL PREVIEW IMPORT EXCEL ================= --}}
+        <div id="importPreviewModal" class="fixed inset-0 z-50 hidden bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div class="bg-white rounded-xl shadow-lg w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+                <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50 shrink-0">
+                    <h3 class="text-lg font-bold text-gray-800">Preview Import Excel</h3>
+                    <button type="button" onclick="closeImportPreview()" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="p-6 overflow-y-auto">
+                    <div id="importPreviewLoading" class="text-center text-gray-500 py-8">Membaca file...</div>
+                    <div id="importPreviewContent" class="hidden">
+                        <div id="importPreviewErrors" class="hidden bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded-md text-sm text-red-700"></div>
+                        <div id="importPreviewWarnings" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 mb-4 rounded-md text-sm text-amber-800"></div>
+
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
+                            <div><span class="text-gray-500">Periode Awal:</span> <span id="pvPeriodeAwal" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">Periode Akhir:</span> <span id="pvPeriodeAkhir" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">No. Shiji:</span> <span id="pvNoShiji" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">Vendor:</span> <span id="pvVendor" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">No. RAF di file:</span> <span id="pvNoRaf" class="font-semibold text-gray-400"></span></div>
+                            <div><span class="text-gray-500">Toko:</span> <span id="pvStores" class="font-semibold"></span></div>
+                        </div>
+
+                        <div class="overflow-x-auto border rounded-lg">
+                            <table class="w-full text-xs">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-2 py-2 text-left">ARTICLE</th>
+                                        <th class="px-2 py-2 text-left">DESCRIPTION</th>
+                                        <th class="px-2 py-2 text-right">REG</th>
+                                        <th class="px-2 py-2 text-right">DISC NOMINAL</th>
+                                        <th class="px-2 py-2 text-right">PROMO DISC</th>
+                                        <th class="px-2 py-2 text-right bg-amber-50">CLAIM</th>
+                                        <th class="px-2 py-2 text-right">Total Sales</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="importPreviewItemsBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-100 flex justify-end gap-3 shrink-0">
+                    <button type="button" onclick="closeImportPreview()" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg">Batal</button>
+                    <button type="button" id="btnApproveImport" onclick="approveImportPreview()" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg disabled:opacity-60 disabled:cursor-not-allowed">Gunakan Data Ini</button>
+                </div>
+            </div>
+        </div>
+
         </div>
     </div>
 </div>
 
+@php
+    $itemRowsForJs = $pwp->items->map(function ($item) {
+        return [
+            'article' => $item->article,
+            'shiji_code' => $item->shiji_code,
+            'description' => $item->description,
+            'disc_nominal' => $item->disc_nominal,
+            'promo_disc' => $item->promo_disc,
+            'reg' => $item->reg,
+            'promo' => $item->promo,
+            'sales' => $item->stores->mapWithKeys(function ($s) {
+                return [(string) $s->toko_id => $s->sales_qty];
+            })->toArray(),
+        ];
+    })->values();
+@endphp
 <script>
+    // Form dokumen dibuat lewat JS (bukan <form> bersarang di dalam form utama --
+    // <form> nested tidak valid HTML dan browser akan "menaikkan" field-nya ke
+    // form terluar, yang bisa bikin update dokumen malah men-trigger delete data utama).
+    function submitDocumentDelete(url) {
+        if (!confirm('Hapus dokumen ini?')) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = url;
+        form.style.display = 'none';
+        form.innerHTML = `@csrf @method('DELETE')`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+
     let supplierList = @json($supplierRafaksi);
     // Selected toko ids for edit
     window.selectedTokos = @json($pwp->tokos->pluck('id'));
+    // Baris item yang sudah tersimpan (kalau ada), buat pre-populate tabel item
+    window.itemRows = @json($itemRowsForJs);
 
     document.getElementById('choices-supplier').addEventListener('change', function() {
         var selectedSupplierCode = this.value;
@@ -270,21 +440,18 @@
         .then(data => {
             supplierList.push({ kode_supplier: kodeSupplier, nama_supplier: namaSupplier });
 
-            supplierSelect.setChoices([
-                {
-                    value: kodeSupplier,
-                    label: kodeSupplier,
-                    selected: true,
-                },
-            ], 'value', 'label', false);
+            const select = document.getElementById('choices-supplier');
+            const option = document.createElement('option');
+            option.value = kodeSupplier;
+            option.text = kodeSupplier + ' - ' + namaSupplier;
+            option.selected = true;
+            select.appendChild(option);
 
             document.getElementById('supplier_name').value = namaSupplier;
 
             closeModal();
             btn.innerHTML = 'Simpan';
             btn.disabled = false;
-
-            alert('Data supplier baru berhasil ditambahkan.');
         })
         .catch((error) => {
             console.error('Error:', error);
@@ -294,66 +461,268 @@
         });
     }
 
-    function fetchTokos(regionId) {
+    // Simpan toko yang lagi dicentang sebelum region-nya berubah/di-refresh,
+    // biar centangan gak ilang pas nambah/ganti region (bisa multi-region sekarang).
+    window.checkedTokoIds = new Set((window.selectedTokos || []).map(String));
+
+    function rememberCheckedTokos(){
+        document.querySelectorAll('#toko_container input[type=checkbox]').forEach(cb => {
+            if (cb.checked) window.checkedTokoIds.add(cb.value);
+            else window.checkedTokoIds.delete(cb.value);
+        });
+    }
+
+    async function fetchTokos(skipRemember) {
         const container = document.getElementById('toko_container');
         const hiddenStore = document.getElementById('hidden_store_name');
-        const selectRegion = document.getElementById('region_filter');
+        // skipRemember: dipakai pas approve import Excel, karena checkedTokoIds sudah
+        // di-set eksplisit dari hasil parse -- kalau tetap "diingat" dari DOM lama,
+        // toko yang belum sempat dirender bakal ke-hapus lagi dari Set-nya.
+        if (!skipRemember) {
+            rememberCheckedTokos();
+        }
 
-        hiddenStore.value = regionId ? selectRegion.options[selectRegion.selectedIndex].text : '-';
+        const regionSelect = document.getElementById('region_filter');
+        const regionIds = Array.from(regionSelect.selectedOptions).map(o => o.value);
+        const regionNames = Array.from(regionSelect.selectedOptions).map(o => o.text);
+        hiddenStore.value = regionNames.length ? regionNames.join(', ') : '-';
 
-        if (!regionId) {
+        if (!regionIds.length) {
             container.innerHTML = '<div class="col-span-full text-center text-gray-400 text-sm py-4">Silakan pilih region terlebih dahulu.</div>';
+            renderItemsTable();
             return;
         }
 
         container.innerHTML = '<div class="col-span-full text-center text-blue-500 text-sm py-4">Memuat data toko...</div>';
 
-        let url = "{{ url('/get-tokos') }}/" + regionId;
         const ptChecked = document.getElementById('local_pt_filter') && document.getElementById('local_pt_filter').checked;
-        if (ptChecked) {
-            url += '?name_pt=' + encodeURIComponent('PT. MITRA BELANJA ANDA');
+        const ptParam = ptChecked ? '&name_pt=' + encodeURIComponent('PT. MITRA BELANJA ANDA') : '';
+
+        try {
+            const base = "{{ url('/get-tokos') }}/";
+            const results = await Promise.all(regionIds.map(id => fetch(base + id + '?_=1' + ptParam).then(r => r.json())));
+            const seen = new Map();
+            results.flat().forEach(t => seen.set(t.id, t));
+            const data = Array.from(seen.values());
+
+            if (!data.length) {
+                container.innerHTML = '<div class="col-span-full text-center text-red-500 text-sm py-4">Tidak ada toko untuk region/filter ini.</div>';
+                renderItemsTable();
+                return;
+            }
+
+            container.innerHTML = '';
+            data.forEach(toko => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center';
+                const checked = window.checkedTokoIds.has(String(toko.id)) ? 'checked' : '';
+                div.innerHTML = `
+                <input type="checkbox" id="toko_${toko.id}" name="toko_id[]" value="${toko.id}" ${checked}
+                    class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                <label for="toko_${toko.id}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
+                    ${toko.nama_toko}
+                </label>
+                `;
+                container.appendChild(div);
+            });
+
+            renderItemsTable();
+        } catch (error) {
+            console.error('Error fetching tokos:', error);
+            container.innerHTML = '<div class="col-span-full text-center text-red-500 text-sm py-4">Gagal memuat data.</div>';
+        }
+    }
+
+    document.getElementById('toko_container').addEventListener('change', function(e){
+        if (e.target.matches('input[type=checkbox]')) {
+            renderItemsTable();
+        }
+    });
+
+    document.getElementById('local_pt_filter').addEventListener('change', fetchTokos);
+
+    // ===================== BARIS ITEM (DETAIL PER ARTIKEL) =====================
+    window.itemStores = [];
+
+    function getCheckedStores(){
+        return Array.from(document.querySelectorAll('#toko_container input[type=checkbox]:checked'))
+            .map(cb => ({ id: cb.value, name: cb.nextElementSibling ? cb.nextElementSibling.textContent.trim() : cb.value }));
+    }
+
+    function fmtNum(n){
+        n = Number(n) || 0;
+        return n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+    }
+
+    function escAttr(v){
+        return String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+
+    function computeClaim(discNominal, promoDisc, reg){
+        discNominal = parseFloat(discNominal) || 0;
+        promoDisc = parseFloat(promoDisc) || 0;
+        reg = parseFloat(reg) || 0;
+        if (discNominal > 0) return Math.round(discNominal * 100) / 100;
+        return Math.round((promoDisc / 100) * reg * 100) / 100;
+    }
+
+    function addItemRow(){
+        window.itemRows.push({
+            article: '', shiji_code: '', description: '',
+            disc_nominal: '', promo_disc: '', reg: '', promo: '',
+            sales: {},
+        });
+        renderItemsTable();
+    }
+
+    function removeItemRow(index){
+        window.itemRows.splice(index, 1);
+        renderItemsTable();
+    }
+
+    function renderItemsTable(){
+        const stores = getCheckedStores();
+        window.itemStores = stores;
+
+        const thead = document.getElementById('itemsTableHead');
+        const tbody = document.getElementById('itemsTableBody');
+        const empty = document.getElementById('itemsTableEmpty');
+        const table = document.getElementById('itemsTable');
+
+        if (!window.itemRows.length) {
+            table.classList.add('hidden');
+            empty.classList.remove('hidden');
+        } else {
+            table.classList.remove('hidden');
+            empty.classList.add('hidden');
         }
 
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                container.innerHTML = '';
+        let headHtml = '<tr>';
+        headHtml += '<th class="px-2 py-2 text-left">NO</th>';
+        headHtml += '<th class="px-2 py-2 text-left">ARTICLE</th>';
+        headHtml += '<th class="px-2 py-2 text-left">SHIJI CODE</th>';
+        headHtml += '<th class="px-2 py-2 text-left">DESCRIPTION</th>';
+        headHtml += '<th class="px-2 py-2 text-right">DISC NOMINAL</th>';
+        headHtml += '<th class="px-2 py-2 text-right">PROMO DISC (%)</th>';
+        headHtml += '<th class="px-2 py-2 text-right">REG</th>';
+        headHtml += '<th class="px-2 py-2 text-right">PROMO</th>';
+        headHtml += '<th class="px-2 py-2 text-right bg-amber-50">CLAIM</th>';
+        stores.forEach(s => { headHtml += `<th class="px-2 py-2 text-right whitespace-nowrap">Sales ${s.name}</th>`; });
+        headHtml += '<th class="px-2 py-2 text-right bg-amber-50">Sales TOTAL</th>';
+        stores.forEach(s => { headHtml += `<th class="px-2 py-2 text-right whitespace-nowrap">Value ${s.name}</th>`; });
+        headHtml += '<th class="px-2 py-2 text-right bg-amber-50">Value TOTAL</th>';
+        headHtml += '<th class="px-2 py-2"></th>';
+        headHtml += '</tr>';
+        thead.innerHTML = headHtml;
 
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="col-span-full text-center text-red-500 text-sm py-4">Tidak ada toko di region ini.</div>';
-                    return;
-                }
-
-                const selected = window.selectedTokos || [];
-                data.forEach(toko => {
-                    const div = document.createElement('div');
-                    div.className = 'flex items-center';
-                    const checked = selected.includes(toko.id) ? 'checked' : '';
-                    div.innerHTML = `
-                    <input type="checkbox" id="toko_${toko.id}" name="toko_id[]" value="${toko.id}" ${checked}
-                        class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                    <label for="toko_${toko.id}" class="ml-2 block text-sm text-gray-900 cursor-pointer">
-                        ${toko.nama_toko}
-                    </label>
-                    `;
-                    container.appendChild(div);
-                });
-            })
-            .catch(error => {
-                console.error('Error fetching tokos:', error);
-                container.innerHTML = '<div class="col-span-full text-center text-red-500 text-sm py-4">Gagal memuat data.</div>';
+        let bodyHtml = '';
+        window.itemRows.forEach((row, i) => {
+            bodyHtml += `<tr class="border-t">`;
+            bodyHtml += `<td class="px-2 py-1 text-gray-500">${i + 1}</td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][article]" class="w-28 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="article" data-row="${i}" value="${escAttr(row.article)}" required></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][shiji_code]" class="w-24 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="shiji_code" data-row="${i}" value="${escAttr(row.shiji_code)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][description]" class="w-32 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="description" data-row="${i}" value="${escAttr(row.description)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][disc_nominal]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="disc_nominal" data-row="${i}" value="${escAttr(row.disc_nominal)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][promo_disc]" class="w-16 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="promo_disc" data-row="${i}" value="${escAttr(row.promo_disc)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][reg]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="reg" data-row="${i}" value="${escAttr(row.reg)}" required></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][promo]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="promo" data-row="${i}" value="${escAttr(row.promo)}"></td>`;
+            bodyHtml += `<td class="px-2 py-1 text-right font-semibold bg-amber-50" data-claim-cell="${i}">0</td>`;
+            stores.forEach(s => {
+                const val = row.sales[s.id] ?? '';
+                bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][sales][${s.id}]" class="w-16 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="sales" data-store="${s.id}" data-row="${i}" value="${escAttr(val)}"></td>`;
             });
+            bodyHtml += `<td class="px-2 py-1 text-right font-semibold bg-amber-50" data-salestotal-cell="${i}">0</td>`;
+            stores.forEach(s => {
+                bodyHtml += `<td class="px-2 py-1 text-right" data-value-cell="${i}-${s.id}">0</td>`;
+            });
+            bodyHtml += `<td class="px-2 py-1 text-right font-semibold bg-amber-50" data-valuetotal-cell="${i}">0</td>`;
+            bodyHtml += `<td class="px-1 py-1 text-center"><button type="button" onclick="removeItemRow(${i})" class="text-red-500 hover:text-red-700 font-bold" title="Hapus baris">&times;</button></td>`;
+            bodyHtml += '</tr>';
+        });
+        tbody.innerHTML = bodyHtml;
+
+        tbody.querySelectorAll('input[data-field]').forEach(input => {
+            input.addEventListener('input', onItemFieldInput);
+        });
+
+        recomputeAllRows();
+    }
+
+    function onItemFieldInput(e){
+        const row = parseInt(e.target.dataset.row, 10);
+        const field = e.target.dataset.field;
+        if (field === 'sales') {
+            window.itemRows[row].sales[e.target.dataset.store] = e.target.value;
+        } else {
+            window.itemRows[row][field] = e.target.value;
+        }
+        recomputeRow(row);
+        recomputeGrandNominal();
+    }
+
+    function recomputeRow(i){
+        const row = window.itemRows[i];
+        if (!row) return;
+        const claim = computeClaim(row.disc_nominal, row.promo_disc, row.reg);
+        const claimCell = document.querySelector(`[data-claim-cell="${i}"]`);
+        if (claimCell) claimCell.textContent = fmtNum(claim);
+
+        let salesTotal = 0, valueTotal = 0;
+        window.itemStores.forEach(s => {
+            const qty = parseFloat(row.sales[s.id]) || 0;
+            const value = Math.round(claim * qty * 100) / 100;
+            salesTotal += qty;
+            valueTotal += value;
+            const cell = document.querySelector(`[data-value-cell="${i}-${s.id}"]`);
+            if (cell) cell.textContent = fmtNum(value);
+        });
+        const salesTotalCell = document.querySelector(`[data-salestotal-cell="${i}"]`);
+        if (salesTotalCell) salesTotalCell.textContent = fmtNum(salesTotal);
+        const valueTotalCell = document.querySelector(`[data-valuetotal-cell="${i}"]`);
+        if (valueTotalCell) valueTotalCell.textContent = fmtNum(valueTotal);
+    }
+
+    function recomputeAllRows(){
+        window.itemRows.forEach((_, i) => recomputeRow(i));
+        recomputeGrandNominal();
+    }
+
+    function recomputeGrandNominal(){
+        const nominalInput = document.getElementById('nominal');
+        const hint = document.getElementById('nominalComputedHint');
+        if (!window.itemRows.length) {
+            nominalInput.readOnly = false;
+            hint.classList.add('hidden');
+            return;
+        }
+        let total = 0;
+        window.itemRows.forEach(row => {
+            const claim = computeClaim(row.disc_nominal, row.promo_disc, row.reg);
+            window.itemStores.forEach(s => {
+                const qty = parseFloat(row.sales[s.id]) || 0;
+                total += Math.round(claim * qty * 100) / 100;
+            });
+        });
+        nominalInput.value = total;
+        nominalInput.readOnly = true;
+        hint.classList.remove('hidden');
     }
 </script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const initialRegion = @json(optional($pwp->tokos->first())->region_id);
-        if (initialRegion) {
-            const regionSelect = document.getElementById('region_filter');
-            if (regionSelect) {
-                regionSelect.value = initialRegion;
-            }
-            fetchTokos(initialRegion);
+        window.regionTomSelect = new TomSelect('#region_filter', {
+            plugins: ['remove_button'],
+            create: false,
+            maxItems: null,
+            placeholder: '-- Pilih Region (bisa lebih dari satu) --',
+            onChange: fetchTokos,
+        });
+
+        const initialRegionIds = @json($pwp->tokos->pluck('region_id')->unique()->values());
+        if (initialRegionIds.length) {
+            window.regionTomSelect.setValue(initialRegionIds.map(String));
+        } else {
+            renderItemsTable();
         }
     });
 
@@ -381,5 +750,131 @@
     if (cat) cat.addEventListener('change', getNextNoRaf);
     const per = document.getElementById('periode_bulan');
     if (per) per.addEventListener('change', getNextNoRaf);
+
+    // ===================== IMPORT DARI EXCEL =====================
+    window.importPreviewResult = null;
+
+    document.getElementById('excelFileInput').addEventListener('change', async function(e){
+        const file = e.target.files[0];
+        if (!file) return;
+
+        document.getElementById('importPreviewModal').classList.remove('hidden');
+        document.getElementById('importPreviewLoading').classList.remove('hidden');
+        document.getElementById('importPreviewContent').classList.add('hidden');
+        document.getElementById('btnApproveImport').disabled = true;
+
+        const formData = new FormData();
+        formData.append('excel_file', file);
+
+        try {
+            const res = await fetch('{{ route('create.document.import') }}', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                body: formData,
+            });
+            const data = await res.json();
+            renderImportPreview(data, res.ok);
+        } catch (err) {
+            console.error(err);
+            renderImportPreview({ errors: ['Gagal membaca file: ' + err.message], warnings: [], items: [], stores: [], header: {} }, false);
+        } finally {
+            e.target.value = '';
+        }
+    });
+
+    function renderImportPreview(data, ok){
+        window.importPreviewResult = ok ? data : null;
+
+        document.getElementById('importPreviewLoading').classList.add('hidden');
+        document.getElementById('importPreviewContent').classList.remove('hidden');
+        document.getElementById('btnApproveImport').disabled = !ok;
+
+        const errBox = document.getElementById('importPreviewErrors');
+        if (data.errors && data.errors.length) {
+            errBox.innerHTML = '<strong>File tidak bisa diimport:</strong><ul class="list-disc list-inside mt-1">' + data.errors.map(m => `<li>${m}</li>`).join('') + '</ul>';
+            errBox.classList.remove('hidden');
+        } else {
+            errBox.classList.add('hidden');
+        }
+
+        const warnBox = document.getElementById('importPreviewWarnings');
+        if (data.warnings && data.warnings.length) {
+            warnBox.innerHTML = '<strong>Perhatian:</strong><ul class="list-disc list-inside mt-1">' + data.warnings.map(m => `<li>${m}</li>`).join('') + '</ul>';
+            warnBox.classList.remove('hidden');
+        } else {
+            warnBox.classList.add('hidden');
+        }
+
+        const h = data.header || {};
+        document.getElementById('pvPeriodeAwal').textContent = h.periode_awal || '(gagal dibaca, isi manual)';
+        document.getElementById('pvPeriodeAkhir').textContent = h.periode_akhir || '(gagal dibaca, isi manual)';
+        document.getElementById('pvNoShiji').textContent = h.no_shiji || '-';
+        document.getElementById('pvNoRaf').textContent = (h.no_raf || '-') + ' (tidak menimpa No. RAF dokumen ini)';
+        document.getElementById('pvVendor').textContent = h.supplier_match ? h.supplier_match.nama_supplier : (h.supplier_name_hint ? h.supplier_name_hint + ' (belum ketemu di database)' : '-');
+        document.getElementById('pvStores').textContent = (data.stores || []).map(s => s.nama_toko).join(', ') || '-';
+
+        const tbody = document.getElementById('importPreviewItemsBody');
+        tbody.innerHTML = (data.items || []).map(item => {
+            const totalSales = Object.values(item.sales || {}).reduce((a, b) => a + (parseFloat(b) || 0), 0);
+            return `<tr class="border-t">
+                <td class="px-2 py-1">${escAttr(item.article)}</td>
+                <td class="px-2 py-1">${escAttr(item.description)}</td>
+                <td class="px-2 py-1 text-right">${fmtNum(item.reg)}</td>
+                <td class="px-2 py-1 text-right">${fmtNum(item.disc_nominal)}</td>
+                <td class="px-2 py-1 text-right">${item.promo_disc ? fmtNum(item.promo_disc) + '%' : '-'}</td>
+                <td class="px-2 py-1 text-right font-semibold bg-amber-50">${fmtNum(item.claim)}</td>
+                <td class="px-2 py-1 text-right">${fmtNum(totalSales)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function closeImportPreview(){
+        document.getElementById('importPreviewModal').classList.add('hidden');
+        window.importPreviewResult = null;
+    }
+
+    async function approveImportPreview(){
+        const data = window.importPreviewResult;
+        if (!data) return;
+
+        const h = data.header || {};
+        if (h.periode_awal) document.getElementById('periode_awal').value = h.periode_awal;
+        if (h.periode_akhir) document.getElementById('periode_akhir').value = h.periode_akhir;
+        if (h.no_shiji) document.getElementById('no_shiji').value = h.no_shiji;
+
+        if (h.supplier_match) {
+            const supplierSelect = document.getElementById('choices-supplier');
+            supplierSelect.value = h.supplier_match.kode_supplier;
+            supplierSelect.dispatchEvent(new Event('change'));
+        } else if (h.supplier_name_hint) {
+            document.getElementById('new_nama_supplier').value = h.supplier_name_hint;
+            openModal();
+        }
+
+        window.itemRows = (data.items || []).map(function (i) {
+            return {
+                article: i.article || '',
+                shiji_code: i.shiji_code || '',
+                description: i.description || '',
+                disc_nominal: i.disc_nominal ?? '',
+                promo_disc: i.promo_disc ?? '',
+                reg: i.reg ?? '',
+                promo: i.promo ?? '',
+                sales: i.sales || {},
+            };
+        });
+
+        window.checkedTokoIds = new Set((data.stores || []).map(s => String(s.toko_id)));
+
+        const regionIds = [...new Set((data.stores || []).map(s => String(s.region_id)))];
+        if (window.regionTomSelect) {
+            window.regionTomSelect.setValue(regionIds, true);
+        }
+
+        await fetchTokos(true);
+        renderItemsTable();
+
+        closeImportPreview();
+    }
 </script>
 @endsection

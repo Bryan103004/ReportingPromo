@@ -21,6 +21,16 @@ class Pwp extends Model
         return $this->belongsToMany(Toko::class, 'pwp_toko', 'pwp_id', 'toko_id');
     }
 
+    public function items()
+    {
+        return $this->hasMany(PwpItem::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(PwpDocument::class);
+    }
+
     public function getDaftarTokoFormattedAttribute()
     {
         // Jika tidak ada toko yang berelasi, kembalikan strip

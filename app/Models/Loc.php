@@ -23,6 +23,11 @@ class Loc extends Model
         return $this->belongsToMany(Toko::class, 'locs_toko', 'loc_id', 'toko_id');
     }
 
+    public function documents()
+    {
+        return $this->hasMany(LocDocument::class);
+    }
+
     public function getDaftarTokoFormattedAttribute()
     {
         // Jika tidak ada toko yang berelasi, kembalikan strip
