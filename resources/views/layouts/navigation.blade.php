@@ -12,11 +12,14 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-4 sm:-my-px sm:ms-10 sm:flex items-center gap-x-2">
-          
+                    
+                    @can('view_dashboard')
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         <i class="fa-solid fa-gauge-high mr-2 opacity-70"></i> {{ __('Dashboard') }}
                     </x-nav-link>
+                    @endcan
 
+                    @canany(['view_users', 'view_roles', 'view_permissions', 'view_toko', 'view_region', 'view_jsm', 'view_rafaksi', 'create_document', 'email_tambahan'])
                     <!-- Dropdown Data Master — pakai Alpine supaya tidak terpotong -->
                     <div class="h-full flex items-center" x-data="{ masterOpen: false, mgmtOpen: false }" @click.outside="masterOpen = false; mgmtOpen = false">
                         <div class="relative">
@@ -159,6 +162,8 @@
                             @endcan
                         </div>
                     </div>
+                    @endcan
+
 
                     <!-- Dropdown Rafaksi -->
                    {{-- @canany(['view_jsm', 'view_rafaksi'])
@@ -367,13 +372,15 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden bg-gray-50 border-t border-gray-200 shadow-inner">
         <div class="pt-2 pb-3 space-y-1">
+            @can('view_dashboard')
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            
+            @endcan
+
         <!-- Mobile Group: Data Master -->
-            <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">Data Master</div>
             @can('view_users')
+            <div class="px-4 py-2 text-xs font-semibold text-gray-400 uppercase">Data Master</div>
             <x-responsive-nav-link :href="route('user.index')" :active="request()->routeIs('user.index')">
                 <span>👤</span> Users
             </x-responsive-nav-link>
