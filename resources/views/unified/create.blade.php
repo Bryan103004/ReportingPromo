@@ -642,12 +642,22 @@
         refreshNoRaf();
     });
 
-    categoryEl.addEventListener('change', function(){
-        // switch form action to the table that matches the chosen category
+    // Sinkronkan form.action dengan tipe dokumen yang lagi dipilih. Dipisah jadi
+    // fungsi sendiri (bukan cuma di dalam listener 'change' categoryEl) karena
+    // browser (terutama Chrome) suka otomatis me-restore pilihan <select> pas
+    // halaman di-reload TANPA nge-fire event 'change' -- kalau cuma andalin
+    // 'change', form.action bisa nyangkut di default HTML-nya (rafaksi) padahal
+    // dropdown & no_raf yang ditampilkan udah keliatan benar (PWP/JSM), dan
+    // dokumen kesave ke tabel yang salah.
+    function syncFormAction(){
         const form = document.getElementById('unifiedForm');
-        if (this.value === 'JSM') form.action = '{{ url('/jsm') }}';
-        else if (this.value === 'PWP') form.action = '{{ url('/pwp') }}';
+        if (categoryEl.value === 'JSM') form.action = '{{ url('/jsm') }}';
+        else if (categoryEl.value === 'PWP') form.action = '{{ url('/pwp') }}';
         else form.action = '{{ url('/rafaksi') }}';
+    }
+
+    categoryEl.addEventListener('change', function(){
+        syncFormAction();
         refreshNoRaf();
     });
 
@@ -667,6 +677,7 @@
     document.getElementById('pt_filter_mode').addEventListener('change', fetchTokos);
 
     window.addEventListener('load', function(){
+        syncFormAction();
         refreshNoRaf();
     });
 
@@ -678,6 +689,10 @@
             e.preventDefault();
             return;
         }
+        // Safety net terakhir -- pastikan form.action beneran sesuai tipe dokumen
+        // yang lagi kepilih SAAT SUBMIT, bukan cuma waktu terakhir kali event
+        // 'change' sempat nyala.
+        syncFormAction();
         btn.disabled = true;
         btn.textContent = 'Menyimpan...';
     });
