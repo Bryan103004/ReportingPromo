@@ -268,16 +268,16 @@ class RafaksiExcelImportParser
                 $mode = 'done';
                 continue;
             }
-            if (str_starts_with($upper, 'SALES ')) {
+            if (strpos($upper, 'SALES ') === 0) {
                 $sales[trim(substr($text, 6))] = $colLetter;
                 continue;
             }
-            if (str_starts_with($upper, 'VALUE ')) {
+            if (strpos($upper, 'VALUE ') === 0) {
                 $value[trim(substr($text, 6))] = $colLetter;
                 continue;
             }
 
-            $key = match ($upper) {
+            $fixedColumnKeys = [
                 'NO' => 'no',
                 'ARTICLE' => 'article',
                 'SHIJI CODE' => 'shiji_code',
@@ -287,8 +287,8 @@ class RafaksiExcelImportParser
                 'REG' => 'reg',
                 'PROMO' => 'promo',
                 'CLAIM' => 'claim',
-                default => null,
-            };
+            ];
+            $key = $fixedColumnKeys[$upper] ?? null;
             if ($key) {
                 $fixed[$key] = $colLetter;
             }
@@ -402,7 +402,7 @@ class RafaksiExcelImportParser
         }
 
         $format = $sheet->getStyle("{$colLetter}{$row}")->getNumberFormat()->getFormatCode();
-        $isPercentFormat = str_contains($format, '%');
+        $isPercentFormat = strpos($format, '%') !== false;
 
         if ($isPercentFormat || (float) $raw <= 1) {
             return round(((float) $raw) * 100, 4);

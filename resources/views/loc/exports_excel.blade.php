@@ -62,8 +62,8 @@
         <tbody>
             @foreach($data as $row)
                     @php
-                        $isAkhirRekap = str_contains($row->Periode, 'AKHIR REKAP');
-                        $isTotalKeseluruhan = str_contains($row->Periode, 'TOTAL KESELURUHAN');
+                        $isAkhirRekap = strpos($row->Periode, 'AKHIR REKAP') !== false;
+                        $isTotalKeseluruhan = strpos($row->Periode, 'TOTAL KESELURUHAN') !== false;
                     @endphp
                 <tr>
                     <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">
