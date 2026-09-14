@@ -198,7 +198,7 @@ class RafaksiController extends Controller
     }
 
     public function store(Request $request){
-        $request->validate([
+        $request->validate(array_merge([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
@@ -214,8 +214,7 @@ class RafaksiController extends Controller
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120', // Maks 5MB per file
             'category_id' => 'exists:categories,id',
-            ...$this->itemValidationRules(),
-        ]);
+        ], $this->itemValidationRules()));
 
         $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
 
@@ -340,6 +339,9 @@ class RafaksiController extends Controller
 
             $originalName = $file->getClientOriginalName();
             $storedName = $originalName;
+            if (Storage::exists($dir . '/' . $storedName)) {
+                $storedName = pathinfo($originalName, PATHINFO_FILENAME) . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            }
             $path = $file->storeAs($dir, $storedName);
 
             $rafaksi->documents()->create([
@@ -432,7 +434,7 @@ class RafaksiController extends Controller
     }
 
     public function update(Request $request, Rafaksi $rafaksi){
-        $request->validate([
+        $request->validate(array_merge([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
@@ -448,8 +450,7 @@ class RafaksiController extends Controller
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120', // Maks 5MB per file
             'category_id' => 'exists:categories,id',
-            ...$this->itemValidationRules(),
-        ]);
+        ], $this->itemValidationRules()));
 
         $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
 

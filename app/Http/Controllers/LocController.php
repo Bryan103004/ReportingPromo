@@ -776,6 +776,9 @@ class LocController extends Controller
 
             $originalName = $file->getClientOriginalName();
             $storedName = $originalName;
+            if (Storage::exists($dir . '/' . $storedName)) {
+                $storedName = pathinfo($originalName, PATHINFO_FILENAME) . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            }
             $path = $file->storeAs($dir, $storedName);
 
             $loc->documents()->create([

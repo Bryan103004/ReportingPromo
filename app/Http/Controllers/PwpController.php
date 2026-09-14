@@ -162,7 +162,7 @@ class PwpController extends Controller
     }
 
     public function store(Request $request){
-        $request->validate([
+        $request->validate(array_merge([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
@@ -178,8 +178,7 @@ class PwpController extends Controller
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
             'category_id' => 'exists:categories,id',
-            ...$this->itemValidationRules(),
-        ]);
+        ], $this->itemValidationRules()));
 
         $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
 
@@ -266,6 +265,9 @@ class PwpController extends Controller
 
             $originalName = $file->getClientOriginalName();
             $storedName = $originalName;
+            if (Storage::exists($dir . '/' . $storedName)) {
+                $storedName = pathinfo($originalName, PATHINFO_FILENAME) . '_' . Str::random(6) . '.' . $file->getClientOriginalExtension();
+            }
             $path = $file->storeAs($dir, $storedName);
 
             $pwp->documents()->create([
@@ -397,7 +399,7 @@ class PwpController extends Controller
     }
 
     public function update(Request $request, Pwp $pwp){
-        $request->validate([
+        $request->validate(array_merge([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
@@ -413,8 +415,7 @@ class PwpController extends Controller
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
             'category_id' => 'exists:categories,id',
-            ...$this->itemValidationRules(),
-        ]);
+        ], $this->itemValidationRules()));
 
         $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
 
