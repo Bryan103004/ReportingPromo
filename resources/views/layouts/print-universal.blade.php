@@ -44,7 +44,7 @@
                 // Mengumpulkan semua ID toko unik yang ada di dalam item-item dokumen ini
                 $allTokoIds = $document->items->flatMap->stores->pluck('toko_id')->unique();
                 // Ambil data master tokonya (pastikan relasi toko terpanggil atau query manual)
-                $tokosHeader = \App\Models\Toko::whereIn('id', $allTokoIds)->get();
+                $tokosHeader = \App\Models\Toko::whereIn('id', $allTokoIds)->orderBy('id_alias')->get();
             @endphp
             <thead>
                 <tr>
