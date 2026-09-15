@@ -87,7 +87,8 @@ class UtilityController extends Controller
     {
         $type = strtolower($type);
 
-        $prepared_by = User::find($request->input('prepared_by'));
+        // $prepared_by = User::find($request->input('prepared_by'));
+        $prepared_by = auth()->user(); // Gunakan user yang sedang login sebagai prepared_by
         $acknowledged_by = User::find($request->input('acknowledged_by'));
 
         if($prepared_by == null || $acknowledged_by == null){

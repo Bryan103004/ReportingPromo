@@ -33,10 +33,11 @@
 
             <div>
                 <label for="prepared_by">Prepared by,</label>
-                <select name="prepared_by" id="prepared_by">
-                    @foreach ($users as $user)
+                <select name="prepared_by" id="prepared_by" readonly>
+                    <!-- @foreach ($users as $user)
                         <option value="{{ $user->id }}">{{ $user->name }}</option>
-                    @endforeach
+                    @endforeach -->
+                    <option value="{{ auth()->user()->id }}" selected>{{ auth()->user()->name }}</option>
                 </select>
             </div>
 

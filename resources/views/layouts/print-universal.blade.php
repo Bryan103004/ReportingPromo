@@ -76,7 +76,7 @@
                     <tr>
                         <td>{{ $index + 1 }}</td>
                         <td>{{ $item->article }}</td>
-                        <td>{{ $item->no_shiji }}</td>
+                        <td>{{ $item->shiji_code }}</td>
                         <td>{{ $item->description }}</td>
                         <td>{{ number_format($item->disc_nominal, 0, ',', '.') }}</td>
                         <td>{{ number_format($item->promo_disc, 0, ',', '.') ?? '-'}}</td>
