@@ -46,31 +46,46 @@ class LocCard extends Component
 
     public function render()
     {
+        // Filter toko dilakukan lewat whereExists (bukan leftJoin ke locs_toko)
+        // supaya query tetap 1 baris per dokumen -- kalau di-join langsung,
+        // dokumen yang ke-link ke N toko bakal fan-out jadi N baris dan
+        // SUM(lc.nominal) ikut kehitung N kali.
         $data = DB::table('locs as lc')
             ->select(
                 DB::raw('YEAR(lc.periode_bulan) as year'),
                 DB::raw('MONTH(lc.periode_bulan) as month'),
                 DB::raw('SUM(lc.nominal) as nominal'),
-                DB::raw('COUNT(lc.id) as total_dokumen')
+                DB::raw('COUNT(DISTINCT lc.id) as total_dokumen')
             )
-            // 1. Join ke tabel pivot locs_toko dulu
-            ->leftJoin('locs_toko as lt', 'lc.id', '=', 'lt.loc_id')
-            // 2. Baru join ke tabel tokos
-            ->leftJoin('tokos as tk', 'lt.toko_id', '=', 'tk.id')
             ->whereYear('lc.periode_bulan', $this->selectedYear)
-            // Optimasi: mengurutkan langsung dari kolom tanggal asli j.periode_bulan
             ->when($this->tokoId, function($q, $tokoId) {
-                $q->where('lt.toko_id', $tokoId);
+                $q->whereExists(function($sub) use ($tokoId) {
+                    $sub->selectRaw('1')
+                        ->from('locs_toko as lt')
+                        ->whereColumn('lt.loc_id', 'lc.id')
+                        ->where('lt.toko_id', $tokoId);
+                });
             })
             ->when($this->filterByPt, function($q) {
-                $q->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+                $q->whereExists(function($sub) {
+                    $sub->selectRaw('1')
+                        ->from('locs_toko as lt')
+                        ->join('tokos as tk', 'lt.toko_id', '=', 'tk.id')
+                        ->whereColumn('lt.loc_id', 'lc.id')
+                        ->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+                });
             })
             ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
                 $allowed = auth()->user()->accessibleTokoIds()->toArray();
                 if (empty($allowed)) {
                     $q->whereRaw('0 = 1');
                 } else {
-                    $q->whereIn('lt.toko_id', $allowed);
+                    $q->whereExists(function($sub) use ($allowed) {
+                        $sub->selectRaw('1')
+                            ->from('locs_toko as lt')
+                            ->whereColumn('lt.loc_id', 'lc.id')
+                            ->whereIn('lt.toko_id', $allowed);
+                    });
                 }
             })
             ->groupBy('year','month')

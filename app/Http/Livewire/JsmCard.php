@@ -44,6 +44,10 @@ class JsmCard extends Component
 
     public function render()
     {
+        // Filter toko dilakukan lewat whereExists (bukan leftJoin ke jsm_toko)
+        // supaya query tetap 1 baris per dokumen -- kalau di-join langsung,
+        // dokumen yang ke-link ke N toko bakal fan-out jadi N baris dan
+        // SUM(j.nominal) ikut kehitung N kali.
         $data = DB::table('jsm as j')
                 ->select(
                     DB::raw('YEAR(j.periode_bulan) as year'),
@@ -51,24 +55,35 @@ class JsmCard extends Component
                     DB::raw('SUM(j.nominal) as nominal'),
                     DB::raw('COUNT(DISTINCT j.id) as total_dokumen')
                 )
-                // 1. Join ke tabel pivot jsm_toko dulu
-                ->leftJoin('jsm_toko as jt', 'j.id', '=', 'jt.jsm_id')
-                // 2. Baru join ke tabel tokos
-                ->leftJoin('tokos as tk', 'jt.toko_id', '=', 'tk.id')
                 ->whereYear('j.periode_bulan', $this->selectedYear)
-                // Optimasi: mengurutkan langsung dari kolom tanggal asli j.periode_bulan
                 ->when($this->tokoId, function($q, $tokoId) {
-                    $q->where('jt.toko_id', $tokoId);
+                    $q->whereExists(function($sub) use ($tokoId) {
+                        $sub->selectRaw('1')
+                            ->from('jsm_toko as jt')
+                            ->whereColumn('jt.jsm_id', 'j.id')
+                            ->where('jt.toko_id', $tokoId);
+                    });
                 })
                 ->when($this->filterByPt, function($q) {
-                    $q->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+                    $q->whereExists(function($sub) {
+                        $sub->selectRaw('1')
+                            ->from('jsm_toko as jt')
+                            ->join('tokos as tk', 'jt.toko_id', '=', 'tk.id')
+                            ->whereColumn('jt.jsm_id', 'j.id')
+                            ->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+                    });
                 })
                 ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
                     $allowed = auth()->user()->accessibleTokoIds()->toArray();
                     if (empty($allowed)) {
                         $q->whereRaw('0 = 1');
                     } else {
-                        $q->whereIn('jt.toko_id', $allowed);
+                        $q->whereExists(function($sub) use ($allowed) {
+                            $sub->selectRaw('1')
+                                ->from('jsm_toko as jt')
+                                ->whereColumn('jt.jsm_id', 'j.id')
+                                ->whereIn('jt.toko_id', $allowed);
+                        });
                     }
                 })
                 ->groupBy('year','month')

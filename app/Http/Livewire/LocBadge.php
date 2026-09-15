@@ -38,10 +38,13 @@ class LocBadge extends Component
     {
         $today = date('Y-m-d'); // Ambil tanggal hari ini saja (Y-m-d)
 
+        // COUNT(DISTINCT CASE...) bukan SUM(CASE...1...) -- karena join ke
+        // locs_toko bikin 1 dokumen fan-out jadi N baris kalau ke-link ke N
+        // toko, jadi SUM per-baris bakal ikut ngitung dokumen itu N kali.
         $data = DB::table('locs as lc')
                 ->select([
-                    DB::raw("SUM(CASE WHEN periode_akhir > '" . Carbon::now() . "' THEN 1 ELSE 0 END) as `aktif`"),
-                    DB::raw("SUM(CASE WHEN periode_akhir <= '" . Carbon::now() . "' THEN 1 ELSE 0 END) as `expired`")
+                    DB::raw("COUNT(DISTINCT CASE WHEN lc.periode_akhir > '" . Carbon::now() . "' THEN lc.id END) as `aktif`"),
+                    DB::raw("COUNT(DISTINCT CASE WHEN lc.periode_akhir <= '" . Carbon::now() . "' THEN lc.id END) as `expired`")
                 ])
                 ->leftJoin('locs_toko as lt', 'lc.id', '=', 'lt.loc_id')
                 ->leftJoin('tokos as tk', 'lt.toko_id', '=', 'tk.id')

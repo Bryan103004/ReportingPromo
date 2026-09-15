@@ -44,6 +44,10 @@ class PwpCard extends Component
 
     public function render()
     {
+        // Filter toko dilakukan lewat whereExists (bukan leftJoin ke pwp_toko)
+        // supaya query tetap 1 baris per dokumen -- kalau di-join langsung,
+        // dokumen yang ke-link ke N toko bakal fan-out jadi N baris dan
+        // SUM(p.nominal) ikut kehitung N kali.
         $data = DB::table('pwps as p')
             ->select(
                 DB::raw('YEAR(p.periode_bulan) as year'),
@@ -51,23 +55,35 @@ class PwpCard extends Component
                 DB::raw('SUM(p.nominal) as nominal'),
                 DB::raw('COUNT(DISTINCT p.id) as total_dokumen')
             )
-            ->leftJoin('pwp_toko as pt', 'p.id', '=', 'pt.pwp_id')
-            ->leftJoin('tokos as tk', 'pt.toko_id', '=', 'tk.id')
             ->whereYear('p.periode_bulan', $this->selectedYear)
-
             ->when($this->tokoId, function($q, $tokoId) {
-                $q->where('pt.toko_id', $tokoId);
+                $q->whereExists(function($sub) use ($tokoId) {
+                    $sub->selectRaw('1')
+                        ->from('pwp_toko as pt')
+                        ->whereColumn('pt.pwp_id', 'p.id')
+                        ->where('pt.toko_id', $tokoId);
+                });
             })
             ->when($this->filterByPt, function($q) {
-                $q->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+                $q->whereExists(function($sub) {
+                    $sub->selectRaw('1')
+                        ->from('pwp_toko as pt')
+                        ->join('tokos as tk', 'pt.toko_id', '=', 'tk.id')
+                        ->whereColumn('pt.pwp_id', 'p.id')
+                        ->where('tk.nama_pt', 'PT. MITRA BELANJA ANDA');
+                });
             })
-
             ->when(! auth()->user()->hasGlobalCompanyAccess(), function($q) {
                 $allowed = auth()->user()->accessibleTokoIds()->toArray();
                 if (empty($allowed)) {
                     $q->whereRaw('0 = 1');
                 } else {
-                    $q->whereIn('pt.toko_id', $allowed);
+                    $q->whereExists(function($sub) use ($allowed) {
+                        $sub->selectRaw('1')
+                            ->from('pwp_toko as pt')
+                            ->whereColumn('pt.pwp_id', 'p.id')
+                            ->whereIn('pt.toko_id', $allowed);
+                    });
                 }
             })
             ->groupBy('year', 'month')
