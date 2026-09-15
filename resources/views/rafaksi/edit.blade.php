@@ -124,6 +124,12 @@
                     <input type="text" name="no_shiji" id="no_shiji" value="{{ old('no_shiji', $rafaksi->no_shiji) }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="Nomor dokumen Shiji (opsional)">
                 </div>
 
+                {{-- No. Shiji Promotion --}}
+                <div>
+                    <label for="no_shiji_promotion" class="block text-sm font-semibold text-gray-700 mb-1.5">No. Shiji Promotion</label>
+                    <input type="text" name="no_shiji_promotion" id="no_shiji_promotion" value="{{ old('no_shiji_promotion', $rafaksi->no_shiji_promotion) }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="Nomor dokumen Shiji Promotion (opsional)">
+                </div>
+
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Status Email<span class="font-bold text-red-600">*</span></label>
                     <select name="status_email" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>                        <option value="aktif" {{ old('status_email', $rafaksi->status_email) == 'aktif' ? 'selected' : '' }}>Aktif</option>
@@ -290,6 +296,7 @@
                             <div><span class="text-gray-500">Periode Awal:</span> <span id="pvPeriodeAwal" class="font-semibold"></span></div>
                             <div><span class="text-gray-500">Periode Akhir:</span> <span id="pvPeriodeAkhir" class="font-semibold"></span></div>
                             <div><span class="text-gray-500">No. Shiji:</span> <span id="pvNoShiji" class="font-semibold"></span></div>
+                            <div><span class="text-gray-500">No. Shiji Promotion:</span> <span id="pvNoShijiPromotion" class="font-semibold"></span></div>
                             <div><span class="text-gray-500">Vendor:</span> <span id="pvVendor" class="font-semibold"></span></div>
                             <div><span class="text-gray-500">No. RAF di file:</span> <span id="pvNoRaf" class="font-semibold text-gray-400"></span></div>
                             <div><span class="text-gray-500">Toko:</span> <span id="pvStores" class="font-semibold"></span></div>
@@ -819,6 +826,7 @@
         document.getElementById('pvPeriodeAwal').textContent = h.periode_awal || '(gagal dibaca, isi manual)';
         document.getElementById('pvPeriodeAkhir').textContent = h.periode_akhir || '(gagal dibaca, isi manual)';
         document.getElementById('pvNoShiji').textContent = h.no_shiji || '-';
+        document.getElementById('pvNoShijiPromotion').textContent = h.no_shiji_promotion || '-';
         document.getElementById('pvNoRaf').textContent = (h.no_raf || '-') + ' (tidak menimpa No. RAF dokumen ini)';
         document.getElementById('pvVendor').textContent = h.supplier_match ? h.supplier_match.nama_supplier : (h.supplier_name_hint ? h.supplier_name_hint + ' (belum ketemu di database)' : '-');
         document.getElementById('pvStores').textContent = (data.stores || []).map(s => s.nama_toko).join(', ') || '-';
@@ -851,6 +859,7 @@
         if (h.periode_awal) document.getElementById('periode_awal').value = h.periode_awal;
         if (h.periode_akhir) document.getElementById('periode_akhir').value = h.periode_akhir;
         if (h.no_shiji) document.getElementById('no_shiji').value = h.no_shiji;
+        if (h.no_shiji_promotion) document.getElementById('no_shiji_promotion').value = h.no_shiji_promotion;
 
         if (h.supplier_match) {
             const supplierSelect = document.getElementById('choices-supplier');

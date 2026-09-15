@@ -36,6 +36,7 @@
             <p>Supplier Name: {{ $document->supplier_name }}</p>
             <p>Toko: {{ $document->tokos->pluck('kode_excel')->implode(', ') }}</p>
             <p>No. Shiji: {{ $document->no_shiji }}</p>
+            <p>No. Shiji Promotion: {{ $document->no_shiji_promotion }}</p>
         </div>
 
         <!-- Tabel Item -->

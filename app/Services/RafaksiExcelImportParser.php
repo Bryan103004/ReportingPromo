@@ -22,7 +22,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
  */
 class RafaksiExcelImportParser
 {
-    private const HEADER_LABELS = ['periode_awal', 'periode_akhir', 'no_raf', 'supplier_code', 'supplier_name', 'nama_toko', 'no_shiji'];
+    private const HEADER_LABELS = ['periode_awal', 'periode_akhir', 'no_raf', 'supplier_code', 'supplier_name', 'nama_toko', 'no_shiji', 'no_shiji_promotion'];
 
     private array $warnings = [];
     private array $errors = [];
@@ -92,6 +92,7 @@ class RafaksiExcelImportParser
             'periode_akhir' => null,
             'no_raf' => null,
             'no_shiji' => null,
+            'no_shiji_promotion' => null,
             'nama_toko_hint' => null,
             'supplier_match' => null,
             'supplier_name_hint' => null,
@@ -116,6 +117,9 @@ class RafaksiExcelImportParser
         }
         if (isset($labelRows['no_shiji'])) {
             $result['no_shiji'] = $this->readHeaderText($sheet, $labelRows['no_shiji']);
+        }
+        if (isset($labelRows['no_shiji_promotion'])) {
+            $result['no_shiji_promotion'] = $this->readHeaderText($sheet, $labelRows['no_shiji_promotion']);
         }
         if (isset($labelRows['nama_toko'])) {
             $result['nama_toko_hint'] = $this->readHeaderText($sheet, $labelRows['nama_toko']);
