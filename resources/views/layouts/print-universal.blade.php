@@ -40,34 +40,55 @@
         </div>
 
         <!-- Tabel Item -->
+        @php
+            // Kumpulkan toko unik
+            $allTokoIds = $document->items->flatMap->stores->pluck('toko_id')->unique();
+            $tokosHeader = \App\Models\Toko::whereIn('id', $allTokoIds)->orderBy('id_alias')->get();
+
+            // Hitung total masing-masing kolom untuk kondisi tampil/sembunyi
+            $hasDiscNominal = $document->items->sum('disc_nominal') != 0;
+            $hasPromoDisc   = $document->items->sum('promo_disc') != 0;
+            $hasPromo       = $document->items->sum('promo') != 0;
+            $hasReg         = $document->items->sum('reg') != 0;
+            // Hitung colspan kolom statis awal:
+            // Dasar: No (1) + Article (1) + Shiji Code (1) + Description (1) + Claim (1) = 5 kolom
+            $baseColspan = 5 
+                + ($hasDiscNominal ? 1 : 0) 
+                + ($hasPromoDisc ? 1 : 0) 
+                + ($hasPromo ? 1 : 0);
+
+            // Total keseluruhan kolom tabel
+            $totalColumns = $baseColspan + (count($tokosHeader) * 2) + 2; // +2 untuk Sales Total & Value Total
+        @endphp
+
         <table class="item-table">
-            @php
-                // Mengumpulkan semua ID toko unik yang ada di dalam item-item dokumen ini
-                $allTokoIds = $document->items->flatMap->stores->pluck('toko_id')->unique();
-                // Ambil data master tokonya (pastikan relasi toko terpanggil atau query manual)
-                $tokosHeader = \App\Models\Toko::whereIn('id', $allTokoIds)->orderBy('id_alias')->get();
-            @endphp
             <thead>
                 <tr>
                     <th>No</th>
                     <th>Article</th>
                     <th>Shiji Code</th>
                     <th>Description</th>
-                    <th>Discount Nominal</th>
-                    <th>Promo Discount %</th>
-                    <th>Reg</th>
-                    <th>Promo</th>
+
+                    @if ($hasDiscNominal)
+                        <th>Discount Nominal</th>
+                    @endif
+                    @if ($hasPromoDisc)
+                        <th>Promo Discount %</th>
+                    @endif
+
+                    @if ($hasPromo)
+                        <th>Promo</th>
+                    @endif
+
                     <th>Claim</th>
+
                     @foreach($tokosHeader as $toko)
-                        <th style="border: 1px solid #ddd; padding: 6px; text-align: center;">
-                            Sales {{ $toko->kode_excel }}
-                        </th>
+                        <th>Sales {{ $toko->kode_excel }}</th>
                     @endforeach
                     <th>Sales Total</th>
+
                     @foreach($tokosHeader as $toko)
-                        <th style="border: 1px solid #ddd; padding: 6px; text-align: center;">
-                            Value {{ $toko->kode_excel }}
-                        </th>
+                        <th>Value {{ $toko->kode_excel }}</th>
                     @endforeach
                     <th>Value Total</th>
                 </tr>
@@ -79,69 +100,64 @@
                         <td>{{ $item->article }}</td>
                         <td>{{ $item->shiji_code }}</td>
                         <td>{{ $item->description }}</td>
-                        <td>{{ number_format($item->disc_nominal, 0, ',', '.') }}</td>
-                        <td>{{ number_format($item->promo_disc, 0, ',', '.') ?? '-'}}</td>
-                        <td>{{ number_format($item->reg, 0, ',', '.') ?? '-' }}</td>
-                        <td>{{ number_format($item->promo, 0, ',', '.') ?? '-'}}</td>
-                        <td>{{ number_format($item->claim, 0, ',', '.') ?? '-' }}</td>
+
+                        @if ($hasDiscNominal)
+                            <td class="text-right">{{ number_format($item->disc_nominal, 0, ',', '.') }}</td>
+                        @endif
+                        @if ($hasPromoDisc)
+                            <td class="text-right">{{ number_format($item->promo_disc, 0, ',', '.') }}</td>
+                        @endif
+                        @if ($hasPromo)
+                            <td class="text-right">{{ number_format($item->promo, 0, ',', '.') }}</td>
+                        @endif
+
+                        <td class="text-right">{{ number_format($item->claim, 0, ',', '.') }}</td>
+
                         @foreach($tokosHeader as $toko)
                             @php
-                                // Cari data toko terkait untuk item ini
                                 $itemToko = $item->stores->firstWhere('toko_id', $toko->id);
                             @endphp
-                            <td class="text-right">{{ number_format(optional($itemToko)->sales_qty, 0, ',', '.') ?? 0 }}</td>
+                            <td class="text-right">{{ number_format(optional($itemToko)->sales_qty ?? 0, 0, ',', '.') }}</td>
                         @endforeach
-                        <td>{{ number_format($item->sales_total, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($item->sales_total, 0, ',', '.') }}</td>
+
                         @foreach($tokosHeader as $toko)
                             @php
-                                // Cari data toko terkait untuk item ini
                                 $itemToko = $item->stores->firstWhere('toko_id', $toko->id);
                             @endphp
-                            <td class="text-right">{{ number_format(optional($itemToko)->value, 0, ',', '.') ?? 0 }}</td>
+                            <td class="text-right">{{ number_format(optional($itemToko)->value ?? 0, 0, ',', '.') }}</td>
                         @endforeach
-                        <td>{{ number_format($item->value_total, 0, ',', '.') }}</td>
+                        <td class="text-right">{{ number_format($item->value_total, 0, ',', '.') }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ 9 + (count($tokosHeader) * 2) + 2 }}" class="text-center" style="color: #777; padding: 15px;">
+                        <td colspan="{{ $totalColumns }}" style="text-align: center; color: #777; padding: 15px;">
                             Tidak ada item detail terkait.
                         </td>
                     </tr>
                 @endforelse
             </tbody>
-            @php
-                $TotalValueSatuToko = 0;
-                $totalSalesQtySatuToko = 0;
-                // $allTokoIds = $document->items->flatMap->stores->pluck('toko_id')->unique();
-                // // Ambil data master tokonya (pastikan relasi toko terpanggil atau query manual)
-                // $tokosHeader = \App\Models\Toko::whereIn('id', $allTokoIds)->get();
-                // // Cari data toko terkait untuk item ini
-                // $itemToko = $document->items->flatMap->stores->firstWhere('toko_id', $toko->id);
-            @endphp
             <tfoot>
                 <tr>
-                    <td colspan="9" align="right"><b>Grand Total:</b></td>
-                    
+                    <!-- Colspan dinamis mengikuti jumlah kolom sebelum toko -->
+                    <td colspan="{{ $baseColspan }}" style="text-align: right; font-weight: bold;">Grand Total:</td>
+
                     @foreach($tokosHeader as $toko)
                         @php
-                            $totalSalesQtySatuToko = $document->items->flatMap->stores->where('toko_id', $toko->id)->pluck('sales_qty')->sum();
+                            $totalSalesQtySatuToko = $document->items->flatMap->stores->where('toko_id', $toko->id)->sum('sales_qty');
                         @endphp    
-                        <td class="text-right">{{ number_format($totalSalesQtySatuToko, 0, ',', '.') ?? 0 }}</td>
+                        <td class="text-right" style="font-weight: bold;">{{ number_format($totalSalesQtySatuToko, 0, ',', '.') }}</td>
                     @endforeach
-                    <td class="text-right">{{ $document->items->sum('sales_total') }}</td>
+                    <td class="text-right" style="font-weight: bold;">{{ number_format($document->items->sum('sales_total'), 0, ',', '.') }}</td>
 
                     @foreach($tokosHeader as $toko)
                         @php
-                            $totalValueSatuToko = $document->items->flatMap->stores->where('toko_id', $toko->id)->pluck('value')->sum(); 
+                            $totalValueSatuToko = $document->items->flatMap->stores->where('toko_id', $toko->id)->sum('value'); 
                         @endphp
-                        <td class="text-right">{{ number_format($totalValueSatuToko, 0, ',', '.') ?? 0 }}</td>
+                        <td class="text-right" style="font-weight: bold;">{{ number_format($totalValueSatuToko, 0, ',', '.') }}</td>
                     @endforeach
 
-                    @php
-                        $totalValueAll = $document->items->flatMap->stores->whereIn('toko_id', $tokosHeader->pluck('id'))->pluck('value')->sum();
-                    @endphp
-
-                    <td class="text-right">{{ number_format($document->items->sum('value_total'), 0, ',', '.') ?? 0 }}</td>
+                    <td class="text-right" style="font-weight: bold;">{{ number_format($document->items->sum('value_total'), 0, ',', '.') }}</td>
                 </tr>
             </tfoot>
         </table>
