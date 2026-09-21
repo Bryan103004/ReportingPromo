@@ -136,8 +136,6 @@
                         </td>
                     </tr>
                 @endforelse
-            </tbody>
-            <tfoot>
                 <tr>
                     <!-- Colspan dinamis mengikuti jumlah kolom sebelum toko -->
                     <td colspan="{{ $baseColspan }}" style="text-align: right; font-weight: bold;">Grand Total:</td>
@@ -159,7 +157,7 @@
 
                     <td class="text-right" style="font-weight: bold;">{{ number_format($document->items->sum('value_total'), 0, ',', '.') }}</td>
                 </tr>
-            </tfoot>
+            </tbody>
         </table>
 
         <!-- Kotak Catatan Modern -->

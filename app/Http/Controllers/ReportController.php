@@ -20,6 +20,9 @@ class ReportController extends Controller
     // Memproses file TXT
     public function store(Request $request)
     {
+
+        SalesReport::truncate(); // Kosongkan tabel sebelum mengisi data baru
+
         $request->validate([
             'report_file'   => 'required|array',
             'report_file.*' => 'file|mimes:txt|max:5120',
@@ -148,7 +151,7 @@ class ReportController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', count($files) . ' dokumen TXT berhasil di-upload dan dibersihkan.');
+        return redirect()->back()->with('success', count($files) . ' dokumen TXT berhasil di-upload.');
     }
 
     public function getWeeklyReport()
