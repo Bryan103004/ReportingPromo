@@ -446,7 +446,8 @@ class PwpController extends Controller
             "Updated Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal}"
         );
 
-        return redirect()->route('pwp.index')->with('success', 'Data PWP berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data PWP berhasil diperbarui.');
+
     }
 
     public function destroy(Pwp $pwp){
@@ -459,7 +460,8 @@ class PwpController extends Controller
             "Deleted Master Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal}"
         );
 
-        return redirect()->route('pwp.index')->with('success', 'Data PWP berhasil dihapus.');
+            return redirect()->back()->with('success', 'Data PWP berhasil dihapus.');
+
     }
 
     public function show(Pwp $pwp){

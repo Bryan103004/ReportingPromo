@@ -481,7 +481,7 @@ class RafaksiController extends Controller
             "Updated Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal}"
         );
 
-        return redirect()->route('rafaksi.index')->with('success', 'Data Rafaksi berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data Rafaksi berhasil diperbarui.');
     }
 
     public function destroy(Rafaksi $rafaksi){
@@ -494,7 +494,7 @@ class RafaksiController extends Controller
             "Deleted Master Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal}"
         );
 
-        return redirect()->route('rafaksi.index')->with('success', 'Data Rafaksi berhasil dihapus.');
+        return redirect()->back()->with('success', 'Data Rafaksi berhasil dihapus.');
     }
 
     public function show(Rafaksi $rafaksi){

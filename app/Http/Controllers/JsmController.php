@@ -481,7 +481,8 @@ class JsmController extends Controller
             "Updated Master JSM #{$jsm->id}: {$jsm->supplier_name} with Nominal {$jsm->nominal}"
         );
 
-        return redirect()->route('jsm.index')->with('success', 'Data JSM berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data JSM berhasil diperbarui.');
+
     }
 
     public function destroy(Jsm $jsm){
@@ -494,7 +495,8 @@ class JsmController extends Controller
             "Deleted Master JSM #{$jsm->id}: {$jsm->supplier_name} with Nominal {$jsm->nominal}"
         );
 
-        return redirect()->route('jsm.index')->with('success', 'Data JSM berhasil dihapus.');
+        return redirect()->back()->with('success', 'Data JSM berhasil dihapus.');
+
     }
 
     public function exportCsv(Request $request)
