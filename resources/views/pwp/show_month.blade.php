@@ -87,7 +87,10 @@
                         <th class="px-6 py-4 text-right">Nominal</th>
                         @endcan
                         <th class="px-6 py-4 text-right">Status</th>
-                        <th class="px-6 py-4 text-right">Aksi</th>
+                        @canany(['can_edit', 'can_renew', 'can_delete', 'can_update', 'can_print'])
+                            <th class="px-6 py-4 text-right">Aksi</th>
+                        @endcanany
+
                     </tr>
                 </thead>
 
@@ -156,22 +159,29 @@
 
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
+                                    @can('can_edit')
                                     <a href="{{ route('pwp.edit', ['pwp' => $pwp->id, 'page' => request('page')]) }}" title="Edit Data">
                                         ✎
                                     </a>
+                                    @endcan
 
                                     @php
                                         $periodeAkhir = \Carbon\Carbon::parse($pwp->periode_akhir);
                                     @endphp
 
+                                    @can('can_renew')
                                     @if (!is_null($pwp->periode_akhir) && now()->greaterThan($periodeAkhir))
                                         <a href="{{ route('pwp.renew.index', ['id' => $pwp->id]) }}" title="Renew Data">🆕</a>
                                     @endif
+                                    @endcan
 
+                                    @can('can_print')
                                     <a href="{{ route('document.select-stores', ['type' => 'pwp', 'id' => $pwp->id]) }}" title="Print Dokumen">
                                         🖨️
                                     </a>
+                                    @endcan
 
+                                    @can('can_update')
                                     @if($pwp->status_email == 'aktif')
                                         <a href="{{ route('pwp.status-tidak-aktif', $pwp->id) }}" title="Tandai Tidak Aktif">
                                             ❌
@@ -181,7 +191,9 @@
                                             ✅
                                         </a>
                                     @endif
+                                    @endcan
 
+                                    @can('can_delete')
                                     <form action="{{ route('pwp.destroy', $pwp->id) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
@@ -189,6 +201,7 @@
                                             🗑
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>

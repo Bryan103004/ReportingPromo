@@ -91,7 +91,9 @@
                         <th class="px-6 py-4 text-right">Nominal</th>
                         @endcan
                         <th class="px-6 py-4 text-right">Status</th>
-                        <th class="px-6 py-4">Aksi</th>
+                        @canany(['can_edit', 'can_renew', 'can_delete', 'can_update', 'can_print'])
+                            <th class="px-6 py-4 text-right">Aksi</th>
+                        @endcanany
 
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
                     </tr>
@@ -168,10 +170,13 @@
                             
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
+
+                                    @can('can_edit')
                                     {{-- Tombol Edit --}}
                                     <a href="{{ route('jsm.edit', ['jsm' => $jsm->id, 'page' => request('page')]) }}" title="Edit Data">
                                         ✎
                                     </a>
+                                    @endcan
                                     {{--  
                                     @php
                                         $bulanReminder = $jsm->bulanReminder ?? 0;
@@ -194,16 +199,21 @@
                                         $periodeAkhir = \Carbon\Carbon::parse($jsm->periode_akhir);
                                     @endphp
 
+                                    @can('can_renew')
                                     {{-- Muncul jika periode_akhir sudah kurang dari hari ini (sudah lewat/kadaluarsa) --}}
                                     @if (!is_null($jsm->periode_akhir) && now()->greaterThan($periodeAkhir))
                                         <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
                                         <a href="{{ route('jsm.renew.index', ['id' => $jsm->id]) }}" title="Renew Data">🆕</a>
                                     @endif
+                                    @endcan
                                     
+                                    @can('can_print')
                                     <a href="{{ route('document.select-stores', ['type' => 'jsm', 'id' => $jsm->id]) }}" title="Print Dokumen">
                                         🖨️
                                     </a>
+                                    @endcan
 
+                                    @can('can_update')
                                     @if($jsm->status_email == 'aktif')
                                         <a href="{{ route('jsm.status-tidak-aktif', $jsm->id) }}" title="Tandai Tidak Aktif">
                                             ❌
@@ -213,7 +223,9 @@
                                             ✅
                                         </a>
                                     @endif
+                                    @can('can_update')
 
+                                    @can('can_delete')
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('jsm.destroy', $jsm->id) }}" method="POST" class="inline">
                                         @csrf 
@@ -222,6 +234,7 @@
                                             🗑
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
 

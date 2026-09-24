@@ -90,7 +90,11 @@
                         <th class="px-6 py-4 text-right">Nominal</th>
                         <th class="px-6 py-4 text-right">Status</th>
                         @endcan
-                        <th class="px-6 py-4 text-right">Aksi</th>
+
+                        @canany(['can_edit', 'can_renew', 'can_delete', 'can_update', 'can_print'])
+                            <th class="px-6 py-4 text-right">Aksi</th>
+                        @endcanany
+
 
                         {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
                     </tr>
@@ -171,9 +175,11 @@
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
                                     {{-- Tombol Edit --}}
+                                    @can('can_edit')
                                     <a href="{{ route('rafaksi.edit', ['rafaksi' => $rafaksi->id, 'page' => request('page')]) }}" title="Edit Data">
                                         ✎
                                     </a>
+                                    @endcan
 
                                     {{--
                                     @php
@@ -197,26 +203,34 @@
                                         $periodeAkhir = \Carbon\Carbon::parse($rafaksi->periode_akhir);
                                     @endphp
 
-                                    {{-- Muncul jika periode_akhir sudah kurang dari hari ini (sudah lewat/kadaluarsa) --}}
-                                    @if (!is_null($rafaksi->periode_akhir) && now()->greaterThan($periodeAkhir))
-                                        <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
-                                        <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">🆕</a>
-                                    @endif
+                                    @can('can_renew')
+                                        {{-- Muncul jika periode_akhir sudah kurang dari hari ini (sudah lewat/kadaluarsa) --}}
+                                        @if (!is_null($rafaksi->periode_akhir) && now()->greaterThan($periodeAkhir))
+                                            <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
+                                            <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">🆕</a>
+                                        @endif
+                                    @endcan
 
-                                    <a href="{{ route('document.select-stores', ['type' => 'rafaksi', 'id' => $rafaksi->id]) }}" title="Print Dokumen">
-                                        🖨️
-                                    </a>
+                                    @can('can_print')
+                                        <a href="{{ route('document.select-stores', ['type' => 'rafaksi', 'id' => $rafaksi->id]) }}" title="Print Dokumen">
+                                            🖨️
+                                        </a>
+                                    @endcan
                                     
-                                    @if($rafaksi->status_email == 'aktif')
-                                        <a href="{{ route('rafaksi.status-tidak-aktif', $rafaksi->id) }}" title="Tandai Tidak Aktif">
-                                            ❌
-                                        </a>
-                                    @else
-                                        <a href="{{ route('rafaksi.status-aktif', $rafaksi->id) }}" title="Tandai Selesai">
-                                            ✅
-                                        </a>
-                                    @endif
+                                    @can('can_update')
+                                        @if($rafaksi->status_email == 'aktif')
+                                            <a href="{{ route('rafaksi.status-tidak-aktif', $rafaksi->id) }}" title="Tandai Tidak Aktif">
+                                                ❌
+                                            </a>
+                                        @else
+                                            <a href="{{ route('rafaksi.status-aktif', $rafaksi->id) }}" title="Tandai Selesai">
+                                                ✅
+                                            </a>
+                                        @endif
+                                    @endcan
 
+
+                                    @can('can_delete')
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('rafaksi.destroy', $rafaksi->id) }}" method="POST" class="inline">
                                         @csrf 
@@ -225,6 +239,7 @@
                                             🗑
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td> 
                         </tr>
