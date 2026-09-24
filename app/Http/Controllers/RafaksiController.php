@@ -141,7 +141,7 @@ class RafaksiController extends Controller
         $query = Rafaksi::with(['tokos'])
             ->where('periode_bulan', '>=', $periodeStart)
             ->where('periode_bulan', '<', $periodeEnd)
-            ->orderBy('periode_akhir', 'desc');
+            ->orderBy('created_at', 'desc');
 
         $periodeTitle = $periodeStart->translatedFormat('F Y');
 
@@ -166,6 +166,10 @@ class RafaksiController extends Controller
 
         if ($request->filled('end_date')) {
             $query->where('periode_akhir', '<=', $request->end_date);
+        }
+        
+        if ($request->filled('no_raf')) {
+            $query->where('no_raf', $request->no_raf);
         }
 
         // If user has limited toko access, restrict query
@@ -721,7 +725,7 @@ class RafaksiController extends Controller
             $periodeStart = Carbon::createFromDate($year, $month, 1)->startOfDay();
             $periodeEnd = (clone $periodeStart)->addMonth();
 
-            $query = Rafaksi::with(['tokos','categories'])
+            $query = Rafaksi::with(['tokos','categories','documents'])
                     ->where('periode_bulan', '>=', $periodeStart)
                     ->where('periode_bulan', '<', $periodeEnd)
                     ->orderBy('category_id')

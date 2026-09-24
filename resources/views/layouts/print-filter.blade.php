@@ -53,6 +53,11 @@
 
             <div class="flex justify-end gap-3">
                 <a href="{{ url()->previous() }}" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Batal</a>
+                @if($document->documents->isNotEmpty())
+                    <a href="{{ route('document.print-attachments', [$type, $document->id]) }}" target="_blank" class="px-5 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700">
+                        Cetak Lampiran
+                    </a>
+                @endif
                 <button type="submit" class="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700">
                     Lanjut Cetak
                 </button>

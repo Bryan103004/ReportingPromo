@@ -135,6 +135,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rute proses cetak sesungguhnya (menerima parameter toko_ids[] dari form di atas)
     Route::get('/document/{type}/{id}/print', [UtilityController::class, 'printDocument'])->name('document.print');
+    Route::get('/document/{type}/{id}/print-attachments', [UtilityController::class, 'printAttachments'])->name('document.print-attachments');
 });
 
 require __DIR__.'/auth.php';

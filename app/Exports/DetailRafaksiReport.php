@@ -57,7 +57,7 @@ class DetailRafaksiReport implements FromView, ShouldAutoSize, WithStyles, WithS
             $periodeStart = Carbon::createFromDate($this->year, $this->month, 1)->startOfDay();
             $periodeEnd = (clone $periodeStart)->addMonth();
 
-            $query = Rafaksi::with(['tokos','categories'])
+            $query = Rafaksi::with(['tokos','categories','documents'])
                 ->where('periode_bulan', '>=', $periodeStart)
                 ->where('periode_bulan', '<', $periodeEnd)
                 ->orderBy('category_id')

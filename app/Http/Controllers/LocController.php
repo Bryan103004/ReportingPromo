@@ -137,7 +137,7 @@ class LocController extends Controller
         $query = Loc::with(['tokos'])
             ->where('periode_bulan', '>=', $periodeStart)
             ->where('periode_bulan', '<', $periodeEnd)
-            ->orderBy('periode_akhir', 'desc');
+            ->orderBy('created_at', 'desc');
 
         $periodeTitle = $periodeStart->translatedFormat('F Y');
 
@@ -162,6 +162,10 @@ class LocController extends Controller
 
         if ($request->filled('end_date')) {
             $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        if ($request->filled('no_raf')) {
+            $query->where('no_raf', $request->no_raf);
         }
 
         // If user has limited toko access, restrict query
@@ -686,7 +690,7 @@ class LocController extends Controller
 
         // Try to stamp signature PDF onto the last page of the document if possible
         try {
-            if ($loc->document_path && $user->signature_path && class_exists('\\setasign\\Fpdi\\Fpdi')) {
+            if ($loc->document_path && $user->signature_path && class_exists('\Setasign\Fpdi\Fpdi')) {
                 $origPath = Storage::disk('public')->path($loc->document_path);
                 $sigPath = Storage::disk('public')->path($user->signature_path);
 
@@ -694,7 +698,7 @@ class LocController extends Controller
                     $outputRel = 'loc_documents/stamped_' . $loc->id . '.pdf';
                     $outputPath = Storage::disk('public')->path($outputRel);
 
-                    $pdf = new \setasign\Fpdi\Fpdi();
+                    $pdf = new \Setasign\Fpdi\Fpdi();
                     $pageCount = $pdf->setSourceFile($origPath);
 
                     for ($i = 1; $i <= $pageCount; $i++) {

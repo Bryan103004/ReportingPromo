@@ -57,7 +57,7 @@ class DetailPwpReport implements FromView, ShouldAutoSize, WithStyles, WithStric
             $periodeStart = Carbon::createFromDate($this->year, $this->month, 1)->startOfDay();
             $periodeEnd = (clone $periodeStart)->addMonth();
 
-            $query = Pwp::with(['tokos','categories'])
+            $query = Pwp::with(['tokos','categories','documents'])
                 ->where('periode_bulan', '>=', $periodeStart)
                 ->where('periode_bulan', '<', $periodeEnd)
                 ->orderBy('category_id')

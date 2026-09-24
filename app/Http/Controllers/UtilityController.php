@@ -9,6 +9,8 @@ use App\Models\Rafaksi;
 use App\Models\Jsm;
 use App\Models\Pwp;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+use setasign\Fpdi\Fpdi;
 
 class UtilityController extends Controller
 {
@@ -46,7 +48,7 @@ class UtilityController extends Controller
     public function selectStoresForPrint($type, $id)
     {   
         $type = strtolower($type);
-        $relations = ['tokos', 'items.stores'];
+        $relations = ['tokos', 'items.stores', 'documents'];
 
         switch ($type) {
             case 'jsm':
@@ -81,6 +83,53 @@ class UtilityController extends Controller
 
         $title = 'Pilih Toko Cetak';
         return view('layouts.print-filter', compact('document', 'title', 'type', 'users'));
+    }
+
+    public function printAttachments($type, $id)
+    {
+        $type = strtolower($type);
+
+        switch ($type) {
+            case 'jsm':
+                $document = Jsm::with('documents')->findOrFail($id);
+                break;
+            case 'pwp':
+                $document = Pwp::with('documents')->findOrFail($id);
+                break;
+            default:
+                $document = Rafaksi::with('documents')->findOrFail($id);
+                break;
+        }
+
+        if ($document->documents->isEmpty()) {
+            return redirect()->back()->with('error', 'Dokumen lampiran tidak tersedia.');
+        }
+
+        $pdf = new Fpdi();
+        foreach ($document->documents as $attachment) {
+            if (! Storage::exists($attachment->filepath)) {
+                continue;
+            }
+
+            $pageCount = $pdf->setSourceFile(Storage::path($attachment->filepath));
+            for ($page = 1; $page <= $pageCount; $page++) {
+                $template = $pdf->importPage($page);
+                $size = $pdf->getTemplateSize($template);
+                $orientation = $size['width'] > $size['height'] ? 'L' : 'P';
+
+                $pdf->AddPage($orientation, [$size['width'], $size['height']]);
+                $pdf->useTemplate($template);
+            }
+        }
+
+        if ($pdf->PageNo() === 0) {
+            return redirect()->back()->with('error', 'File dokumen lampiran tidak ditemukan.');
+        }
+
+        return response($pdf->Output('S'), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $document->no_raf . '_lampiran.pdf"',
+        ]);
     }
 
     public function printDocument(Request $request, $type, $id)

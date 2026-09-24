@@ -144,7 +144,7 @@ class JsmController extends Controller
         $query = Jsm::with(['tokos'])
             ->where('periode_bulan', '>=', $periodeStart)
             ->where('periode_bulan', '<', $periodeEnd)
-            ->orderBy('periode_akhir', 'desc');
+            ->orderBy('created_at', 'desc');
 
         $periodeTitle = $periodeStart->translatedFormat('F Y');
 
@@ -169,6 +169,10 @@ class JsmController extends Controller
 
         if ($request->filled('end_date')) {
             $query->where('periode_akhir', '<=', $request->end_date);
+        }
+
+        if ($request->filled('no_raf')) {
+            $query->where('no_raf', $request->no_raf);
         }
 
         // If user has limited toko access, restrict query
@@ -650,7 +654,7 @@ class JsmController extends Controller
             $periodeStart = Carbon::createFromDate($year, $month, 1)->startOfDay();
             $periodeEnd = (clone $periodeStart)->addMonth();
 
-            $query = Jsm::with(['tokos'])
+            $query = Jsm::with(['tokos','documents'])
                     ->where('periode_bulan', '>=', $periodeStart)
                     ->where('periode_bulan', '<', $periodeEnd)
                     ->orderBy('periode_awal', 'asc')

@@ -15,6 +15,7 @@
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Store</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Periode Awal</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Periode Akhir</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Documents</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Nominal</th>
             </tr>
         </thead>
@@ -32,6 +33,13 @@
                 
                 <td>{{ $row->periode_awal ? \Carbon\Carbon::parse($row->periode_awal)->format('d M Y') : '-' }}</td>
                 <td>{{ $row->periode_akhir ? \Carbon\Carbon::parse($row->periode_akhir)->format('d M Y') : '-' }}</td>
+                <td>
+                    @forelse($row->documents as $document)
+                        {{ $document->filename }} - {{ $document->filepath }}@if(!$loop->last)<br>@endif
+                    @empty
+                        -
+                    @endforelse
+                </td>
                 <td align="right">{{ $row->nominal }}</td>
             </tr>
         @endforeach
@@ -39,7 +47,7 @@
         @if($data->count() > 0)
         <tfoot>
             <tr>
-                <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="10" align="right"><b>Grand Total:</b></td>
+                <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="11" align="right"><b>Grand Total:</b></td>
                 <td style="background-color: #FF4E73DF; color: #FFFFFF;" align="right"><b>{{ $data->sum('nominal') }}</b></td>
             </tr>
         </tfoot>

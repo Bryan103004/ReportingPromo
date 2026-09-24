@@ -71,7 +71,7 @@ class TestLocStamp extends Command
         $this->info('Checking FPDI and file paths before approve...');
         $origPath = Storage::disk('public')->path($loc->document_path);
         $sigPath = Storage::disk('public')->path($user->signature_path);
-        $this->info('FPDI class_exists: ' . (class_exists('\\setasign\\Fpdi\\Fpdi') ? 'yes' : 'no'));
+        $this->info('FPDI class_exists: ' . (class_exists('\Setasign\Fpdi\Fpdi') ? 'yes' : 'no'));
         $this->info('Orig path: ' . $origPath . ' exists: ' . (file_exists($origPath) ? 'yes' : 'no'));
         $this->info('Sig path: ' . $sigPath . ' exists: ' . (file_exists($sigPath) ? 'yes' : 'no'));
 
