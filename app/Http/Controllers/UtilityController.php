@@ -95,9 +95,6 @@ class UtilityController extends Controller
             return redirect()->back()->with('error', 'Prepared By atau Acknowledged By tidak ditemukan. Pastikan Tipe Dokumen ini memilki SPV yang sesuai.');
         }
 
-        $prepared_by = $prepared_by->name;
-        $acknowledged_by = $acknowledged_by->name;
-
         // Ambil input array toko_ids yang dicentang dari form filter
         $selectedTokoIds = $request->input('toko_ids', []);
 
