@@ -33,6 +33,7 @@
             <p>Periode Awal: {{ Carbon::parse($document->periode_awal)->format('d/m/Y')  }}</p>
             <p>Periode Akhir: {{ Carbon::parse($document->periode_akhir)->format('d/m/Y') }}</p>
             <p>No. Dokumen: <strong>{{ $document->no_raf }}</strong></p>
+            <p>Supplier Code: {{ $document->supplier_code }}</p>
             <p>Supplier Name: {{ $document->supplier_name }}</p>
             <p>Toko: {{ $document->tokos->pluck('kode_excel')->implode(', ') }}</p>
             <p>No. Shiji: {{ $document->no_shiji }}</p>
