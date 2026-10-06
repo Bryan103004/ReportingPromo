@@ -280,7 +280,7 @@ class JsmController extends Controller
             $jsm,
             $jsm->id,
             $request->only(['supplier_code', 'supplier_name', 'periode_awal', 'periode_akhir', 'no_raf', 'store', 'nominal']),
-            "Created Master JSM #{$jsm->id}: {$jsm->supplier_name} with Nominal {$jsm->nominal}"
+            "Created Master JSM #{$jsm->id}: {$jsm->supplier_name} with Nominal {$jsm->nominal_formatted}"
         );
 
         return redirect()->route('jsm.index')->with('success', 'Data JSM berhasil disimpan.');
@@ -482,7 +482,7 @@ class JsmController extends Controller
             $jsm,
             $jsm->id,
             $request->only(['supplier_code', 'supplier_name', 'periode_awal', 'periode_akhir', 'no_raf', 'store', 'nominal']),
-            "Updated Master JSM #{$jsm->id}: {$jsm->supplier_name} with Nominal {$jsm->nominal}"
+            "Updated Master JSM #{$jsm->id}: {$jsm->supplier_name} with Nominal {$jsm->nominal_formatted}"
         );
 
         return redirect()->back()->with('success', 'Data JSM berhasil diperbarui.');
@@ -495,8 +495,8 @@ class JsmController extends Controller
         ActivityLogger::logDelete(
             $jsm,
             $jsm->id,
-            ['supplier_name' => $jsm->supplier_name, 'nominal' => $jsm->nominal],
-            "Deleted Master JSM #{$jsm->id}: {$jsm->supplier_name} with Nominal {$jsm->nominal}"
+            ['supplier_name' => $jsm->supplier_name, 'nominal' => $jsm->nominal_formatted],
+            "Deleted Master JSM #{$jsm->id}: {$jsm->supplier_name} with Nominal {$jsm->nominal_formatted}"
         );
 
         return redirect()->back()->with('success', 'Data JSM berhasil dihapus.');
@@ -644,6 +644,28 @@ class JsmController extends Controller
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
         return Excel::download(new DetailJsmReport($year, $month, $stores, $categoryId, $tokoId), $fileName);
+    }
+
+    public function viewExcel(Request $request)
+    {
+        $year = $request->year;
+        $month = $request->month;
+        $categoryId = $request->category_id;
+        $tokoId = $request->toko_id;
+
+        // Toko yang boleh dipakai untuk export dibatasi sesuai akses user
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $stores = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get();
+        } else {
+            $stores = $tokoQuery->get();
+        }
+
+        // Pakai logika yang sama persis dengan export Excel (DetailJsmReport::view())
+        // -- bukan dihitung ulang di sini, supaya $data/$isDetail/hideTotal selalu
+        // konsisten dan tetap menghormati filter categoryId/tokoId di mode rekap juga.
+        return (new DetailJsmReport($year, $month, $stores, $categoryId, $tokoId))->view();
     }
 
     public function printPdf(Request $request){

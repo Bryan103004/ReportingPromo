@@ -39,7 +39,7 @@
                         -
                     @endforelse
                 </td>
-                <td align="right">{{ $row->nominal }}</td>
+                <td align="right">{{ $row->nominal_formatted }}</td>
             </tr>
         @endforeach
         </tbody>
@@ -47,7 +47,7 @@
         <tfoot>
             <tr>
                 <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="11" align="right"><b>Grand Total:</b></td>
-                <td style="background-color: #FF4E73DF; color: #FFFFFF;" align="right"><b>{{ $data->sum('nominal') }}</b></td>
+                <td style="background-color: #FF4E73DF; color: #FFFFFF;" align="right"><b>{{ number_format($data->sum('nominal'), 0, ',', '.') }}</b></td>
             </tr>
         </tfoot>
         @endif
@@ -82,11 +82,11 @@
                             $val = $row->$colName;
                         @endphp
 
-                        <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">{{ ($val === '' || $val === null) ? '' : $val }}</td>
+                        <td style="{{ $isAkhirRekap ? 'background-color: #FF000000; color: #FFFFFF; font-weight: bold;' : ($isTotalKeseluruhan ? 'background-color: #FF4E73DF; color: #FFFFFF; font-weight: bold;' : '') }}">{{ ($val === '' || $val === null) ? '' : number_format((float) $val, 2, ',', '.') }}</td>
                     @endforeach
                     @unless($hideTotal ?? false)
                     <td align="right" style="background-color: #FF4E73DF; font-weight: bold;">
-                        {{ ($row->TOTAL === '' || $row->TOTAL === null) ? '' : $row->TOTAL }}
+                        {{ ($row->TOTAL === '' || $row->TOTAL === null) ? '' : number_format((float) $row->TOTAL, 2, ',', '.') }}
                     </td>
                     @endunless
                 </tr>

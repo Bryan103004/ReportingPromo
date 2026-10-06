@@ -279,7 +279,7 @@ class RafaksiController extends Controller
             $rafaksi,
             $rafaksi->id,
             $request->only(['supplier_code', 'supplier_name', 'periode_awal', 'periode_akhir', 'no_raf', 'nominal', 'toko_id']),
-            "Created Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal}"
+            "Created Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal_formatted}"
         );
 
         return redirect()->route('rafaksi.index')->with('success', 'Data Rafaksi berhasil disimpan.');
@@ -482,7 +482,7 @@ class RafaksiController extends Controller
             $rafaksi,
             $rafaksi->id,
             $request->only(['supplier_code', 'supplier_name', 'periode_awal', 'periode_akhir', 'no_raf', 'nominal', 'toko_id']),
-            "Updated Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal}"
+            "Updated Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal_formatted}"
         );
 
         return redirect()->back()->with('success', 'Data Rafaksi berhasil diperbarui.');
@@ -494,8 +494,8 @@ class RafaksiController extends Controller
         ActivityLogger::logDelete(
             $rafaksi,
             $rafaksi->id,
-            ['supplier_name' => $rafaksi->supplier_name, 'nominal' => $rafaksi->nominal],
-            "Deleted Master Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal}"
+            ['supplier_name' => $rafaksi->supplier_name, 'nominal' => $rafaksi->nominal_formatted],
+            "Deleted Master Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal_formatted}"
         );
 
         return redirect()->back()->with('success', 'Data Rafaksi berhasil dihapus.');
@@ -714,6 +714,28 @@ class RafaksiController extends Controller
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
         return Excel::download(new DetailRafaksiReport($year, $month, $stores, $categoryId, $tokoId), $fileName);
+    }
+
+    public function viewExcel(Request $request)
+    {
+        $year = $request->year;
+        $month = $request->month;
+        $categoryId = $request->category_id;
+        $tokoId = $request->toko_id;
+
+        // Toko yang boleh dipakai untuk export dibatasi sesuai akses user
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $stores = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get();
+        } else {
+            $stores = $tokoQuery->get();
+        }
+
+        // Pakai logika yang sama persis dengan export Excel (DetailRafaksiReport::view())
+        // -- bukan dihitung ulang di sini, supaya $data/$isDetail/hideTotal selalu
+        // konsisten dan tetap menghormati filter categoryId/tokoId di mode rekap juga.
+        return (new DetailRafaksiReport($year, $month, $stores, $categoryId, $tokoId))->view();
     }
 
     public function printPdf(Request $request){

@@ -11,6 +11,14 @@ class Pwp extends Model
 
     protected $guarded = ['id'];
 
+    public function getNominalFormattedAttribute()
+    {
+        $nominal_formatted = $this->nominal ?? 0; 
+        
+        return number_format($nominal_formatted, 0, ',', '.');
+    }
+    
+
     public function supplierRafaksi()
     {
         return $this->belongsTo(SupplierRafaksi::class, 'supplier_code', 'kode_supplier');

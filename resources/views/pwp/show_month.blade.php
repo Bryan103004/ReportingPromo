@@ -97,7 +97,7 @@
                 {{-- Body Tabel --}}
                 <tbody class="divide-y divide-gray-100">
                     @forelse($pwps as $pwp)
-                        <tr class="hover:bg-gray-50 transition-colors" data-nominal="{{ $pwp->nominal }}">
+                        <tr class="hover:bg-gray-50 transition-colors" data-nominal="{{ $pwp->nominal_formatted }}">
                             <td class="px-6 py-4 text-center font-medium text-gray-500">
                                 {{ $loop->iteration }}
                             </td>
@@ -147,7 +147,7 @@
 
                             @can('see_nominal')
                             <td class="px-6 py-4 text-right font-bold text-green-600">
-                                Rp {{ number_format($pwp->nominal, 0, ',', '.') }}
+                                Rp {{ number_format($pwp->nominal_formatted, 0, ',', '.') }}
                             </td>
                             @endcan
 
@@ -220,7 +220,7 @@
                 @if($pwps->count() > 0)
                 <tfoot class="bg-gray-50 border-t border-gray-200">
                     <tr>
-                        <td colspan="9" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
+                        <td colspan="8" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
                             Grand Total:
                         </td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 text-base">

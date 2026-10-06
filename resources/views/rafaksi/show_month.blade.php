@@ -103,7 +103,7 @@
                 {{-- Body Tabel --}}
                 <tbody class="divide-y divide-gray-100">
                     @forelse($rafaksis as $rafaksi)
-                        <tr class="hover:bg-gray-50 transition-colors" data-nominal="{{ $rafaksi->nominal }}">
+                        <tr class="hover:bg-gray-50 transition-colors" data-nominal="{{ $rafaksi->nominal_formatted }}">
                             {{-- Nomor Urut --}}
                             <td class="px-6 py-4 text-center font-medium text-gray-500">
                                 {{ $loop->iteration }}
@@ -161,7 +161,7 @@
                             @can('see_nominal')
                             {{-- Nominal --}}
                             <td class="px-6 py-4 text-right font-bold text-green-600">
-                                Rp {{ number_format($rafaksi->nominal, 0, ',', '.') }}
+                                Rp {{ $rafaksi->nominal_formatted }}
                             </td>
                             @endcan
 
@@ -258,7 +258,7 @@
                 @if($rafaksis->count() > 0)
                 <tfoot class="bg-gray-50 border-t border-gray-200">
                     <tr>
-                        <td colspan="9" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
+                        <td colspan="8" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
                             Grand Total:
                         </td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 text-base">

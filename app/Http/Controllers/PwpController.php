@@ -244,7 +244,7 @@ class PwpController extends Controller
             $pwp,
             $pwp->id,
             $request->only(['supplier_code', 'supplier_name', 'periode_awal', 'periode_akhir', 'no_raf', 'nominal', 'toko_id']),
-            "Created Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal}"
+            "Created Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal_formatted}"
         );
 
         return redirect()->route('pwp.index')->with('success', 'Data PWP berhasil disimpan.');
@@ -447,7 +447,7 @@ class PwpController extends Controller
             $pwp,
             $pwp->id,
             $request->only(['supplier_code', 'supplier_name', 'periode_awal', 'periode_akhir', 'no_raf', 'nominal', 'toko_id']),
-            "Updated Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal}"
+            "Updated Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal_formatted}"
         );
 
         return redirect()->back()->with('success', 'Data PWP berhasil diperbarui.');
@@ -460,8 +460,8 @@ class PwpController extends Controller
         ActivityLogger::logDelete(
             $pwp,
             $pwp->id,
-            ['supplier_name' => $pwp->supplier_name, 'nominal' => $pwp->nominal],
-            "Deleted Master Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal}"
+            ['supplier_name' => $pwp->supplier_name, 'nominal' => $pwp->nominal_formatted],
+            "Deleted Master Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal_formatted}"
         );
 
             return redirect()->back()->with('success', 'Data PWP berhasil dihapus.');
@@ -678,6 +678,28 @@ class PwpController extends Controller
 
         // PENTING: Masukkan $year dan $month ke dalam kurung kelas export-nya
         return Excel::download(new DetailPwpReport($year, $month, $stores, $categoryId, $tokoId), $fileName);
+    }
+
+    public function viewExcel(Request $request)
+    {
+        $year = $request->year;
+        $month = $request->month;
+        $categoryId = $request->category_id;
+        $tokoId = $request->toko_id;
+
+        // Toko yang boleh dipakai untuk export dibatasi sesuai akses user
+        $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
+            $stores = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get();
+        } else {
+            $stores = $tokoQuery->get();
+        }
+
+        // Pakai logika yang sama persis dengan export Excel (DetailPwpReport::view())
+        // -- bukan dihitung ulang di sini, supaya $data/$isDetail/hideTotal selalu
+        // konsisten dan tetap menghormati filter categoryId/tokoId di mode rekap juga.
+        return (new DetailPwpReport($year, $month, $stores, $categoryId, $tokoId))->view();
     }
 
     public function printPdf(Request $request){

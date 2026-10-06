@@ -69,6 +69,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/jsm/print', [JsmController::class, 'printPdf'])->name('jsm.print');
     Route::get('/jsm/rekap/{year}/{month}', [JsmController::class, 'showMonth'])->name('jsm.show_month');
     Route::get('/jsm/export_excel', [JsmController::class, 'exportExcel'])->name('jsm.export.excel');
+    Route::get('/jsm/view_excel', [JsmController::class, 'viewExcel'])->name('jsm.view.excel');
     Route::get('/jsm/export_csv', [JsmController::class, 'exportCSV'])->name('jsm.export');
     Route::get('/jsm/documents/{document}/download', [JsmController::class, 'downloadDocument'])->name('jsm.documents.download');
     Route::delete('/jsm/documents/{document}', [JsmController::class, 'deleteDocument'])->name('jsm.documents.destroy');
@@ -82,6 +83,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/rafaksi/print', [RafaksiController::class, 'printPdf'])->name('rafaksi.print');
     Route::get('/rafaksi/rekap/{year}/{month}', [RafaksiController::class, 'showMonth'])->name('rafaksi.show_month');
     Route::get('/rafaksi/export_excel', [RafaksiController::class, 'exportExcel'])->name('rafaksi.export.excel');
+    Route::get('/rafaksi/view_excel', [RafaksiController::class, 'viewExcel'])->name('rafaksi.view.excel');
     Route::get('/rafaksi/export_csv', [RafaksiController::class, 'exportCSV'])->name('rafaksi.export');
     Route::get('/rafaksi/documents/{document}/download', [RafaksiController::class, 'downloadDocument'])->name('rafaksi.documents.download');
     Route::delete('/rafaksi/documents/{document}', [RafaksiController::class, 'deleteDocument'])->name('rafaksi.documents.destroy');
@@ -94,6 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pwp/print', [PwpController::class, 'printPdf'])->name('pwp.print');
     Route::get('/pwp/rekap/{year}/{month}', [PwpController::class, 'showMonth'])->name('pwp.show_month');
     Route::get('/pwp/export_excel', [PwpController::class, 'exportExcel'])->name('pwp.export.excel');
+    Route::get('/pwp/view_excel', [PwpController::class, 'viewExcel'])->name('pwp.view.excel');
     Route::get('/pwp/export_csv', [PwpController::class, 'exportCSV'])->name('pwp.export');
     Route::get('/pwp/documents/{document}/download', [PwpController::class, 'downloadDocument'])->name('pwp.documents.download');
     Route::delete('/pwp/documents/{document}', [PwpController::class, 'deleteDocument'])->name('pwp.documents.destroy');
