@@ -863,8 +863,8 @@
         if (!data) return;
 
         const h = data.header || {};
-        if (h.periode_awal) document.getElementById('periode_awal').value = h.periode_awal;
-        if (h.periode_akhir) document.getElementById('periode_akhir').value = h.periode_akhir;
+        if (h.periode_awal) window.setDateFieldValue('periode_awal', h.periode_awal);
+        if (h.periode_akhir) window.setDateFieldValue('periode_akhir', h.periode_akhir);
         if (h.no_shiji) document.getElementById('no_shiji').value = h.no_shiji;
         if (h.no_shiji_promotion) document.getElementById('no_shiji_promotion').value = h.no_shiji_promotion;
 

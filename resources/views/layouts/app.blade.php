@@ -90,6 +90,22 @@
                     });
                 }
             });
+
+            // Dipakai di mana pun kode JS lain butuh ngisi field tanggal (date-dmy)
+            // secara terprogram (misal auto-isi dari hasil import Excel) -- gak boleh
+            // langsung assign .value kayak input biasa, karena field aslinya udah
+            // disembunyikan sama flatpickr (altInput:true) dan gak otomatis nge-sync
+            // ke tampilan visible-nya kalau di-assign langsung. Pakai fp.setDate()
+            // biar tampilan & nilai aslinya ikut ke-update bareng.
+            window.setDateFieldValue = function (id, value) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                if (el._flatpickr) {
+                    el._flatpickr.setDate(value, true);
+                } else {
+                    el.value = value;
+                }
+            };
         </script>
 
         <!-- @livewireStyle -->
