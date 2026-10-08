@@ -223,7 +223,7 @@
                                             ✅
                                         </a>
                                     @endif
-                                    @can('can_update')
+                                    @endcan
 
                                     @can('can_delete')
                                     {{-- Tombol Hapus --}}
@@ -237,7 +237,6 @@
                                     @endcan
                                 </div>
                             </td>
-
                         </tr>
                     @empty
                         <tr>
