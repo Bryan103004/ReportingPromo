@@ -264,6 +264,9 @@ class LocController extends Controller
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
         ]);
 
+        $year = Carbon::parse($loc->periode_bulan)->year;
+        $month = Carbon::parse($loc->periode_bulan)->month;
+
         $loc->update($request->except(['toko_id', 'document_file']));
         $this->storeDocuments($loc, $request);
         $tokoIds = is_array($request->input('toko_id')) ? $request->input('toko_id') : [$request->input('toko_id')];
@@ -280,7 +283,7 @@ class LocController extends Controller
             "Updated Loc #{$loc->id}: {$loc->supplier_name} with Nominal {$loc->nominal}"
         );
 
-        return redirect()->route('loc.index')->with('success', 'Data Loc berhasil diperbarui.');
+        return redirect()->route('loc.show_month',['year' => $year, 'month' => $month, 'page' => $request->input('page')])->with('success', 'Data Loc berhasil diperbarui.');
     }
 
     public function destroy(Loc $loc){

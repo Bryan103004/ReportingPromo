@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -166,7 +167,7 @@ class PwpController extends Controller
     }
 
     public function store(Request $request){
-        $request->validate(array_merge([
+        $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
@@ -177,22 +178,23 @@ class PwpController extends Controller
             'status_email' => 'aktif',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
-            'nominal' => 'required_without:items|nullable|numeric|min:0',
+            'nominal' => 'required_without:items_json|nullable|numeric|min:0',
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
             'category_id' => 'exists:categories,id',
-        ], $this->itemValidationRules()));
+        ]);
 
-        $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
+        $items = $this->decodeAndValidateItems($request);
+        $this->assertItemsDiscMutuallyExclusive($items);
 
         $category = Category::find($request->category_id);
 
         $cat_init = $category->initial_category;
 
 
-        $data = $request->except(['toko_id', 'items', 'document_file']);
+        $data = $request->except(['toko_id', 'items_json', 'document_file']);
 
         // If frontend provided raf_sequence explicitly, prefer it
         if ($request->filled('raf_sequence')) {
@@ -226,11 +228,11 @@ class PwpController extends Controller
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
 
-        $pwp = DB::transaction(function () use ($data, $tokoIds, $request) {
+        $pwp = DB::transaction(function () use ($data, $tokoIds, $request, $items) {
             $pwp = Pwp::create($data);
             $pwp->tokos()->sync($tokoIds);
 
-            $nominal = $this->persistItems($pwp, $request->input('items', []), $tokoIds);
+            $nominal = $this->persistItems($pwp, $items, $tokoIds);
             if ($nominal !== null) {
                 $pwp->update(['nominal' => $nominal]);
             }
@@ -302,6 +304,26 @@ class PwpController extends Controller
     }
 
     /**
+     * Baris item sekarang dikirim sebagai 1 field JSON (items_json), bukan ratusan
+     * field form terpisah (items[0][article], items[0][reg], dst) -- dokumen besar
+     * (banyak baris x banyak toko) bisa nembus limit max_input_vars PHP (default
+     * 1000) dan datanya kepotong diam-diam tanpa error kalau masih pakai field
+     * per-baris. Aturan validasi tiap baris tetap sama persis (itemValidationRules),
+     * cuma sumber datanya pindah dari array form ke hasil decode JSON.
+     */
+    private function decodeAndValidateItems(Request $request): array
+    {
+        $items = json_decode($request->input('items_json', ''), true);
+        if (! is_array($items)) {
+            $items = [];
+        }
+
+        Validator::make(['items' => $items], $this->itemValidationRules())->validate();
+
+        return $items;
+    }
+
+    /**
      * DISC NOMINAL dan PROMO DISC saling eksklusif per baris item.
      */
     private function assertItemsDiscMutuallyExclusive(array $items): void
@@ -356,7 +378,7 @@ class PwpController extends Controller
                 'disc_nominal' => ($discNominal !== null && $discNominal !== '') ? $discNominal : null,
                 'promo_disc' => ($promoDisc !== null && $promoDisc !== '') ? $promoDisc : null,
                 'reg' => $reg,
-                'promo' => $itemInput['promo'] ?? null,
+                'promo' => ($itemInput['promo'] ?? null) !== '' ? ($itemInput['promo'] ?? null) : null,
                 'claim' => $claim,
                 'sales_total' => 0,
                 'value_total' => 0,
@@ -404,7 +426,7 @@ class PwpController extends Controller
     }
 
     public function update(Request $request, Pwp $pwp){
-        $request->validate(array_merge([
+        $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
@@ -415,15 +437,16 @@ class PwpController extends Controller
             'status_email' => 'in:aktif,tidak_aktif|required',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
-            'nominal' => 'required_without:items|nullable|numeric|min:0',
+            'nominal' => 'required_without:items_json|nullable|numeric|min:0',
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
             'category_id' => 'exists:categories,id',
-        ], $this->itemValidationRules()));
+        ]);
 
-        $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
+        $items = $this->decodeAndValidateItems($request);
+        $this->assertItemsDiscMutuallyExclusive($items);
 
         $tokoIds = $request->input('toko_id', []);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
@@ -431,17 +454,20 @@ class PwpController extends Controller
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
 
-        DB::transaction(function () use ($request, $pwp, $tokoIds) {
-            $pwp->update($request->except(['toko_id', 'items', 'document_file']));
+        DB::transaction(function () use ($request, $pwp, $tokoIds, $items) {
+            $pwp->update($request->except(['toko_id', 'items_json', 'document_file']));
             $pwp->tokos()->sync($tokoIds);
 
-            $nominal = $this->persistItems($pwp, $request->input('items', []), $tokoIds);
+            $nominal = $this->persistItems($pwp, $items, $tokoIds);
             if ($nominal !== null) {
                 $pwp->update(['nominal' => $nominal]);
             }
 
             $this->storeDocuments($pwp, $request);
         });
+
+        $year = Carbon::parse($pwp->periode_bulan)->year;
+        $month = Carbon::parse($pwp->periode_bulan)->month;
 
         ActivityLogger::logUpdate(
             $pwp,
@@ -450,8 +476,7 @@ class PwpController extends Controller
             "Updated Pwp #{$pwp->id}: {$pwp->supplier_name} with Nominal {$pwp->nominal_formatted}"
         );
 
-        return redirect()->back()->with('success', 'Data PWP berhasil diperbarui.');
-
+        return redirect()->route('pwp.show_month', ['year' => $year, 'month' => $month, 'page' => $request->input('page')]);
     }
 
     public function destroy(Pwp $pwp){

@@ -52,18 +52,18 @@
     {{-- Input Periode Awal --}}
     <div>
         <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Periode Awal</label>
-        <input type="date" name="start_date" id="start_date" value="{{ old('start_date', request('start_date')) }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
+        <input type="text" name="start_date" id="start_date" value="{{ old('start_date', request('start_date')) }}" class="date-dmy w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
     </div>
 
     {{-- Input Periode Akhir --}}
     <div>
         <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Periode Akhir</label>
-        <input type="date" name="end_date" id="end_date" value="{{ old('end_date', request('end_date')) }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
+        <input type="text" name="end_date" id="end_date" value="{{ old('end_date', request('end_date')) }}" class="date-dmy w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
     </div>
 
     <div>
         <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Periode Akhir</label>
-        <input type="date" name="end_date" id="end_date" value="{{ old('end_date', request('end_date')) }}" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
+        <input type="text" name="end_date" id="end_date" value="{{ old('end_date', request('end_date')) }}" class="date-dmy w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
     </div>
 
     {{-- Tombol Aksi --}}

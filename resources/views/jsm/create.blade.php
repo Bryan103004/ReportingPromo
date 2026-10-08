@@ -86,13 +86,13 @@
                 {{-- Periode Awal --}}
                 <div>
                     <label for="periode_awal" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Awal Rafaksi<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_awal" id="periode_awal" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
+                    <input type="text" name="periode_awal" id="periode_awal" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div>
 
                 {{-- Periode Akhir --}}
                 <div>
                     <label for="periode_akhir" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Akhir Rafaksi<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_akhir" id="periode_akhir" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
+                    <input type="text" name="periode_akhir" id="periode_akhir" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div> 
 
                 {{-- No. RAF --}}
@@ -104,7 +104,7 @@
                 {{-- Periode Bulan --}}
                 <div>
                     <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Rekap<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_bulan" id="periode_bulan" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
+                    <input type="text" name="periode_bulan" id="periode_bulan" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div>
 
                 {{-- Store --}}

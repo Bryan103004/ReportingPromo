@@ -48,7 +48,50 @@
 
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css"/>
         <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
-    
+
+        <!-- Flatpickr: biar tampilan input tanggal SELALU dd/mm/yyyy di semua device,
+             gak ikut locale OS/browser user (beda dari <input type="date"> bawaan yang
+             tampilannya ikut-ikutan settingan device). Dipasang ke input manapun yang
+             punya class "date-dmy" -- nilai yang beneran dikirim ke server tetap format
+             Y-m-d (gak berubah), cuma tampilan di layar yang jadi dd/mm/yyyy.
+             Disimpan lokal di public/vendor/flatpickr (bukan CDN) biar tetap jalan
+             walau device/jaringan gak ada akses internet ke CDN luar. -->
+        <link rel="stylesheet" href="{{ asset('vendor/flatpickr/flatpickr.min.css') }}">
+        <script src="{{ asset('vendor/flatpickr/flatpickr.min.js') }}"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                if (window.flatpickr) {
+                    var fpInstances = flatpickr('.date-dmy', {
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'd/m/Y',
+                        allowInput: true,
+                    });
+
+                    // flatpickr(selector, ...) balikin 1 instance kalau selector cuma
+                    // kena 1 elemen, atau array of instance kalau kena banyak -- disamain
+                    // jadi array biar bisa di-loop konsisten.
+                    (Array.isArray(fpInstances) ? fpInstances : [fpInstances]).forEach(function (fp) {
+                        if (!fp || !fp.altInput) return;
+
+                        // Biar pas ngetik angka (30102004) otomatis ke-sisipin "/" jadi
+                        // dd/mm/yyyy (30/10/2004) -- allowInput:true doang gak bikin ini
+                        // otomatis, jadi perlu format manual tiap ada input baru.
+                        fp.altInput.addEventListener('input', function (e) {
+                            var digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                            var formatted = digits;
+                            if (digits.length > 4) {
+                                formatted = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4);
+                            } else if (digits.length > 2) {
+                                formatted = digits.slice(0, 2) + '/' + digits.slice(2);
+                            }
+                            e.target.value = formatted;
+                        });
+                    });
+                }
+            });
+        </script>
+
         <!-- @livewireStyle -->
     </head>
     <body class="font-sans antialiased">

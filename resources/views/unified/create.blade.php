@@ -92,13 +92,13 @@
                 {{-- Periode Awal --}}
                 <div>
                     <label for="periode_awal" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Awal<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_awal" id="periode_awal" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
+                    <input type="text" name="periode_awal" id="periode_awal" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
                 </div>
 
                 {{-- Periode Akhir --}}
                 <div>
                     <label for="periode_akhir" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Akhir<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_akhir" id="periode_akhir" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
+                    <input type="text" name="periode_akhir" id="periode_akhir" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
                 </div> 
 
                 {{-- No. RAF --}}
@@ -122,7 +122,7 @@
                 {{-- Periode Bulan --}}
                 <div>
                     <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Rekap<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_bulan" id="periode_bulan" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
+                    <input type="text" name="periode_bulan" id="periode_bulan" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
                 </div>
 
                 <div class="md:col-span-2 text-lg font-semibold text-gray-700 border-b pb-2 mt-4">Pemilihan Toko (Store)</div>
@@ -162,6 +162,7 @@
                 
                 <input type="hidden" name="store" id="hidden_store_name" value="-">
                 <input type="hidden" name="raf_sequence" id="raf_sequence" value="">
+                <input type="hidden" name="items_json" id="items_json_input" value="">
             </div>
 
             {{-- Baris Item (Detail per Artikel) --}}
@@ -535,17 +536,17 @@
         window.itemRows.forEach((row, i) => {
             bodyHtml += `<tr class="border-t">`;
             bodyHtml += `<td class="px-2 py-1 text-gray-500">${i + 1}</td>`;
-            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][article]" class="w-28 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="article" data-row="${i}" value="${escAttr(row.article)}" required></td>`;
-            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][shiji_code]" class="w-24 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="shiji_code" data-row="${i}" value="${escAttr(row.shiji_code)}"></td>`;
-            bodyHtml += `<td class="px-1 py-1"><input type="text" name="items[${i}][description]" class="w-32 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="description" data-row="${i}" value="${escAttr(row.description)}"></td>`;
-            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][disc_nominal]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="disc_nominal" data-row="${i}" value="${escAttr(row.disc_nominal)}"></td>`;
-            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][promo_disc]" class="w-16 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="promo_disc" data-row="${i}" value="${escAttr(row.promo_disc)}"></td>`;
-            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][reg]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="reg" data-row="${i}" value="${escAttr(row.reg)}" required></td>`;
-            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][promo]" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="promo" data-row="${i}" value="${escAttr(row.promo)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" class="w-28 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="article" data-row="${i}" value="${escAttr(row.article)}" required></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" class="w-24 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="shiji_code" data-row="${i}" value="${escAttr(row.shiji_code)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="text" class="w-32 rounded border border-gray-300 text-xs px-1.5 py-1" data-field="description" data-row="${i}" value="${escAttr(row.description)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="disc_nominal" data-row="${i}" value="${escAttr(row.disc_nominal)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" class="w-16 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="promo_disc" data-row="${i}" value="${escAttr(row.promo_disc)}"></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="reg" data-row="${i}" value="${escAttr(row.reg)}" required></td>`;
+            bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" class="w-20 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="promo" data-row="${i}" value="${escAttr(row.promo)}"></td>`;
             bodyHtml += `<td class="px-2 py-1 text-right font-semibold bg-amber-50" data-claim-cell="${i}">0</td>`;
             stores.forEach(s => {
                 const val = row.sales[s.id] ?? '';
-                bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" name="items[${i}][sales][${s.id}]" class="w-16 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="sales" data-store="${s.id}" data-row="${i}" value="${escAttr(val)}"></td>`;
+                bodyHtml += `<td class="px-1 py-1"><input type="number" step="0.01" class="w-16 rounded border border-gray-300 text-xs px-1.5 py-1 text-right" data-field="sales" data-store="${s.id}" data-row="${i}" value="${escAttr(val)}"></td>`;
             });
             bodyHtml += `<td class="px-2 py-1 text-right font-semibold bg-amber-50" data-salestotal-cell="${i}">0</td>`;
             stores.forEach(s => {
@@ -709,6 +710,13 @@
         // yang lagi kepilih SAAT SUBMIT, bukan cuma waktu terakhir kali event
         // 'change' sempat nyala.
         syncFormAction();
+
+        // Baris item dikirim sebagai 1 field JSON (bukan ratusan field items[i][...]
+        // terpisah) -- dokumen gede (banyak baris x banyak toko) bisa nembus limit
+        // max_input_vars PHP (default 1000) dan datanya kepotong diam-diam tanpa
+        // ada error apapun kalau masih pakai field per-baris.
+        document.getElementById('items_json_input').value = JSON.stringify(window.itemRows);
+
         btn.disabled = true;
         btn.textContent = 'Menyimpan...';
     });

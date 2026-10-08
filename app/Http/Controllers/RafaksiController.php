@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Maatwebsite\Excel\Facades\Excel;
@@ -202,7 +203,7 @@ class RafaksiController extends Controller
     }
 
     public function store(Request $request){
-        $request->validate(array_merge([
+        $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
@@ -213,21 +214,22 @@ class RafaksiController extends Controller
             'status_email' => 'aktif',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
-            'nominal' => 'required_without:items|nullable|numeric|min:0',
+            'nominal' => 'required_without:items_json|nullable|numeric|min:0',
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120', // Maks 5MB per file
             'category_id' => 'exists:categories,id',
-        ], $this->itemValidationRules()));
+        ]);
 
-        $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
+        $items = $this->decodeAndValidateItems($request);
+        $this->assertItemsDiscMutuallyExclusive($items);
 
         $category = Category::find($request->category_id);
 
         $cat_init = $category->initial_category;
 
-        $data = $request->except(['toko_id', 'items', 'document_file']);
+        $data = $request->except(['toko_id', 'items_json', 'document_file']);
 
         // If frontend provided raf_sequence explicitly, prefer it
         if ($request->filled('raf_sequence')) {
@@ -261,11 +263,11 @@ class RafaksiController extends Controller
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
 
-        $rafaksi = DB::transaction(function () use ($data, $tokoIds, $request) {
+        $rafaksi = DB::transaction(function () use ($data, $tokoIds, $request, $items) {
             $rafaksi = Rafaksi::create($data);
             $rafaksi->tokos()->sync($tokoIds);
 
-            $nominal = $this->persistItems($rafaksi, $request->input('items', []), $tokoIds);
+            $nominal = $this->persistItems($rafaksi, $items, $tokoIds);
             if ($nominal !== null) {
                 $rafaksi->update(['nominal' => $nominal]);
             }
@@ -302,6 +304,26 @@ class RafaksiController extends Controller
             'items.*.sales' => 'nullable|array',
             'items.*.sales.*' => 'nullable|numeric|min:0',
         ];
+    }
+
+    /**
+     * Baris item sekarang dikirim sebagai 1 field JSON (items_json), bukan ratusan
+     * field form terpisah (items[0][article], items[0][reg], dst) -- dokumen besar
+     * (banyak baris x banyak toko) bisa nembus limit max_input_vars PHP (default
+     * 1000) dan datanya kepotong diam-diam tanpa error kalau masih pakai field
+     * per-baris. Aturan validasi tiap baris tetap sama persis (itemValidationRules),
+     * cuma sumber datanya pindah dari array form ke hasil decode JSON.
+     */
+    private function decodeAndValidateItems(Request $request): array
+    {
+        $items = json_decode($request->input('items_json', ''), true);
+        if (! is_array($items)) {
+            $items = [];
+        }
+
+        Validator::make(['items' => $items], $this->itemValidationRules())->validate();
+
+        return $items;
     }
 
     /**
@@ -391,7 +413,7 @@ class RafaksiController extends Controller
                 'disc_nominal' => ($discNominal !== null && $discNominal !== '') ? $discNominal : null,
                 'promo_disc' => ($promoDisc !== null && $promoDisc !== '') ? $promoDisc : null,
                 'reg' => $reg,
-                'promo' => $itemInput['promo'] ?? null,
+                'promo' => ($itemInput['promo'] ?? null) !== '' ? ($itemInput['promo'] ?? null) : null,
                 'claim' => $claim,
                 'sales_total' => 0,
                 'value_total' => 0,
@@ -439,7 +461,7 @@ class RafaksiController extends Controller
     }
 
     public function update(Request $request, Rafaksi $rafaksi){
-        $request->validate(array_merge([
+        $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
             'periode_awal' => 'date|required',
@@ -450,15 +472,16 @@ class RafaksiController extends Controller
             'status_email' => 'in:aktif,tidak_aktif|required',
             'periode_bulan' => 'string|required',
             'store' => 'string|required',
-            'nominal' => 'required_without:items|nullable|numeric|min:0',
+            'nominal' => 'required_without:items_json|nullable|numeric|min:0',
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:5120', // Maks 5MB per file
             'category_id' => 'exists:categories,id',
-        ], $this->itemValidationRules()));
+        ]);
 
-        $this->assertItemsDiscMutuallyExclusive($request->input('items', []));
+        $items = $this->decodeAndValidateItems($request);
+        $this->assertItemsDiscMutuallyExclusive($items);
 
         $tokoIds = $request->input('toko_id', []);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
@@ -466,11 +489,11 @@ class RafaksiController extends Controller
             $tokoIds = array_values(array_intersect($tokoIds, $allowed));
         }
 
-        DB::transaction(function () use ($request, $rafaksi, $tokoIds) {
-            $rafaksi->update($request->except(['toko_id', 'items', 'document_file']));
+        DB::transaction(function () use ($request, $rafaksi, $tokoIds, $items) {
+            $rafaksi->update($request->except(['toko_id', 'items_json', 'document_file']));
             $rafaksi->tokos()->sync($tokoIds);
 
-            $nominal = $this->persistItems($rafaksi, $request->input('items', []), $tokoIds);
+            $nominal = $this->persistItems($rafaksi, $items, $tokoIds);
             if ($nominal !== null) {
                 $rafaksi->update(['nominal' => $nominal]);
             }
@@ -485,7 +508,17 @@ class RafaksiController extends Controller
             "Updated Rafaksi #{$rafaksi->id}: {$rafaksi->supplier_name} with Nominal {$rafaksi->nominal_formatted}"
         );
 
-        return redirect()->back()->with('success', 'Data Rafaksi berhasil diperbarui.');
+        // redirect()->back() gak selalu balik ke show_month -- kalau "previous URL"
+        // di session kebetulan bukan halaman show_month (misal gara-gara ada request
+        // AJAX/GET lain yang kepanggil terakhir), user malah kelempar ke tempat lain
+        // (termasuk index). Jadi balik ke show_month eksplisit, pakai periode_bulan
+        // TERBARU hasil update ini (bukan yang lama), biar konsisten sama tombol Batal.
+        $year = Carbon::parse($rafaksi->periode_bulan)->year;
+        $month = Carbon::parse($rafaksi->periode_bulan)->month;
+
+        return redirect()
+            ->route('rafaksi.show_month', ['year' => $year, 'month' => $month, 'page' => $request->input('page')])
+            ->with('success', 'Data Rafaksi berhasil diperbarui.');
     }
 
     public function destroy(Rafaksi $rafaksi){

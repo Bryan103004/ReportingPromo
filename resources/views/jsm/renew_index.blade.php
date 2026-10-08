@@ -26,12 +26,12 @@
                 </label>
                 
                 <div class="relative rounded-lg shadow-sm">
-                    <input 
-                        type="date" 
-                        name="periode_bulan" 
-                        id="periode_bulan" 
+                    <input
+                        type="text"
+                        name="periode_bulan"
+                        id="periode_bulan"
                         value="{{ old('periode_bulan', isset($jsm->periode_bulan) ? \Carbon\Carbon::parse($jsm->periode_bulan)->format('Y-m-d') : '') }}"
-                        class="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200" 
+                        class="date-dmy w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 outline-none transition-all duration-200"
                         required
                     >
                 </div>

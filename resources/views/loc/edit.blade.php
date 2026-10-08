@@ -23,7 +23,7 @@
                 </div>
             @endif
 
-        <form action="{{route('loc.update', $loc->id)}}" method="POST" class="p-6" enctype="multipart/form-data">
+        <form action="{{route('loc.update', ['loc' => $loc->id, 'page' => request('page')])}}" method="POST" class="p-6" enctype="multipart/form-data">
             @csrf
             @method('PUT')
             
@@ -94,13 +94,13 @@
                 {{-- Periode Awal --}}
                 <div>
                     <label for="periode_awal" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Awal Loc<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_awal" id="periode_awal" value="{{ old('periode_awal', $loc->periode_awal ? date('Y-m-d', strtotime($loc->periode_awal)) : '') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
+                    <input type="text" name="periode_awal" id="periode_awal" value="{{ old('periode_awal', $loc->periode_awal ? date('Y-m-d', strtotime($loc->periode_awal)) : '') }}" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div>
 
                 {{-- Periode Akhir --}}
                 <div>
                     <label for="periode_akhir" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Akhir Loc<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_akhir" id="periode_akhir" value="{{ old('periode_akhir', $loc->periode_akhir ? date('Y-m-d', strtotime($loc->periode_akhir)) : '') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
+                    <input type="text" name="periode_akhir" id="periode_akhir" value="{{ old('periode_akhir', $loc->periode_akhir ? date('Y-m-d', strtotime($loc->periode_akhir)) : '') }}" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div> 
 
                 {{-- No. RAF --}}
@@ -120,7 +120,7 @@
                 {{-- Periode Bulan --}}
                 <div>
                     <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Rekap<span class="text-red-500">*</span></label>
-                    <input type="date" name="periode_bulan" id="periode_bulan" value="{{ old('periode_bulan', $loc->periode_bulan ? date('Y-m-d', strtotime($loc->periode_bulan)) : '') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
+                    <input type="text" name="periode_bulan" id="periode_bulan" value="{{ old('periode_bulan', $loc->periode_bulan ? date('Y-m-d', strtotime($loc->periode_bulan)) : '') }}" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" required>
                 </div>
 
                 <div class="md:col-span-2 text-lg font-semibold text-gray-700 border-b pb-2 mt-4">Pemilihan Toko (Store)</div>

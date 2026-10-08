@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Toko;
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use App\Support\ManagesPublicFiles;
@@ -17,8 +18,15 @@ class UserController extends Controller
 
     public function index(Request $request)
     {
-        $query = User::whereNotIn('name',['bryan'])
-                    ->orderBy('username','asc');
+
+        if (Auth::user()->hasRole('superadmin')) {
+            // Mengambil semua user dan diurutkan berdasarkan username
+            $query = User::orderBy('username', 'asc');
+        } else {
+            // Mengambil data user yang sedang login saja (dikembalikan sebagai Collection)
+            $query = User::where('id', Auth::user()->id); 
+        }
+        
         $number_paginate = [10, 25, 50, 100, 300, 999999999];
         $number = $request->input('number', 10);
 
