@@ -169,12 +169,12 @@
         </div>
 
         <!-- Area Tanda Tangan Proproporsional -->
-        <div style="display: flex; justify-content: flex-start; gap: 80px; margin-top: 50px; font-family: sans-serif;">
+        <div style="display: flex; justify-content: space-between; gap: 80px; margin-top: 50px; font-family: sans-serif;">
             <!-- Kolom Pembuat -->
             <div style="text-align: left; width: 180px; display: flex; flex-direction: column; justify-content: space-between; height: 120px;">
                 <p style="margin: 0; color: #495057; font-size: 14px; text-align: center;">Prepared by,</p>
                 @if ($prepared_by->signature_path)
-                    <img class="max-w-xs" src="data:image/png;base64,{{ base64_encode(Storage::disk('local')->get($prepared_by->signature_path)) }}" alt="Tanda Tangan Prepared"  style="max-height: 100px;"/>
+                    <img class="max-w-xs" src="data:image/png;base64,{{ base64_encode(Storage::disk('local')->get($prepared_by->signature_path)) }}" alt="Tanda Tangan Prepared"  style="margin-left: 50px; max-height: 80px; max-width:80px !important"/>
                 @endif
                 <p style="margin: 0; font-weight: bold; color: #212529; font-size: 14px; text-align: center;">{{ $prepared_by->name }}</p>
             </div>
@@ -183,7 +183,7 @@
             <div style="text-align: left; width: 180px; display: flex; flex-direction: column; justify-content: space-between; height: 120px;">
                 <p style="margin: 0; color: #495057; font-size: 14px; text-align: center;">Acknowledged by,</p>
                 @if ($acknowledged_by->signature_path)
-                    <img class="max-w-xs" src="data:image/png;base64,{{ base64_encode(Storage::disk('local')->get($acknowledged_by->signature_path)) }}" alt="Tanda Tangan Acknowledged" style="max-height: 100px;"/>                
+                    <img class="max-w-xs" src="data:image/png;base64,{{ base64_encode(Storage::disk('local')->get($acknowledged_by->signature_path)) }}" alt="Tanda Tangan Acknowledged" style="margin-left: 50px; max-height: 80px; max-width:80px !important"/>                
                 @endif
                 <p style="margin: 0; font-weight: bold; color: #212529; font-size: 14px; text-align: center;">{{ $acknowledged_by->name }}</p>
             </div>
