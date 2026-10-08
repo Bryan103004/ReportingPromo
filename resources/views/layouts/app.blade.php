@@ -108,6 +108,35 @@
             };
         </script>
 
+        @auth
+        <script>
+            // Logout otomatis kalau user bener-bener gak ngapa-ngapain (gak gerakin
+            // mouse/keyboard/sentuh layar) selama durasi sesi (session.lifetime di
+            // .env) -- biar user langsung ke-lempar ke halaman login pas emang udah
+            // idle, bukan baru ketauan pas gak sengaja klik tombol & kena "Page
+            // Expired". Session-nya sendiri emang udah expired di sisi server pas
+            // durasi ini kelewat, jadi reload di sini cuma mancing redirect normal
+            // ke /login lewat middleware auth -- gak nabrak CSRF karena ini GET.
+            (function () {
+                var idleTimeoutMs = {{ (int) config('session.lifetime') * 60 * 1000 }};
+                var idleTimer;
+
+                function resetIdleTimer() {
+                    clearTimeout(idleTimer);
+                    idleTimer = setTimeout(function () {
+                        window.location.reload();
+                    }, idleTimeoutMs);
+                }
+
+                ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart'].forEach(function (evt) {
+                    document.addEventListener(evt, resetIdleTimer, { passive: true });
+                });
+
+                resetIdleTimer();
+            })();
+        </script>
+        @endauth
+
         <!-- @livewireStyle -->
     </head>
     <body class="font-sans antialiased">
