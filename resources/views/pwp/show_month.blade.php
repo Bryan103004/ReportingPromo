@@ -165,7 +165,7 @@
                             @if (!auth()->user()->hasRole('AR OI'))
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $pwp->status_email === 'aktif' ? 'Aktif' : 'Nonaktif' }}
+                                    {{ $pwp->status_email === 'aktif' ? 'Nonaktif' : 'Aktif' }}
                                 </span>
                             </td>
                             @endif
@@ -235,12 +235,13 @@
 
                                     @can('can_update')
                                     @if($pwp->status_email == 'aktif')
-                                        <a href="{{ route('pwp.status-tidak-aktif', $pwp->id) }}" title="Tandai Tidak Aktif">
-                                            ❌
-                                        </a>
-                                    @else
                                         <a href="{{ route('pwp.status-aktif', $pwp->id) }}" title="Tandai Selesai">
                                             ✅
+                                        </a>
+                                    @else
+                                        
+                                        <a href="{{ route('pwp.status-tidak-aktif', $pwp->id) }}" title="Tandai Tidak Aktif">
+                                            ❌
                                         </a>
                                     @endif
                                     @endcan

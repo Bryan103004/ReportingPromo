@@ -177,7 +177,7 @@
                             @if (!auth()->user()->hasRole('AR OI'))
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $jsm->status_email === 'aktif' ? 'Aktif' : 'Nonaktif' }}
+                                    {{ $jsm->status_email === 'aktif' ? 'Nonaktif' : 'Aktif' }}
                                 </span>
                             </td>
                             @endif
@@ -268,12 +268,13 @@
 
                                     @can('can_update')
                                     @if($jsm->status_email == 'aktif')
-                                        <a href="{{ route('jsm.status-tidak-aktif', $jsm->id) }}" title="Tandai Tidak Aktif">
-                                            ❌
-                                        </a>
-                                    @else
                                         <a href="{{ route('jsm.status-aktif', $jsm->id) }}" title="Tandai Selesai">
                                             ✅
+                                        </a>
+                                    @else
+
+                                        <a href="{{ route('jsm.status-tidak-aktif', $jsm->id) }}" title="Tandai Tidak Aktif">
+                                            ❌
                                         </a>
                                     @endif
                                     @endcan
