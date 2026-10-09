@@ -11,6 +11,11 @@ class Jsm extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'invoice_status' => 'boolean',
+    ];
+
+
     protected $table = 'jsm';
 
     public function getNominalFormattedAttribute()

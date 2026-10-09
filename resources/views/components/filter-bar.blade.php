@@ -49,6 +49,16 @@
     </div>
 
 
+    <div>
+        <label for="invoice_status" class="block text-sm font-medium text-gray-700 mb-1">Status Invoice</label>
+        <select name="invoice_status" id="invoice_status" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
+            <option value="" {{ request('invoice_status') == '' ? 'selected' : '' }}>All Invoice</option>
+            <option value="0" {{ request()->filled('invoice_status') && request('invoice_status') == 0 ? 'selected' : '' }}>Not Done</option>
+            <option value="1" {{ request('invoice_status') == 1 ? 'selected' : '' }}>Done</option>
+        </select>
+    </div>
+
+
     {{-- Dropdown Category --}}
     <div>
         <label for="filter-category" class="block text-sm font-medium text-gray-700 mb-1">Category</label>

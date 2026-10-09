@@ -11,6 +11,10 @@ class Rafaksi extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'invoice_status' => 'boolean',
+    ];
+
 
     public function getNominalFormattedAttribute()
     {

@@ -75,6 +75,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/jsm/documents/{document}', [JsmController::class, 'deleteDocument'])->name('jsm.documents.destroy');
     Route::get('/jsm/{jsm}/status-tidak-aktif', [JsmController::class, 'statusTidakAktif'])->name('jsm.status-tidak-aktif');
     Route::get('/jsm/{jsm}/status-aktif', [JsmController::class, 'statusAktif'])->name('jsm.status-aktif');
+    Route::get('/jsm/{jsm}/invoice-status', [JsmController::class, 'updateStatusInvoice'])->name('jsm.invoice-status');
 
     Route::resource('jsm', JsmController::class);
 
@@ -89,6 +90,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/rafaksi/documents/{document}', [RafaksiController::class, 'deleteDocument'])->name('rafaksi.documents.destroy');
     Route::get('/rafaksi/{rafaksi}/status-tidak-aktif', [RafaksiController::class, 'statusTidakAktif'])->name('rafaksi.status-tidak-aktif');
     Route::get('/rafaksi/{rafaksi}/status-aktif', [RafaksiController::class, 'statusAktif'])->name('rafaksi.status-aktif');
+    Route::get('/rafaksi/{rafaksi}/invoice-status', [RafaksiController::class, 'updateStatusInvoice'])->name('rafaksi.invoice-status');
     Route::resource('rafaksi', RafaksiController::class);
 
     Route::get('/pwp/renew', [PwpController::class, 'renewIndex'])->name('pwp.renew.index');
@@ -102,6 +104,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/pwp/documents/{document}', [PwpController::class, 'deleteDocument'])->name('pwp.documents.destroy');
     Route::get('/pwp/{pwp}/status-tidak-aktif', [PwpController::class, 'statusTidakAktif'])->name('pwp.status-tidak-aktif');
     Route::get('/pwp/{pwp}/status-aktif', [PwpController::class, 'statusAktif'])->name('pwp.status-aktif');
+    Route::get('/pwp/{pwp}/invoice-status', [PwpController::class, 'updateStatusInvoice'])->name('pwp.invoice-status');
 
     Route::resource('pwp', PwpController::class);
 

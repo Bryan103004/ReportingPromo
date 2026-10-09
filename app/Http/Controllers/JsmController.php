@@ -187,6 +187,19 @@ class JsmController extends Controller
             });
         }
 
+        $query->when($request->filled('invoice_status'), function ($q) use ($request) {
+            if ($request->invoice_status == '1') {
+                return $q->where('invoice_status', true);
+            }
+
+            // "Not Done" mencakup yang eksplisit dibatalkan (false) MAUPUN yang belum
+            // pernah ditoggle sama sekali (NULL) -- selaras dengan label di tabel yang
+            // nganggep NULL sebagai "Not Done" juga.
+            return $q->where(function ($qq) {
+                $qq->whereNull('invoice_status')->orWhere('invoice_status', false);
+            });
+        });
+
         if ($request->filled('start_date')) {
             $query->where('periode_awal', '>=', $request->start_date);
         }
@@ -935,5 +948,47 @@ class JsmController extends Controller
         );
 
         return redirect()->back()->with('success', 'Status email berhasil diubah menjadi tidak aktif.');
+    }
+
+
+
+    public function updateStatusInvoice(Jsm $jsm)
+    {
+        $userName = auth()->check() ? auth()->user()->name : 'System';
+        $isDone = (bool) $jsm->invoice_status;
+
+        if ($isDone) {
+            // Transisi: Selesai -> Batal
+            $jsm->update([
+                'invoice_status'       => 0,
+                'invoice_cancel_count' => DB::raw('COALESCE(invoice_cancel_count, 0) + 1'),
+                'invoice_cancel_at'    => now(),
+                'invoice_cancel_by'    => $userName,
+            ]);
+
+            ActivityLogger::logUpdate(
+                $jsm,
+                $jsm->id,
+                ['invoice_status' => false, 'by' => $userName],
+                "Invoice Rafaksi #{$jsm->id} dibatalkan (cancel) oleh {$userName}"
+            );
+        } else {
+            // Transisi: Batal/Pending -> Selesai
+            $jsm->update([
+                'invoice_status'     => 1,
+                'invoice_done_count' => DB::raw('COALESCE(invoice_done_count, 0) + 1'),
+                'invoice_done_at'    => now(),
+                'invoice_done_by'    => $userName,
+            ]);
+
+            ActivityLogger::logUpdate(
+                $jsm,
+                $jsm->id,
+                ['invoice_status' => true, 'by' => $userName],
+                "Invoice Rafaksi #{$jsm->id} ditandai selesai (done) oleh {$userName}"
+            );
+        }
+
+        return redirect()->back()->with('success', 'Status invoice berhasil diperbarui');
     }
 }

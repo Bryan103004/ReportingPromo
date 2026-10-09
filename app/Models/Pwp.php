@@ -11,6 +11,11 @@ class Pwp extends Model
 
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'invoice_status' => 'boolean',
+    ];
+
+
     public function getNominalFormattedAttribute()
     {
         $nominal_formatted = $this->nominal ?? 0; 

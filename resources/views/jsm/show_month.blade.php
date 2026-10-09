@@ -90,7 +90,19 @@
                         @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>
                         @endcan
-                        <th class="px-6 py-4 text-right">Status</th>
+                        @if (!auth()->user()->hasRole('AR OI'))
+                            <th class="px-6 py-4 text-right">Status</th>
+                        @endif
+                        @can('can_invoice')
+                            <th class="px-6 py-4 text-right">Status Invoice</th>
+                            <th class="px-6 py-4 text-right">Invoice Done Count</th>
+                            <th class="px-6 py-4 text-right">Latest Done By</th>
+                            <th class="px-6 py-4 text-right">Latest Done At</th>
+                            <th class="px-6 py-4 text-right">Invoice Cancel Count</th>
+                            <th class="px-6 py-4 text-right">Latest Cancel By</th>
+                            <th class="px-6 py-4 text-right">Latest Cancel At</th>
+                        @endcan
+
                         @canany(['can_edit', 'can_renew', 'can_delete', 'can_update', 'can_print'])
                             <th class="px-6 py-4 text-right">Aksi</th>
                         @endcanany
@@ -162,11 +174,52 @@
                             </td>
                             @endcan
 
+                            @if (!auth()->user()->hasRole('AR OI'))
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
                                     {{ $jsm->status_email === 'aktif' ? 'Aktif' : 'Nonaktif' }}
                                 </span>
                             </td>
+                            @endif
+
+                            @can('can_invoice')
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-gray-700 border border-gray-200 font-bold px-2 py-1 rounded text-xs">
+                                        {{ $jsm->invoice_status === true ? 'Done' : 'Not Done' }}
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $jsm->invoice_done_count ?? 0 }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $jsm->invoice_done_by ?? '-' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $jsm->invoice_done_at ?? '-' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-red-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $jsm->invoice_cancel_count ?? 0 }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-red-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $jsm->invoice_cancel_by ?? '-' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-red-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $jsm->invoice_cancel_at ?? '-' }}
+                                    </span>
+                                </td>
+                            @endcan
                             
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
@@ -224,6 +277,19 @@
                                         </a>
                                     @endif
                                     @endcan
+
+                                    @can('can_invoice')
+                                        @if($jsm->invoice_status == true)
+                                            <a href="{{ route('jsm.invoice-status', $jsm->id) }}" title="Tandai Tidak Aktif">
+                                                📑
+                                            </a>
+                                        @else
+                                            <a href="{{ route('jsm.invoice-status', $jsm->id) }}" title="Tandai Selesai">
+                                                📑
+                                            </a>
+                                        @endif
+                                    @endcan
+
 
                                     @can('can_delete')
                                     {{-- Tombol Hapus --}}
