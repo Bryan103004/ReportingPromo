@@ -66,12 +66,12 @@
 
         <div>
             <label for="password" class="mb-1.5 block text-sm font-medium">Password <span class="font-bold text-red-600">*</span></label>
-            <input type="password" name="password" id="password" class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Kosongkan jika tidak ingin mengubah password">
+            <input type="password" name="password" id="password" autocomplete="new-password" class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Kosongkan jika tidak ingin mengubah password">
         </div>
 
         <div>
             <label for="password_confirmation" class="mb-1.5 block text-sm font-medium">Konfirmasi Password <span class="font-bold text-red-600">*</span></label>
-            <input type="password" name="password_confirmation" id="password_confirmation" class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Isi jika mengubah password">
+            <input type="password" name="password_confirmation" id="password_confirmation" autocomplete="new-password" class="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="Isi jika mengubah password">
         </div>
 
         {{-- @foreach ($user->roles as $role)
