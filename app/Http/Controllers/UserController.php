@@ -85,7 +85,7 @@ class UserController extends Controller
 
         if ($request->hasFile('ttd')) {
             $file = $request->file('ttd');
-            $filename = $file->getClientOriginalName();
+            $filename = uniqid() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('signatures', $filename, 'local');
             $userPayload['signature_path'] = $path;
             $userPayload['ttd'] = 'storage/' . $path;
@@ -161,12 +161,15 @@ class UserController extends Controller
         $userPayload = collect($validatedData)->except(['toko_ids', 'perusahaan_ids', 'roles'])->all();
 
         if ($request->hasFile('ttd')) {
+            $oldSignaturePath = $user->signature_path;
+
             $file = $request->file('ttd');
-            $filename = $file->getClientOriginalName();
+            $filename = uniqid() . '_' . $file->getClientOriginalName();
             $path = $file->storeAs('signatures', $filename, 'local');
-            // delete old signature file from storage disk
-            if ($user->signature_path) {
-                Storage::delete($user->signature_path);
+
+            // delete old signature file from storage disk (unless it's somehow the same path as the new one)
+            if ($oldSignaturePath && $oldSignaturePath !== $path) {
+                Storage::delete($oldSignaturePath);
             }
             $userPayload['signature_path'] = $path;
             $userPayload['ttd'] = 'storage/' . $path;

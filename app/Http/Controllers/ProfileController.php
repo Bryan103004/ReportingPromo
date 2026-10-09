@@ -51,7 +51,7 @@ class ProfileController extends Controller
             // Also store under the 'local' disk as signature_path — this is the field
             // LocController::approve() reads (via User::signature_url) to stamp documents,
             // so a self-uploaded signature needs to land here too, not just in ttd.
-            $filename = $request->file('ttd')->getClientOriginalName();
+            $filename = uniqid() . '_' . $request->file('ttd')->getClientOriginalName();
             $validated['signature_path'] = $request->file('ttd')->storeAs('signatures', $filename, 'local');
         } else {
             unset($validated['ttd']);
@@ -61,7 +61,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        if ($request->hasFile('ttd') && $oldSignaturePath) {
+        if ($request->hasFile('ttd') && $oldSignaturePath && $oldSignaturePath !== $validated['signature_path']) {
             Storage::disk('local')->delete($oldSignaturePath);
         }
 

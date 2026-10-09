@@ -124,9 +124,26 @@ class LocController extends Controller
         $tokoQuery = Toko::whereNotIn('status', ['nonaktif']);
         if (! auth()->user()->hasGlobalCompanyAccess()) {
             $allowedTokoIds = auth()->user()->accessibleTokoIds()->toArray();
-            $tokos = empty($allowedTokoIds) ? collect() : $tokoQuery->whereIn('id', $allowedTokoIds)->get(['id', 'nama_toko']);
+            
+            if (empty($allowedTokoIds)) {
+                $tokos = collect();
+                $pts = collect(); // Menjamin variabel $pts tetap ada meskipun kosong
+            } else {
+                $tokos = $tokoQuery->whereIn('id', $allowedTokoIds)->get(['id', 'nama_toko', 'nama_pt']);
+                
+                // Mengambil list PT unik langsung lewat database SQL
+                $pts = Toko::whereNotIn('status', ['nonaktif'])
+                        ->whereIn('id', $allowedTokoIds)
+                        ->distinct()
+                        ->pluck('nama_pt');
+            }
         } else {
-            $tokos = $tokoQuery->get(['id', 'nama_toko']);
+            $tokos = $tokoQuery->get(['id', 'nama_toko', 'nama_pt']);
+            
+            // Mengambil list PT unik untuk akses global
+            $pts = Toko::whereNotIn('status', ['nonaktif'])
+                    ->distinct()
+                    ->pluck('nama_pt');
         }
 
         // 2. Siapkan Query Builder Dasar (JANGAN panggil customPaginate di sini)
@@ -155,6 +172,13 @@ class LocController extends Controller
                 $q->where('tokos.id', $request->toko_id);
             });
         }
+
+        if ($request->filled('filter_pt')) {
+            $query->whereHas('tokos', function($q) use ($request) {
+                $q->where('tokos.nama_pt', $request->filter_pt);
+            });
+        }
+
 
         if ($request->filled('start_date')) {
             $query->where('periode_awal', '>=', $request->start_date);
@@ -187,7 +211,7 @@ class LocController extends Controller
         // Ini agar saat kamu pindah ke Halaman 2, filter tidak hilang/reset
         $locs->appends($request->all());
 
-        return view('loc.show_month', compact('locs', 'periodeTitle', 'year', 'month', 'suppliers', 'tokos', 'categories'));
+        return view('loc.show_month', compact('locs', 'periodeTitle', 'year', 'month', 'suppliers', 'tokos', 'categories', 'pts'));
     }
 
     public function create(){
