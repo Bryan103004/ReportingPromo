@@ -1,4 +1,4 @@
-@props(['suppliers' => [], 'tokos' => [], 'categories' => []])
+@props(['suppliers' => [], 'tokos' => [], 'categories' => [], 'pts' => []])
 
 <!-- Tambahkan CSS Choices.js jika belum ada di layout utama -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
@@ -35,6 +35,19 @@
             @endforeach
         </select>
     </div>
+
+    <div>
+        <label for="filter-pt" class="block text-sm font-medium text-gray-700 mb-1">PT</label>
+        <select name="filter_pt" id="filter-pt" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border">
+            <option value="">Semua PT</option>
+            @foreach($pts as $pt)
+                <option value="{{ $pt}}" {{ request('filter_pt') == $pt ? 'selected' : '' }}>
+                    {{ $pt }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
 
     {{-- Dropdown Category --}}
     <div>
@@ -81,7 +94,7 @@
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        ['filter-supplier', 'filter-toko', 'filter-category'].forEach(function (id) {
+        ['filter-supplier', 'filter-toko', 'filter-category', 'filter-pt'].forEach(function (id) {
             const element = document.getElementById(id);
             if (element) {
                 new Choices(element, {
