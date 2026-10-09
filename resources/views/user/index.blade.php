@@ -118,11 +118,15 @@
                         <td class="px-4 py-3">
                             <div class="flex flex-wrap users-center gap-2">
                                 <a class="inline-flex users-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium hover:bg-gray-100" href="{{ route('user.edit', $user->id) }}">Edit</a>
-                                    <form action="{{route('user.destroy', $user->id)}}" method="POST">
+                                @hasanyrole(['superadmin', 'admin'])
+                                    <form action="{{ route('user.destroy', $user->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="inline-flex users-center rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">Hapus</button>
+                                        <button type="submit" class="inline-flex items-center rounded-md border border-red-300 bg-white px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50">
+                                            Hapus
+                                        </button>
                                     </form>
+                                @endhasanyrole
                             </div>
                         </td>
                     </tr>            
