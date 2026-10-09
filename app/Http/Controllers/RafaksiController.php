@@ -183,7 +183,7 @@ class RafaksiController extends Controller
                 $q->where('tokos.nama_pt', $request->filter_pt);
             });
         }
-        
+
         $query->when($request->filled('invoice_status'), function ($q) use ($request) {
             if ($request->invoice_status == '1') {
                 return $q->where('invoice_status', true);
@@ -196,6 +196,10 @@ class RafaksiController extends Controller
                 $qq->whereNull('invoice_status')->orWhere('invoice_status', false);
             });
         });
+
+        if($request->filled('status_email')){
+            $query->where('status_email', $request->status_email);
+        }
 
         if ($request->filled('start_date')) {
             $query->where('periode_awal', '>=', $request->start_date);

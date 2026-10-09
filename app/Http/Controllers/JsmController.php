@@ -200,6 +200,11 @@ class JsmController extends Controller
             });
         });
 
+        if($request->filled('status_email')){
+            $query->where('status_email', $request->status_email);
+        }
+
+
         if ($request->filled('start_date')) {
             $query->where('periode_awal', '>=', $request->start_date);
         }
