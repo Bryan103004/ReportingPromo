@@ -236,7 +236,7 @@ class LocController extends Controller
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
-            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
         $loc = Loc::create($request->except(['toko_id', 'document_file']));
@@ -285,7 +285,7 @@ class LocController extends Controller
             // 'toko_id' => 'array|required',
             'toko_id' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
-            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:10240',
         ]);
 
         $year = Carbon::parse($loc->periode_bulan)->year;

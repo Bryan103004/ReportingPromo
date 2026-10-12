@@ -258,7 +258,7 @@ class RafaksiController extends Controller
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
-            'document_file.*' => 'nullable|file|mimes:pdf|max:5120', // Maks 5MB per file
+            'document_file.*' => 'nullable|file|mimes:pdf|max:10240', // Maks 10MB per file
             'category_id' => 'exists:categories,id',
         ]);
 
@@ -516,7 +516,7 @@ class RafaksiController extends Controller
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
-            'document_file.*' => 'nullable|file|mimes:pdf|max:5120', // Maks 5MB per file
+            'document_file.*' => 'nullable|file|mimes:pdf|max:10240', // Maks 10MB per file
             'category_id' => 'exists:categories,id',
         ]);
 

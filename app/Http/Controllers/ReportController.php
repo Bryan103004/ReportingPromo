@@ -25,7 +25,7 @@ class ReportController extends Controller
 
         $request->validate([
             'report_file'   => 'required|array',
-            'report_file.*' => 'file|mimes:txt|max:5120',
+            'report_file.*' => 'file|mimes:txt|max:10240',
         ]);
 
         $outletCode = '';

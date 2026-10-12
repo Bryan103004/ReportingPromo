@@ -262,7 +262,7 @@ class JsmController extends Controller
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
-            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:10240',
             'category_id' => 'exists:categories,id',
         ]);
 
@@ -517,7 +517,7 @@ class JsmController extends Controller
             'remarks' => 'string|nullable',
             'toko_id' => 'array|required',
             'toko_id.*' => 'exists:tokos,id',
-            'document_file.*' => 'nullable|file|mimes:pdf|max:5120',
+            'document_file.*' => 'nullable|file|mimes:pdf|max:10240',
             'category_id' => 'exists:categories,id',
         ]);
 
