@@ -36,16 +36,22 @@ class DetailLocReport implements FromView, ShouldAutoSize, WithStyles, WithStric
 
     public function columnFormats(): array
     {
-        // Asumsi: kolom toko mulai dari index C (3) sampai sebelum kolom TOTAL
+        // MODE 1 (Export Detail): kolom Nominal ada di K (gak ada kolom Documents
+        // kayak Rafaksi/Jsm/Pwp). Biarkan Excel yang nge-format angka mentahnya.
+        if ($this->year && $this->month) {
+            return ['K' => '#,##0'];
+        }
+
+        // MODE 2 (Export Rekap All): kolom toko mulai dari index C (3) sampai sebelum kolom TOTAL
         $formats = [];
         $char = 'C';
         foreach ($this->stores as $store) {
             // Gunakan string '#,##0' untuk pemisah ribuan tanpa desimal
-            $formats[$char] = '#,##0'; 
+            $formats[$char] = '#,##0';
             $char++;
         }
         $formats[$char] = '#,##0'; // Untuk kolom TOTAL
-        
+
         return $formats;
     }
 

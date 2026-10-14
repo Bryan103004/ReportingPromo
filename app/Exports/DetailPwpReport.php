@@ -36,7 +36,14 @@ class DetailPwpReport implements FromView, ShouldAutoSize, WithStyles, WithStric
 
     public function columnFormats(): array
     {
-        // Asumsi: kolom toko mulai dari index C (3) sampai sebelum kolom TOTAL
+        // MODE 1 (Export Detail): kolom Nominal ada di L -- biarkan Excel yang nge-format
+        // angka mentahnya, jangan di-string-in manual di Blade (itu yang bikin "720.000"
+        // kebaca sebagai angka 720.000 alias 720 sama PhpSpreadsheet).
+        if ($this->year && $this->month) {
+            return ['L' => '#,##0'];
+        }
+
+        // MODE 2 (Export Rekap All): kolom toko mulai dari index C (3) sampai sebelum kolom TOTAL
         $formats = [];
         $char = 'C';
         foreach ($this->stores as $store) {

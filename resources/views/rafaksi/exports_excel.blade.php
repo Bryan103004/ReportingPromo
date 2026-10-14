@@ -40,7 +40,7 @@
                         -
                     @endforelse
                 </td>
-                <td align="right">{{ $row->nominal_formatted }}</td>
+                <td align="right">{{ $row->nominal ?? 0 }}</td>
             </tr>
         @endforeach
         </tbody>
@@ -48,7 +48,7 @@
         <tfoot>
             <tr>
                 <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="11" align="right"><b>Grand Total:</b></td>
-                <td style="background-color: #FF4E73DF; color: #FFFFFF;" align="right"><b>{{ number_format($data->sum('nominal'), 0, ',', '.') }}</b></td>
+                <td style="background-color: #FF4E73DF; color: #FFFFFF;" align="right"><b>{{ $data->sum('nominal') }}</b></td>
             </tr>
         </tfoot>
         @endif

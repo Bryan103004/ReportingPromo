@@ -57,7 +57,7 @@
                     </select>
 
                     <div class="flex justify-end gap-2">
-                        <button type="button" onclick="closeViewModal()" class="px-4 py-2 text-gray-600">Batal</button>
+                        <button type="button" onclick="closeExportModal()" class="px-4 py-2 text-gray-600">Batal</button>
                         <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg">Download</button>
                     </div>
                 </form>
