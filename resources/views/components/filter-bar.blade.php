@@ -136,10 +136,16 @@
 <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const tokoData = @json($tokos);
+        const currentTokoId = @json(request('toko_id', ''));
+        const currentPt = @json(request('filter_pt', ''));
+
+        const choicesInstances = {};
+
         ['filter-supplier', 'filter-toko', 'filter-category', 'filter-pt'].forEach(function (id) {
             const element = document.getElementById(id);
             if (element) {
-                new Choices(element, {
+                choicesInstances[id] = new Choices(element, {
                     searchEnabled: true,
                     searchChoices: true,
                     itemSelectText: '',
@@ -148,5 +154,49 @@
                 });
             }
         });
+
+        const ptChoice = choicesInstances['filter-pt'];
+        const tokoChoice = choicesInstances['filter-toko'];
+
+        if (ptChoice && tokoChoice) {
+            const updateTokoOptions = function(selectedPt, preserveSelected = true) {
+                const currentVal = preserveSelected ? (tokoChoice.getValue(true) || currentTokoId) : '';
+                
+                // Filter toko data by selected PT
+                const filtered = selectedPt 
+                    ? tokoData.filter(t => t.nama_pt === selectedPt) 
+                    : tokoData;
+
+                const choicesList = [
+                    { value: '', label: 'Semua Store', selected: !currentVal || !filtered.some(t => String(t.id) === String(currentVal)) }
+                ];
+
+                filtered.forEach(t => {
+                    const isSelected = String(t.id) === String(currentVal);
+                    choicesList.push({
+                        value: String(t.id),
+                        label: t.nama_toko,
+                        selected: isSelected
+                    });
+                });
+
+                tokoChoice.clearChoices();
+                tokoChoice.setChoices(choicesList, 'value', 'label', true);
+            };
+
+            // Initial call if PT already filtered on load
+            if (currentPt) {
+                updateTokoOptions(currentPt, true);
+            }
+
+            // On PT change event
+            const ptElement = document.getElementById('filter-pt');
+            if (ptElement) {
+                ptElement.addEventListener('change', function(e) {
+                    const ptVal = e.target.value;
+                    updateTokoOptions(ptVal, false);
+                });
+            }
+        }
     });
 </script>

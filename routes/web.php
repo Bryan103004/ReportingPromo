@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\CategorySpvController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JsmController;
 use App\Http\Controllers\LocController;
@@ -47,6 +48,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('role', RoleController::class);
 
+    Route::get('/category-spv', [CategorySpvController::class, 'index'])->name('category-spv.index');
+    Route::put('/category-spv/{category}', [CategorySpvController::class, 'update'])->name('category-spv.update');
+
     Route::resource('user', UserController::class);
 
     Route::get('/activity-log', [ActivityLogController::class, 'index'])->name('activity-log.index');
@@ -76,6 +80,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/jsm/{jsm}/status-tidak-aktif', [JsmController::class, 'statusTidakAktif'])->name('jsm.status-tidak-aktif');
     Route::get('/jsm/{jsm}/status-aktif', [JsmController::class, 'statusAktif'])->name('jsm.status-aktif');
     Route::get('/jsm/{jsm}/invoice-status', [JsmController::class, 'updateStatusInvoice'])->name('jsm.invoice-status');
+    Route::get('/jsm/search-no-raf', [JsmController::class, 'searchNoRaf'])->name('jsm.search-no-raf');
 
     Route::resource('jsm', JsmController::class);
 
@@ -91,6 +96,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/rafaksi/{rafaksi}/status-tidak-aktif', [RafaksiController::class, 'statusTidakAktif'])->name('rafaksi.status-tidak-aktif');
     Route::get('/rafaksi/{rafaksi}/status-aktif', [RafaksiController::class, 'statusAktif'])->name('rafaksi.status-aktif');
     Route::get('/rafaksi/{rafaksi}/invoice-status', [RafaksiController::class, 'updateStatusInvoice'])->name('rafaksi.invoice-status');
+    Route::get('/rafaksi/search-no-raf', [RafaksiController::class, 'searchNoRaf'])->name('rafaksi.search-no-raf');
     Route::resource('rafaksi', RafaksiController::class);
 
     Route::get('/pwp/renew', [PwpController::class, 'renewIndex'])->name('pwp.renew.index');
@@ -105,6 +111,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/pwp/{pwp}/status-tidak-aktif', [PwpController::class, 'statusTidakAktif'])->name('pwp.status-tidak-aktif');
     Route::get('/pwp/{pwp}/status-aktif', [PwpController::class, 'statusAktif'])->name('pwp.status-aktif');
     Route::get('/pwp/{pwp}/invoice-status', [PwpController::class, 'updateStatusInvoice'])->name('pwp.invoice-status');
+    Route::get('/pwp/search-no-raf', [PwpController::class, 'searchNoRaf'])->name('pwp.search-no-raf');
 
     Route::resource('pwp', PwpController::class);
 
@@ -117,7 +124,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/loc/{loc}/approve', [LocController::class, 'approve'])->name('loc.approve');
     Route::get('/loc/{loc}/download', [LocController::class, 'downloadDocument'])->name('loc.download');
     Route::get('/loc/documents/{document}/download', [LocController::class, 'downloadDocumentFile'])->name('loc.documents.download');
-    Route::delete('/loc/documents/{document}', [LocController::class, 'deleteDocumentFile'])->name('loc.documents.destroy');
+    Route::get('/loc/{loc}/status-tidak-aktif', [LocController::class, 'statusTidakAktif'])->name('loc.status-tidak-aktif');
+    Route::get('/loc/{loc}/status-aktif', [LocController::class, 'statusAktif'])->name('loc.status-aktif');
+    Route::get('/loc/{loc}/invoice-status', [LocController::class, 'updateStatusInvoice'])->name('loc.invoice-status');
+    Route::get('/loc/search-no-raf', [LocController::class, 'searchNoRaf'])->name('loc.search-no-raf');
+    Route::get('/invoice-logs/{type}/{id}', [UtilityController::class, 'getInvoiceLogs'])->name('invoice.logs');
     Route::resource('loc', LocController::class);
 
     Route::resource('region', RegionController::class);

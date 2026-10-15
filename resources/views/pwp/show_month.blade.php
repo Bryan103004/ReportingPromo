@@ -146,7 +146,7 @@
 
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ optional($pwp->tokos->first())->nama_toko ?? '-' }}
+                                    {{ $pwp->tokos->count() > 1 ? ($pwp->store ?: $pwp->tokos->pluck('nama_toko')->implode(', ')) : (optional($pwp->tokos->first())->nama_toko ?? $pwp->store ?? '-') }}
                                 </span>
                             </td>
 
@@ -165,16 +165,18 @@
                             @if (!auth()->user()->hasRole('AR OI'))
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $pwp->status_email === 'aktif' ? 'Nonaktif' : 'Aktif' }}
+                                    {{ $pwp->status_email === 'aktif' ? 'Belum Siap' : 'Siap' }}
                                 </span>
                             </td>
                             @endif
 
                             @can('can_invoice')
                                 <td class="px-6 py-4">
-                                    <span class="bg-gray-100 text-gray-700 border border-gray-200 font-bold px-2 py-1 rounded text-xs">
-                                        {{ $pwp->invoice_status === true ? 'Done' : 'Not Done' }}
-                                    </span>
+                                    <button type="button" onclick="showInvoiceLogs('pwp', {{ $pwp->id }}, '{{ addslashes($pwp->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
+                                        <span class="bg-gray-100 {{ $pwp->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
+                                            {{ $pwp->invoice_status === true ? 'Done' : 'Not Done' }} 📋
+                                        </span>
+                                    </button>
                                 </td>
 
                                 <td class="px-6 py-4">
@@ -211,21 +213,29 @@
 
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
-                                    @can('can_edit')
-                                    <a href="{{ route('pwp.edit', ['pwp' => $pwp->id, 'page' => request('page')]) }}" title="Edit Data">
-                                        ✎
-                                    </a>
-                                    @endcan
+                                    @if ($pwp->invoice_status == 0)
+                                        @can('can_edit')
+                                        <a href="{{ route('pwp.edit', ['pwp' => $pwp->id, 'page' => request('page')]) }}" title="Edit Data">
+                                            ✎
+                                        </a>
+                                        @endcan
+                                    @elseif($pwp->invoice_status == 1 && auth()->user()->hasAnyRole(['superadmin', 'admin'])) 
+                                        <a href="{{ route('pwp.edit', ['pwp' => $pwp->id, 'page' => request('page')]) }}" title="Edit Data">
+                                            ✎
+                                        </a>
+                                        @endcan                    
+                                    @endif
+
 
                                     @php
                                         $periodeAkhir = \Carbon\Carbon::parse($pwp->periode_akhir);
                                     @endphp
 
-                                    @can('can_renew')
+                                    <!-- @can('can_renew')
                                     @if (!is_null($pwp->periode_akhir) && now()->greaterThan($periodeAkhir))
                                         <a href="{{ route('pwp.renew.index', ['id' => $pwp->id]) }}" title="Renew Data">🆕</a>
                                     @endif
-                                    @endcan
+                                    @endcan -->
 
                                     @can('can_print')
                                     <a href="{{ route('document.select-stores', ['type' => 'pwp', 'id' => $pwp->id]) }}" title="Print Dokumen">
@@ -234,25 +244,26 @@
                                     @endcan
 
                                     @can('can_update')
-                                    @if($pwp->status_email == 'aktif')
-                                        <a href="{{ route('pwp.status-aktif', $pwp->id) }}" title="Tandai Selesai">
-                                            ✅
-                                        </a>
-                                    @else
-                                        
-                                        <a href="{{ route('pwp.status-tidak-aktif', $pwp->id) }}" title="Tandai Tidak Aktif">
-                                            ❌
-                                        </a>
+                                    @if(\App\Services\CategorySpvService::userCanToggleReadiness(auth()->user(), $pwp->categories))
+                                        @if($pwp->status_email == 'aktif')
+                                            <a href="{{ route('pwp.status-tidak-aktif', $pwp->id) }}" title="Tandai Sudah Siap ke AR">
+                                                ✅
+                                            </a>
+                                        @else
+                                            <a href="{{ route('pwp.status-aktif', $pwp->id) }}" title="Tandai Belum Siap ke AR">
+                                                ❌
+                                            </a>
+                                        @endif
                                     @endif
                                     @endcan
 
                                     @can('can_invoice')
-                                        @if($pwp->invoice_status == true)
-                                            <a href="{{ route('pwp.invoice-status', $pwp->id) }}" title="Tandai Tidak Aktif">
+                                        @if($pwp->invoice_status == 1)
+                                            <a href="{{ route('pwp.invoice-status', $pwp->id) }}" title="Tandai Belum Invoicing">
                                                 📑
                                             </a>
                                         @else
-                                            <a href="{{ route('pwp.invoice-status', $pwp->id) }}" title="Tandai Selesai">
+                                            <a href="{{ route('pwp.invoice-status', $pwp->id) }}" title="Tandai Sudah Invoicing">
                                                 📑
                                             </a>
                                         @endif

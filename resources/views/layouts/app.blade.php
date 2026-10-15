@@ -133,6 +133,14 @@
                             <span class="text-sm font-medium text-green-800">{{ session('success') }}</span>
                         </div>
                     @endif
+
+                    {{-- Alert Error (Jika ada redirect dengan pesan 'error') --}}
+                    @if(session('error'))
+                        <div class="py-3 mb-6 rounded-lg bg-red-50 p-4 border border-red-200 flex items-center">
+                            <svg class="w-5 h-5 text-red-500 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            <span class="text-sm font-medium text-red-800">{{ session('error') }}</span>
+                        </div>
+                    @endif
                     @yield('content')
                 @elseif (isset($slot))
                     {{ $slot }}
@@ -146,6 +154,7 @@
                 </div>
             </footer>
         </div>
+        <x-invoice-log-modal />
         @livewireScripts
     </body>
     <script>

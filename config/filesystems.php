@@ -53,6 +53,17 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
         ],
 
+        'remote_ftp' => [
+            'driver' => 'ftp',
+            'host' => env('FTP_HOST'),
+            'username' => env('FTP_USERNAME'),
+            'password' => env('FTP_PASSWORD'),
+            'port' => env('FTP_PORT', 44),
+            'root' => env('FTP_ROOT', '/'),
+            'passive' => true, // Seringkali wajib true agar tidak diblokir firewall
+            'timeout' => 30,
+        ],
+
     ],
 
     /*

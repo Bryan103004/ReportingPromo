@@ -15,6 +15,11 @@ class Jsm extends Model
         'invoice_status' => 'boolean',
     ];
 
+    public function invoiceLogs()
+    {
+        return $this->hasMany(InvoiceLog::class, 'document_id')->where('document_type', 'jsm')->orderBy('action_at', 'desc');
+    }
+
 
     protected $table = 'jsm';
 

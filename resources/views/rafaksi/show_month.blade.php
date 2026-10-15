@@ -90,7 +90,7 @@
                         <th class="px-6 py-4 text-right">Nominal</th>
                         @endcan
                         @if (!auth()->user()->hasRole('AR OI'))
-                            <th class="px-6 py-4 text-right">Status</th>
+                            <th class="px-6 py-4 text-right">Status Kirim AR</th>
                         @endif
                         @can('can_invoice')
                             <th class="px-6 py-4 text-right">Status Invoice</th>
@@ -158,7 +158,7 @@
                             {{-- Store --}}
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ optional($rafaksi->tokos->first())->nama_toko ?? '-' }}
+                                    {{ $rafaksi->tokos->count() > 1 ? ($rafaksi->store ?: $rafaksi->tokos->pluck('nama_toko')->implode(', ')) : (optional($rafaksi->tokos->first())->nama_toko ?? $rafaksi->store ?? '-') }}
                                 </span>
                             </td>
                             
@@ -179,16 +179,18 @@
                             @if (!auth()->user()->hasRole('AR OI'))
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $rafaksi->status_email === 'aktif' ? 'Nonaktif' : 'Aktif' }}
+                                    {{ $rafaksi->status_email === 'aktif' ? 'Belum Siap' : 'Siap' }}
                                 </span>
                             </td>
                             @endif
 
                             @can('can_invoice')
                                 <td class="px-6 py-4">
-                                    <span class="bg-gray-100 text-gray-700 border border-gray-200 font-bold px-2 py-1 rounded text-xs">
-                                        {{ $rafaksi->invoice_status === true ? 'Done' : 'Not Done' }}
-                                    </span>
+                                    <button type="button" onclick="showInvoiceLogs('rafaksi', {{ $rafaksi->id }}, '{{ addslashes($rafaksi->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
+                                        <span class="bg-gray-100 {{ $rafaksi->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
+                                            {{ $rafaksi->invoice_status === true ? 'Done' : 'Not Done' }} 📋
+                                        </span>
+                                    </button>
                                 </td>
 
                                 <td class="px-6 py-4">
@@ -227,11 +229,19 @@
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
                                     {{-- Tombol Edit --}}
-                                    @can('can_edit')
-                                    <a href="{{ route('rafaksi.edit', ['rafaksi' => $rafaksi->id, 'page' => request('page')]) }}" title="Edit Data">
-                                        ✎
-                                    </a>
-                                    @endcan
+                                    @if ($rafaksi->invoice_status == 0)
+                                        @can('can_edit')
+                                        <a href="{{ route('rafaksi.edit', ['rafaksi' => $rafaksi->id, 'page' => request('page')]) }}" title="Edit Data">
+                                            ✎
+                                        </a>
+                                        @endcan  
+                                    @elseif ($rafaksi->invoice_status == 1 && auth()->user()->hasAnyRole(['superadmin', 'admin']))
+                                        @can('can_edit')
+                                        <a href="{{ route('rafaksi.edit', ['rafaksi' => $rafaksi->id, 'page' => request('page')]) }}" title="Edit Data">
+                                            ✎
+                                        </a>
+                                        @endcan 
+                                    @endif
 
                                     {{--
                                     @php
@@ -255,14 +265,12 @@
                                         $periodeAkhir = \Carbon\Carbon::parse($rafaksi->periode_akhir);
                                     @endphp
 
-                                    @can('can_renew')
-                                        {{-- Muncul jika periode_akhir sudah kurang dari hari ini (sudah lewat/kadaluarsa) --}}
-                                        @if (!is_null($rafaksi->periode_akhir) && now()->greaterThan($periodeAkhir))
-                                            <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
-                                            <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">🆕</a>
-                                        @endif
-                                    @endcan
-
+                                    <!-- @can('can_renew')
+                                    @if (!is_null($rafaksi->periode_akhir) && now()->greaterThan($periodeAkhir))
+                                        <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}" title="Renew Data">🆕</a>
+                                    @endif
+                                    @endcan -->
+                                
                                     @can('can_print')
                                         <a href="{{ route('document.select-stores', ['type' => 'rafaksi', 'id' => $rafaksi->id]) }}" title="Print Dokumen">
                                             🖨️
@@ -270,24 +278,26 @@
                                     @endcan
                                     
                                     @can('can_update')
-                                        @if($rafaksi->status_email == 'aktif')
-                                            <a href="{{ route('rafaksi.status-aktif', $rafaksi->id) }}" title="Tandai Selesai">
-                                                ✅
-                                            </a>
-                                        @else
-                                            <a href="{{ route('rafaksi.status-tidak-aktif', $rafaksi->id) }}" title="Tandai Tidak Aktif">
-                                                ❌
-                                            </a>
+                                        @if(\App\Services\CategorySpvService::userCanToggleReadiness(auth()->user(), $rafaksi->categories))
+                                            @if($rafaksi->status_email == 'aktif')
+                                                <a href="{{ route('rafaksi.status-tidak-aktif', $rafaksi->id) }}" title="Tandai Sudah Siap ke AR">
+                                                    ✅
+                                                </a>
+                                            @else
+                                                <a href="{{ route('rafaksi.status-aktif', $rafaksi->id) }}" title="Tandai Belum Siap ke AR">
+                                                    ❌
+                                                </a>
+                                            @endif
                                         @endif
                                     @endcan
 
                                     @can('can_invoice')
-                                        @if($rafaksi->invoice_status == true)
-                                            <a href="{{ route('rafaksi.invoice-status', $rafaksi->id) }}" title="Tandai Tidak Aktif">
+                                        @if($rafaksi->invoice_status == 1)
+                                            <a href="{{ route('rafaksi.invoice-status', $rafaksi->id) }}" title="Tandai Belum Invoicing">
                                                 📑
                                             </a>
                                         @else
-                                            <a href="{{ route('rafaksi.invoice-status', $rafaksi->id) }}" title="Tandai Selesai">
+                                            <a href="{{ route('rafaksi.invoice-status', $rafaksi->id) }}" title="Tandai Sudah Invoicing">
                                                 📑
                                             </a>
                                         @endif

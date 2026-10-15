@@ -68,6 +68,17 @@
 
     {{--  KOMPONEN FILTER --}}
 
+    {{-- Cari No RAF langsung, loncat ke show_month bulan yang bersangkutan --}}
+    <form method="GET" action="{{ route('loc.search-no-raf') }}" class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-col sm:flex-row gap-3 sm:items-end">
+        <div class="flex-1">
+            <label for="search-no-raf" class="block text-sm font-medium text-gray-700 mb-1">Cari No RAF</label>
+            <input type="text" name="no_raf" id="search-no-raf" placeholder="Masukkan No RAF" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm outline-none px-3 py-2 border" required>
+        </div>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
+            Cari &amp; Buka
+        </button>
+    </form>
+
     {{-- ===== SEARCH BAR ===== --}}
     <x-search-bar 
         placeholder="Masukkan user atau aksi..." 

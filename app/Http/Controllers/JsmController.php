@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Exports\DetailJsmReport;
 use App\Models\Category;
+use App\Models\InvoiceLog;
 use App\Models\Jsm;
 use App\Models\JsmDocument;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Models\Toko;
 use App\Services\ActivityLogger;
+use App\Services\CategorySpvService;
 use App\Services\ClaimCalculator;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -109,6 +111,41 @@ class JsmController extends Controller
         return view('jsm.index', compact('jsmGroups', 'suppliers', 'tokos', 'categories'));
     }
 
+    // Quick-jump: cari No RAF langsung dari index, tanpa perlu buka show_month per bulan
+    // dulu buat nyari manual. Begitu ketemu, langsung diarahkan ke show_month bulan yang
+    // bersangkutan dengan filter no_raf yang sudah otomatis ke-apply.
+    public function searchNoRaf(Request $request)
+    {
+        $request->validate(['no_raf' => 'required|string']);
+
+        $query = Jsm::where('no_raf', 'like', '%' . $request->no_raf . '%');
+
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $ids = auth()->user()->accessibleTokoIds()->toArray();
+            if (empty($ids)) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->whereHas('tokos', function ($q) use ($ids) {
+                    $q->whereIn('tokos.id', $ids);
+                });
+            }
+        }
+
+        $jsm = $query->orderBy('periode_bulan', 'desc')->first();
+
+        if (! $jsm) {
+            return redirect()->route('jsm.index')->with('error', "No RAF \"{$request->no_raf}\" tidak ditemukan.");
+        }
+
+        $periode = Carbon::parse($jsm->periode_bulan);
+
+        return redirect()->route('jsm.show_month', [
+            'year'    => $periode->year,
+            'month'   => $periode->month,
+            'no_raf'  => $jsm->no_raf,
+        ]);
+    }
+
     // public function showMonth($year, $month)
     // {
     //     $jsms = Jsm::with(['tokos'])
@@ -175,15 +212,14 @@ class JsmController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->filled('toko_id')) {
+        if ($request->filled('toko_id') || $request->filled('filter_pt')) {
             $query->whereHas('tokos', function($q) use ($request) {
-                $q->where('tokos.id', $request->toko_id);
-            });
-        }
-
-        if ($request->filled('filter_pt')) {
-            $query->whereHas('tokos', function($q) use ($request) {
-                $q->where('tokos.nama_pt', $request->filter_pt);
+                if ($request->filled('toko_id')) {
+                    $q->where('tokos.id', $request->toko_id);
+                }
+                if ($request->filled('filter_pt')) {
+                    $q->where('tokos.nama_pt', $request->filter_pt);
+                }
             });
         }
 
@@ -926,6 +962,10 @@ class JsmController extends Controller
     }
 
     public function statusAktif(Jsm $jsm){
+        if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($jsm->category_id))) {
+            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+        }
+
         $jsm->update([
             'status_email' => 'aktif',
         ]);
@@ -941,6 +981,10 @@ class JsmController extends Controller
     }
 
     public function statusTidakAktif(Jsm $jsm){
+        if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($jsm->category_id))) {
+            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+        }
+
         $jsm->update([
             'status_email' => 'tidak_aktif',
         ]);
@@ -959,7 +1003,10 @@ class JsmController extends Controller
 
     public function updateStatusInvoice(Jsm $jsm)
     {
-        $userName = auth()->check() ? auth()->user()->name : 'System';
+        $user = auth()->user();
+        $userName = $user ? $user->name : 'System';
+        $userId = $user ? $user->id : null;
+        $now = now();
         $isDone = (bool) $jsm->invoice_status;
 
         if ($isDone) {
@@ -967,30 +1014,50 @@ class JsmController extends Controller
             $jsm->update([
                 'invoice_status'       => 0,
                 'invoice_cancel_count' => DB::raw('COALESCE(invoice_cancel_count, 0) + 1'),
-                'invoice_cancel_at'    => now(),
+                'invoice_cancel_at'    => $now,
                 'invoice_cancel_by'    => $userName,
+            ]);
+
+            InvoiceLog::create([
+                'document_type' => 'jsm',
+                'document_id'   => $jsm->id,
+                'no_raf'        => $jsm->no_raf,
+                'status'        => 'cancel',
+                'user_id'       => $userId,
+                'user_name'     => $userName,
+                'action_at'     => $now,
             ]);
 
             ActivityLogger::logUpdate(
                 $jsm,
                 $jsm->id,
                 ['invoice_status' => false, 'by' => $userName],
-                "Invoice Rafaksi #{$jsm->id} dibatalkan (cancel) oleh {$userName}"
+                "Invoice JSM #{$jsm->id} dibatalkan (cancel) oleh {$userName}"
             );
         } else {
             // Transisi: Batal/Pending -> Selesai
             $jsm->update([
                 'invoice_status'     => 1,
                 'invoice_done_count' => DB::raw('COALESCE(invoice_done_count, 0) + 1'),
-                'invoice_done_at'    => now(),
+                'invoice_done_at'    => $now,
                 'invoice_done_by'    => $userName,
+            ]);
+
+            InvoiceLog::create([
+                'document_type' => 'jsm',
+                'document_id'   => $jsm->id,
+                'no_raf'        => $jsm->no_raf,
+                'status'        => 'done',
+                'user_id'       => $userId,
+                'user_name'     => $userName,
+                'action_at'     => $now,
             ]);
 
             ActivityLogger::logUpdate(
                 $jsm,
                 $jsm->id,
                 ['invoice_status' => true, 'by' => $userName],
-                "Invoice Rafaksi #{$jsm->id} ditandai selesai (done) oleh {$userName}"
+                "Invoice JSM #{$jsm->id} ditandai selesai (done) oleh {$userName}"
             );
         }
 

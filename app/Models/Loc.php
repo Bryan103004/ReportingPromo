@@ -13,6 +13,15 @@ class Loc extends Model
 
     protected $table = 'locs';
 
+    protected $casts = [
+        'invoice_status' => 'boolean',
+    ];
+
+    public function invoiceLogs()
+    {
+        return $this->hasMany(InvoiceLog::class, 'document_id')->where('document_type', 'loc')->orderBy('action_at', 'desc');
+    }
+
     public function supplierRafaksi()
     {
         return $this->belongsTo(SupplierRafaksi::class, 'supplier_code', 'kode_supplier');

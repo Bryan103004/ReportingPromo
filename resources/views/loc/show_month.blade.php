@@ -89,9 +89,21 @@
                         @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>
                         @endcan
-                        <th class="px-6 py-4">Aksi</th>
-                       
-                        {{-- <th class="px-6 py-4 text-center">Aksi</th> --}} {{-- Buka komen ini jika nanti butuh tombol Edit/Delete --}}
+                        @if (!auth()->user()->hasRole('AR OI'))
+                            <th class="px-6 py-4 text-right">Status</th>
+                        @endif
+                        @can('can_invoice')
+                            <th class="px-6 py-4 text-right">Status Invoice</th>
+                            <th class="px-6 py-4 text-right">Invoice Done Count</th>
+                            <th class="px-6 py-4 text-right">Latest Done By</th>
+                            <th class="px-6 py-4 text-right">Latest Done At</th>
+                            <th class="px-6 py-4 text-right">Invoice Cancel Count</th>
+                            <th class="px-6 py-4 text-right">Latest Cancel By</th>
+                            <th class="px-6 py-4 text-right">Latest Cancel At</th>
+                        @endcan
+                        @canany(['can_edit', 'can_renew', 'can_delete', 'can_update', 'can_print', 'can_invoice'])
+                            <th class="px-6 py-4 text-right">Aksi</th>
+                        @endcanany
                     </tr>
                 </thead>
                 
@@ -132,17 +144,10 @@
                                 {{ $loc->no_raf ?? '-' }}
                             </td>
 
-                            {{-- Region --}}
-                            <!-- <td class="px-6 py-4">
-                                <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $loc->store }}
-                                </span>
-                            </td> -->
-
                             {{-- Store --}}
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ optional($loc->tokos->first())->nama_toko ?? '-' }}
+                                    {{ $loc->tokos->count() > 1 ? ($loc->store ?: $loc->tokos->pluck('nama_toko')->implode(', ')) : (optional($loc->tokos->first())->nama_toko ?? $loc->store ?? '-') }}
                                 </span>
                             </td>
                             
@@ -160,30 +165,72 @@
                             </td>
                             @endcan
 
-                            {{-- Aksi (Opsional) --}}
+                            @if (!auth()->user()->hasRole('AR OI'))
+                            <td class="px-6 py-4">
+                                <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                    {{ $loc->status_email === 'aktif' ? 'Belum Siap' : 'Siap' }}
+                                </span>
+                            </td>
+                            @endif
+
+                            @can('can_invoice')
+                                <td class="px-6 py-4">
+                                    <button type="button" onclick="showInvoiceLogs('loc', {{ $loc->id }}, '{{ addslashes($loc->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
+                                        <span class="bg-gray-100 {{ $loc->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
+                                            {{ $loc->invoice_status === true ? 'Done' : 'Not Done' }} 📋
+                                        </span>
+                                    </button>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $loc->invoice_done_count ?? 0 }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $loc->invoice_done_by ?? '-' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $loc->invoice_done_at ?? '-' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-red-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $loc->invoice_cancel_count ?? 0 }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-red-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $loc->invoice_cancel_by ?? '-' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-gray-100 text-red-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
+                                        {{ $loc->invoice_cancel_at ?? '-' }}
+                                    </span>
+                                </td>
+                            @endcan
+
+                            {{-- Aksi --}}
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
                                     {{-- Tombol Edit --}}
-                                    <a href="{{ route('loc.edit', ['loc' => $loc->id, 'page' => request('page')]) }}" title="Edit Data">
-                                        ✎
-                                    </a>
-
-                                    {{--
-                                    @php
-                                        $bulanReminder = $loc->bulanReminder ?? 0;
-                                        $tglMulaiReminder = \Carbon\Carbon::parse($loc->periode_akhir)->subMonths($bulanReminder);
-                                        $tglAkhirReminder = \Carbon\Carbon::parse($loc->periode_akhir)->addMonth();
-                                    @endphp
-
-                                    @if (
-                                        now()->greaterThanOrEqualTo($tglMulaiReminder) && 
-                                        now()->lessThanOrEqualTo($tglAkhirReminder) && 
-                                        !is_null($loc->periode_akhir)
-                                    )
-                                        <!-- Tombol Renew Anda di sini -->
-                                        <a href="{{ route('loc.renew.index', ['id' => $loc->id]) }}" title="Renew Data">🆕</a>
+                                    @if ($loc->invoice_status == 0)
+                                        @can('can_edit')
+                                        <a href="{{ route('loc.edit', ['loc' => $loc->id, 'page' => request('page')]) }}" title="Edit Data">
+                                            ✎
+                                        </a>
+                                        @endcan
+                                    @elseif ($loc->invoice_status == 1 && auth()->user()->hasAnyRole(['superadmin', 'admin']))
+                                        @can('can_edit')
+                                        <a href="{{ route('loc.edit', ['loc' => $loc->id, 'page' => request('page')]) }}" title="Edit Data">
+                                            ✎
+                                        </a>
+                                        @endcan
                                     @endif
-                                    --}}  
 
                                     @php
                                         // Ubah periode_akhir menjadi instance Carbon agar bisa dibandingkan
@@ -191,12 +238,45 @@
                                     @endphp
 
                                     {{-- Muncul jika periode_akhir sudah kurang dari hari ini (sudah lewat/kadaluarsa) --}}
-                                    @if (!is_null($loc->periode_akhir) && now()->greaterThan($periodeAkhir))
-                                        <!-- Tombol Renew hanya muncul jika periode_akhir < sekarang -->
+                                    <!-- @if (!is_null($loc->periode_akhir) && now()->greaterThan($periodeAkhir))
+                                        @can('can_renew')
                                         <a href="{{ route('loc.renew.index', ['id' => $loc->id]) }}" title="Renew Data">🆕</a>
-                                    @endif
+                                        @endcan
+                                    @endif -->
 
-                                    
+                                    @can('can_print')
+                                        <a href="{{ route('document.select-stores', ['type' => 'loc', 'id' => $loc->id]) }}" title="Print Dokumen">
+                                            🖨️
+                                        </a>
+                                    @endcan
+
+                                    @can('can_update')
+                                        @if(\App\Services\CategorySpvService::userCanToggleReadiness(auth()->user(), $loc->categories))
+                                            @if($loc->status_email == 'aktif')
+                                                <a href="{{ route('loc.status-tidak-aktif', $loc->id) }}" title="Tandai Sudah Siap ke AR">
+                                                    ✅
+                                                </a>
+                                            @else
+                                                <a href="{{ route('loc.status-aktif', $loc->id) }}" title="Tandai Belum Siap ke AR">
+                                                    ❌
+                                                </a>
+                                            @endif
+                                        @endif
+                                    @endcan
+
+                                    @can('can_invoice')
+                                        @if($loc->invoice_status == 1)
+                                            <a href="{{ route('loc.invoice-status', $rafaksi->id) }}" title="Tandai Belum Invoicing">
+                                                📑
+                                            </a>
+                                        @else
+                                            <a href="{{ route('loc.invoice-status', $rafaksi->id) }}" title="Tandai Sudah Invoicing">
+                                                📑
+                                            </a>
+                                        @endif
+                                    @endcan
+
+                                    @can('can_delete')
                                     {{-- Tombol Hapus --}}
                                     <form action="{{ route('loc.destroy', $loc->id) }}" method="POST" class="inline">
                                         @csrf 
@@ -205,12 +285,13 @@
                                             🗑
                                         </button>
                                     </form>
+                                    @endcan
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center">
+                            <td colspan="20" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                                     <span class="font-medium text-gray-500">Tidak ada data transaksi di bulan ini.</span>
@@ -229,8 +310,7 @@
                         <td class="px-6 py-4 text-right font-bold text-blue-700 text-base">
                             Rp <span id="locGrandTotal">{{ number_format($locs->sum('nominal'), 0, ',', '.') }}</span>
                         </td>
-                        {{-- Tambahkan 1 <td> kosong di bawah ini JIKA kamu mengaktifkan kolom Aksi di atas --}}
-                        {{-- <td></td> --}}
+                        <td colspan="10"></td>
                     </tr>
                 </tfoot>
                 @endif

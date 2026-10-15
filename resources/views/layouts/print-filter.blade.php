@@ -31,28 +31,43 @@
                 @endforeach
             </div>
 
-            <div>
-                <label for="prepared_by">Prepared by,</label>
-                <select name="prepared_by" id="prepared_by" readonly>
-                    <!-- @foreach ($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
-                    @endforeach -->
-                    <option value="{{ auth()->user()->id }}" selected>{{ auth()->user()->name }}</option>
-                </select>
-            </div>
+            @if ($document->status_email === 'tidak_aktif' && !empty($autoPrepared) && !empty($autoAck))
+                <div class="p-3 mb-4 rounded-lg bg-green-50 border border-green-200 text-xs text-green-800">
+                    <p class="font-bold mb-1">Status Divisi Buyer: Nonaktif (Sudah Siap)</p>
+                    <p>TTD SPV Kategori otomatis terisi:</p>
+                    <ul class="list-disc list-inside mt-1">
+                        <li>Prepared by: <strong>{{ $autoPrepared->name }}</strong></li>
+                        <li>Acknowledged by: <strong>{{ $autoAck->name }}</strong></li>
+                    </ul>
+                </div>
+                <input type="hidden" name="prepared_by" value="{{ $autoPrepared->id }}">
+                <input type="hidden" name="acknowledged_by" value="{{ $autoAck->id }}">
+            @else
+                <div class="mb-4">
+                    <label for="prepared_by" class="block text-sm font-medium text-gray-700 mb-1">Prepared by,</label>
+                    <select name="prepared_by" id="prepared_by" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                        <option value="{{ auth()->user()->id }}" selected>{{ auth()->user()->name }}</option>
+                        @foreach ($users as $user)
+                            @if ($user->id !== auth()->id())
+                                <option value="{{ $user->id }}">{{ $user->name }}</option>
+                            @endif
+                        @endforeach
+                    </select>
+                </div>
 
-            <div>
-                <label for="acknowledged_by">Acknowledged by,</label>
-                <select name="acknowledged_by" id="acknowledged_by">
-                    @foreach ($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
-                    @endforeach
-                </select>
-            </div>
+                <div class="mb-4">
+                    <label for="acknowledged_by" class="block text-sm font-medium text-gray-700 mb-1">Acknowledged by,</label>
+                    <select name="acknowledged_by" id="acknowledged_by" class="w-full rounded-md border-gray-300 shadow-sm text-sm">
+                        @foreach ($users as $user)
+                            <option value="{{ $user->id }}" {{ (isset($autoAck) && $autoAck && $autoAck->id === $user->id) ? 'selected' : '' }}>{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            @endif
 
 
             <div class="flex justify-end gap-3">
-                <a href="{{ url()->previous() }}" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Batal</a>
+                <a href="{{ url()->previous(true) }}" class="px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Batal</a>
                 @if($document->documents->isNotEmpty())
                     <a href="{{ route('document.print-attachments', [$type, $document->id]) }}" target="_blank" class="px-5 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700">
                         Cetak Lampiran

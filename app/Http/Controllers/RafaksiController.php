@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Exports\DetailRafaksiReport;
 use App\Models\Category;
+use App\Models\InvoiceLog;
 use App\Models\Rafaksi;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Models\RafaksiDocument;
 use App\Models\Toko;
 use App\Services\ActivityLogger;
+use App\Services\CategorySpvService;
 use App\Services\ClaimCalculator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -81,6 +83,10 @@ class RafaksiController extends Controller
         if ($request->filled('end_date')) {
             $query->where('periode_akhir', '<=', $request->end_date);
         }
+        
+        if ($request->filled('no_raf')) {
+            $query->where('no_raf', $request->no_raf);
+        }
 
         // If user has limited toko access, restrict query
         if (! auth()->user()->hasGlobalCompanyAccess()) {
@@ -104,6 +110,41 @@ class RafaksiController extends Controller
         $rafaksiGroups->appends($request->all());
 
         return view('rafaksi.index', compact('rafaksiGroups', 'suppliers', 'tokos', 'categories'));
+    }
+
+    // Quick-jump: cari No RAF langsung dari index, tanpa perlu buka show_month per bulan
+    // dulu buat nyari manual. Begitu ketemu, langsung diarahkan ke show_month bulan yang
+    // bersangkutan dengan filter no_raf yang sudah otomatis ke-apply.
+    public function searchNoRaf(Request $request)
+    {
+        $request->validate(['no_raf' => 'required|string']);
+
+        $query = Rafaksi::where('no_raf', 'like', '%' . $request->no_raf . '%');
+
+        if (! auth()->user()->hasGlobalCompanyAccess()) {
+            $ids = auth()->user()->accessibleTokoIds()->toArray();
+            if (empty($ids)) {
+                $query->whereRaw('0 = 1');
+            } else {
+                $query->whereHas('tokos', function ($q) use ($ids) {
+                    $q->whereIn('tokos.id', $ids);
+                });
+            }
+        }
+
+        $rafaksi = $query->orderBy('periode_bulan', 'desc')->first();
+
+        if (! $rafaksi) {
+            return redirect()->route('rafaksi.index')->with('error', "No RAF \"{$request->no_raf}\" tidak ditemukan.");
+        }
+
+        $periode = Carbon::parse($rafaksi->periode_bulan);
+
+        return redirect()->route('rafaksi.show_month', [
+            'year'    => $periode->year,
+            'month'   => $periode->month,
+            'no_raf'  => $rafaksi->no_raf,
+        ]);
     }
 
     // public function showMonth($year, $month)
@@ -172,15 +213,14 @@ class RafaksiController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        if ($request->filled('toko_id')) {
+        if ($request->filled('toko_id') || $request->filled('filter_pt')) {
             $query->whereHas('tokos', function($q) use ($request) {
-                $q->where('tokos.id', $request->toko_id);
-            });
-        }
-
-        if ($request->filled('filter_pt')) {
-            $query->whereHas('tokos', function($q) use ($request) {
-                $q->where('tokos.nama_pt', $request->filter_pt);
+                if ($request->filled('toko_id')) {
+                    $q->where('tokos.id', $request->toko_id);
+                }
+                if ($request->filled('filter_pt')) {
+                    $q->where('tokos.nama_pt', $request->filter_pt);
+                }
             });
         }
 
@@ -999,6 +1039,10 @@ class RafaksiController extends Controller
     }
 
     public function statusAktif(Rafaksi $rafaksi){
+        if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($rafaksi->category_id))) {
+            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+        }
+
         $rafaksi->update([
             'status_email' => 'aktif',
         ]);
@@ -1014,6 +1058,10 @@ class RafaksiController extends Controller
     }
 
     public function statusTidakAktif(Rafaksi $rafaksi){
+        if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($rafaksi->category_id))) {
+            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+        }
+
         $rafaksi->update([
             'status_email' => 'tidak_aktif',
         ]);
@@ -1031,7 +1079,10 @@ class RafaksiController extends Controller
 
     public function updateStatusInvoice(Rafaksi $rafaksi)
     {
-        $userName = auth()->check() ? auth()->user()->name : 'System';
+        $user = auth()->user();
+        $userName = $user ? $user->name : 'System';
+        $userId = $user ? $user->id : null;
+        $now = now();
         $isDone = (bool) $rafaksi->invoice_status;
 
         if ($isDone) {
@@ -1039,8 +1090,18 @@ class RafaksiController extends Controller
             $rafaksi->update([
                 'invoice_status'       => 0,
                 'invoice_cancel_count' => DB::raw('COALESCE(invoice_cancel_count, 0) + 1'),
-                'invoice_cancel_at'    => now(),
+                'invoice_cancel_at'    => $now,
                 'invoice_cancel_by'    => $userName,
+            ]);
+
+            InvoiceLog::create([
+                'document_type' => 'rafaksi',
+                'document_id'   => $rafaksi->id,
+                'no_raf'        => $rafaksi->no_raf,
+                'status'        => 'cancel',
+                'user_id'       => $userId,
+                'user_name'     => $userName,
+                'action_at'     => $now,
             ]);
 
             ActivityLogger::logUpdate(
@@ -1054,8 +1115,18 @@ class RafaksiController extends Controller
             $rafaksi->update([
                 'invoice_status'     => 1,
                 'invoice_done_count' => DB::raw('COALESCE(invoice_done_count, 0) + 1'),
-                'invoice_done_at'    => now(),
+                'invoice_done_at'    => $now,
                 'invoice_done_by'    => $userName,
+            ]);
+
+            InvoiceLog::create([
+                'document_type' => 'rafaksi',
+                'document_id'   => $rafaksi->id,
+                'no_raf'        => $rafaksi->no_raf,
+                'status'        => 'done',
+                'user_id'       => $userId,
+                'user_name'     => $userName,
+                'action_at'     => $now,
             ]);
 
             ActivityLogger::logUpdate(

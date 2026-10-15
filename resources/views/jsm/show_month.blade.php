@@ -157,7 +157,8 @@
                             {{-- Toko --}}
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                {{ optional($jsm->tokos->first())->nama_toko ?? '-' }}                                </span>
+                                    {{ $jsm->tokos->count() > 1 ? ($jsm->store ?: $jsm->tokos->pluck('nama_toko')->implode(', ')) : (optional($jsm->tokos->first())->nama_toko ?? $jsm->store ?? '-') }}
+                                </span>
                             </td>
                             
                             {{-- Remarks --}}
@@ -177,16 +178,18 @@
                             @if (!auth()->user()->hasRole('AR OI'))
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $jsm->status_email === 'aktif' ? 'Nonaktif' : 'Aktif' }}
+                                    {{ $jsm->status_email === 'aktif' ? 'Belum Siap' : 'Siap' }}
                                 </span>
                             </td>
                             @endif
 
                             @can('can_invoice')
                                 <td class="px-6 py-4">
-                                    <span class="bg-gray-100 text-gray-700 border border-gray-200 font-bold px-2 py-1 rounded text-xs">
-                                        {{ $jsm->invoice_status === true ? 'Done' : 'Not Done' }}
-                                    </span>
+                                    <button type="button" onclick="showInvoiceLogs('jsm', {{ $jsm->id }}, '{{ addslashes($jsm->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
+                                        <span class="bg-gray-100 {{ $jsm->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
+                                            {{ $jsm->invoice_status === true ? 'Done' : 'Not Done' }} 📋
+                                        </span>
+                                    </button>
                                 </td>
 
                                 <td class="px-6 py-4">
@@ -224,12 +227,22 @@
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
 
-                                    @can('can_edit')
-                                    {{-- Tombol Edit --}}
-                                    <a href="{{ route('jsm.edit', ['jsm' => $jsm->id, 'page' => request('page')]) }}" title="Edit Data">
-                                        ✎
-                                    </a>
-                                    @endcan
+                                    @if ($jsm->invoice_status == 0)
+                                        @can('can_edit')
+                                        {{-- Tombol Edit --}}
+                                        <a href="{{ route('jsm.edit', ['jsm' => $jsm->id, 'page' => request('page')]) }}" title="Edit Data">
+                                            ✎
+                                        </a>
+                                        @endcan    
+                                    @elseif ($jsm->invoice_status == 1 && auth()->user()->hasAnyRole(['superadmin', 'admin']))            
+                                        @can('can_edit')
+                                        {{-- Tombol Edit --}}
+                                        <a href="{{ route('jsm.edit', ['jsm' => $jsm->id, 'page' => request('page')]) }}" title="Edit Data">
+                                            ✎
+                                        </a>
+                                        @endcan          
+                                    @endif
+
                                     {{--  
                                     @php
                                         $bulanReminder = $jsm->bulanReminder ?? 0;
@@ -267,25 +280,26 @@
                                     @endcan
 
                                     @can('can_update')
-                                    @if($jsm->status_email == 'aktif')
-                                        <a href="{{ route('jsm.status-aktif', $jsm->id) }}" title="Tandai Selesai">
-                                            ✅
-                                        </a>
-                                    @else
-
-                                        <a href="{{ route('jsm.status-tidak-aktif', $jsm->id) }}" title="Tandai Tidak Aktif">
-                                            ❌
-                                        </a>
+                                    @if(\App\Services\CategorySpvService::userCanToggleReadiness(auth()->user(), $jsm->categories))
+                                        @if($jsm->status_email == 'aktif')
+                                            <a href="{{ route('jsm.status-tidak-aktif', $jsm->id) }}" title="Tandai Sudah Siap ke AR">
+                                                ✅
+                                            </a>
+                                        @else
+                                            <a href="{{ route('jsm.status-aktif', $jsm->id) }}" title="Tandai Belum Siap ke AR">
+                                                ❌
+                                            </a>
+                                        @endif
                                     @endif
                                     @endcan
 
                                     @can('can_invoice')
-                                        @if($jsm->invoice_status == true)
-                                            <a href="{{ route('jsm.invoice-status', $jsm->id) }}" title="Tandai Tidak Aktif">
+                                        @if($jsm->invoice_status == 1)
+                                            <a href="{{ route('jsm.invoice-status', $jsm->id) }}" title="Tandai Belum Invoicing">
                                                 📑
                                             </a>
                                         @else
-                                            <a href="{{ route('jsm.invoice-status', $jsm->id) }}" title="Tandai Selesai">
+                                            <a href="{{ route('jsm.invoice-status', $jsm->id) }}" title="Tandai Sudah Invoicing">
                                                 📑
                                             </a>
                                         @endif

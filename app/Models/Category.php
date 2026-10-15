@@ -30,4 +30,19 @@ class Category extends Model
     public function inbounds(){
         return $this->hasMany(Inbound::class);
     }
+
+    public function signatories()
+    {
+        return $this->hasMany(CategorySignatory::class);
+    }
+
+    public function preparedBySignatories()
+    {
+        return $this->hasMany(CategorySignatory::class)->where('role', 'prepared_by');
+    }
+
+    public function acknowledgedBySignatories()
+    {
+        return $this->hasMany(CategorySignatory::class)->where('role', 'acknowledged_by');
+    }
 }

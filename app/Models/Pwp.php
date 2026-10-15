@@ -15,6 +15,11 @@ class Pwp extends Model
         'invoice_status' => 'boolean',
     ];
 
+    public function invoiceLogs()
+    {
+        return $this->hasMany(InvoiceLog::class, 'document_id')->where('document_type', 'pwp')->orderBy('action_at', 'desc');
+    }
+
 
     public function getNominalFormattedAttribute()
     {

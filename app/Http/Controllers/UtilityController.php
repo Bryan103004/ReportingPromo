@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\InvoiceLog;
+use App\Models\Loc;
 use App\Models\User;
+use App\Services\CategorySpvService;
 use Illuminate\Http\Request;
 use App\Models\Rafaksi;
 use App\Models\Jsm;
@@ -45,10 +48,26 @@ class UtilityController extends Controller
         ]);
     }
 
+    public function resolveCategorySpv($document)
+    {
+        $category = null;
+        if ($document->relationLoaded('categories') && $document->categories) {
+            $category = $document->categories;
+        } elseif (!empty($document->category_id)) {
+            $category = Category::find($document->category_id);
+        }
+
+        if (! $category) {
+            return [null, null];
+        }
+
+        return CategorySpvService::resolveSignatories($category, auth()->id());
+    }
+
     public function selectStoresForPrint($type, $id)
     {   
         $type = strtolower($type);
-        $relations = ['tokos', 'items.stores', 'documents'];
+        $relations = ['tokos', 'items.stores', 'documents', 'categories'];
 
         switch ($type) {
             case 'jsm':
@@ -58,6 +77,10 @@ class UtilityController extends Controller
             case 'pwp':
                 $document = Pwp::with($relations)->findOrFail($id);
                 $users = User::where('is_pwp_spv', true)->get();
+                break;
+            case 'loc':
+                $document = Loc::with(['tokos', 'documents', 'categories'])->findOrFail($id);
+                $users = User::all();
                 break;
             default:
                 $document = Rafaksi::with($relations)->findOrFail($id);
@@ -71,7 +94,7 @@ class UtilityController extends Controller
         // cetak) gak usah dikasih pilihan, biar gak bikin bingung. Dokumen lama
         // yang belum punya baris item (manual/flat) tetap tampilkan semua toko
         // yang di-link, karena filter per-item ini gak berlaku buat dokumen itu.
-        if ($document->items->isNotEmpty()) {
+        if (isset($document->items) && $document->items->isNotEmpty()) {
             $tokoIdsWithData = $document->items
                 ->flatMap(fn ($item) => $item->stores)
                 ->where('sales_qty', '>', 0)
@@ -81,8 +104,10 @@ class UtilityController extends Controller
             $document->setRelation('tokos', $document->tokos->whereIn('id', $tokoIdsWithData));
         }
 
+        [$autoPrepared, $autoAck] = $this->resolveCategorySpv($document);
+
         $title = 'Pilih Toko Cetak';
-        return view('layouts.print-filter', compact('document', 'title', 'type', 'users'));
+        return view('layouts.print-filter', compact('document', 'title', 'type', 'users', 'autoPrepared', 'autoAck'));
     }
 
     public function printAttachments($type, $id)
@@ -95,6 +120,9 @@ class UtilityController extends Controller
                 break;
             case 'pwp':
                 $document = Pwp::with('documents')->findOrFail($id);
+                break;
+            case 'loc':
+                $document = Loc::with('documents')->findOrFail($id);
                 break;
             default:
                 $document = Rafaksi::with('documents')->findOrFail($id);
@@ -136,39 +164,52 @@ class UtilityController extends Controller
     {
         $type = strtolower($type);
 
-        // $prepared_by = User::find($request->input('prepared_by'));
-        $prepared_by = auth()->user(); // Gunakan user yang sedang login sebagai prepared_by
-        $acknowledged_by = User::find($request->input('acknowledged_by'));
-
-        if($prepared_by == null || $acknowledged_by == null){
-            return redirect()->back()->with('error', 'Prepared By atau Acknowledged By tidak ditemukan. Pastikan Tipe Dokumen ini memilki SPV yang sesuai.');
-        }
-
         // Ambil input array toko_ids yang dicentang dari form filter
         $selectedTokoIds = $request->input('toko_ids', []);
 
         // Load relasi standar
-        $relations = ['items.stores.toko', 'tokos'];
+        $relations = ['items.stores.toko', 'tokos', 'categories'];
 
         switch ($type) {
             case 'jsm':
                 $document = Jsm::with($relations)->findOrFail($id);
                 $title = 'DOKUMEN JSM';
-                $prepared_by;
-                $acknowledged_by;
                 break;
             case 'pwp':
                 $document = Pwp::with($relations)->findOrFail($id);
                 $title = 'DOKUMEN PWP';
-                $prepared_by;
-                $acknowledged_by;
+                break;
+            case 'loc':
+                $document = Loc::with(['tokos', 'categories'])->findOrFail($id);
+                $title = 'DOKUMEN LOC';
                 break;
             default:
                 $document = Rafaksi::with($relations)->findOrFail($id);
-                $title = 'DOKUMEN RAFRAKSI';
-                $prepared_by;
-                $acknowledged_by;
+                $title = 'DOKUMEN RAFAKSI';
                 break;
+        }
+
+        $prepared_by = null;
+        $acknowledged_by = null;
+
+        // Jika status_email sudah nonaktif ('tidak_aktif'), otomatis isi TTD dari SPV Kategori
+        if ($document->status_email === 'tidak_aktif') {
+            [$autoPrepared, $autoAck] = $this->resolveCategorySpv($document);
+            $prepared_by = $autoPrepared;
+            $acknowledged_by = $autoAck;
+        }
+
+        // Fallback jika tidak otomatis atau belum diset
+        if (! $prepared_by) {
+            $prepId = $request->input('prepared_by');
+            $prepared_by = $prepId ? User::find($prepId) : auth()->user();
+        }
+        if (! $acknowledged_by) {
+            $acknowledged_by = User::find($request->input('acknowledged_by'));
+        }
+
+        if ($prepared_by == null || $acknowledged_by == null) {
+            return redirect()->back()->with('error', 'Prepared By atau Acknowledged By tidak ditemukan. Pastikan Tipe Dokumen ini memiliki SPV yang sesuai.');
         }
 
         // Filter daftar toko utama dokumen agar hanya menampilkan yang dipilih user
@@ -176,17 +217,41 @@ class UtilityController extends Controller
             $document->setRelation('tokos', $document->tokos->whereIn('id', $selectedTokoIds));
             
             // Filter juga rincian stores di dalam setiap item agar hanya menghitung toko yang dipilih
-            foreach ($document->items as $item) {
-                $filteredStores = $item->stores->whereIn('toko_id', $selectedTokoIds);
-                $item->setRelation('stores', $filteredStores);
+            if (isset($document->items)) {
+                foreach ($document->items as $item) {
+                    $filteredStores = $item->stores->whereIn('toko_id', $selectedTokoIds);
+                    $item->setRelation('stores', $filteredStores);
 
-                // HITUNG ULANG TOTAL SECARA DINAMIS BERDASARKAN TOKO YANG DIPILIH
-                $item->sales_total = $filteredStores->sum('sales_qty');
-                $item->value_total = $filteredStores->sum('value');
+                    // HITUNG ULANG TOTAL SECARA DINAMIS BERDASARKAN TOKO YANG DIPILIH
+                    $item->sales_total = $filteredStores->sum('sales_qty');
+                    $item->value_total = $filteredStores->sum('value');
+                }
             }
         }
 
-
         return view('layouts.print-universal', compact('document', 'title', 'type', 'prepared_by', 'acknowledged_by'));
+    }
+
+    public function getInvoiceLogs($type, $id)
+    {
+        $logs = InvoiceLog::where('document_type', strtolower($type))
+            ->where('document_id', $id)
+            ->orderBy('action_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'logs' => $logs->map(function ($log) {
+                return [
+                    'id'           => $log->id,
+                    'status'       => $log->status,
+                    'status_label' => $log->status === 'done' ? 'Done' : 'Cancel (Batal)',
+                    'user_name'    => $log->user_name,
+                    'date'         => $log->action_at ? $log->action_at->format('d/m/Y') : '-',
+                    'time'         => $log->action_at ? $log->action_at->format('H:i:s') : '-',
+                    'datetime'     => $log->action_at ? $log->action_at->format('d M Y, H:i:s') : '-',
+                ];
+            })
+        ]);
     }
 }

@@ -69,7 +69,7 @@
                                 <div>
                                     <button
                                         @click="mgmtOpen = !mgmtOpen"
-                                        class="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs(['user.*', 'role.*', 'toko.*', 'region.*', 'permission.*']) ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                        class="w-full flex items-center justify-between px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors mx-1 rounded-lg {{ request()->routeIs(['user.*', 'role.*', 'toko.*', 'region.*', 'permission.*', 'category-spv.*']) ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                         <div class="flex items-center gap-2.5">
                                             <span class="text-base">👥</span>
                                             <span>Manajemen Pengguna</span>
@@ -99,9 +99,15 @@
 
                                              @can('view_permissions')
                                             <x-dropdown-link :href="route('permission.index')" class="text-sm {{ request()->routeIs('permission.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
-                                                <span>🛡️</span> Permissions 
+                                                <span>🛡️</span> Permissions
                                             </x-dropdown-link>
                                             @endcan
+
+                                            @if(auth()->user()->hasAnyRole(['superadmin', 'admin']))
+                                            <x-dropdown-link :href="route('category-spv.index')" class="text-sm {{ request()->routeIs('category-spv.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                                <span>✍️</span> SPV Kategori
+                                            </x-dropdown-link>
+                                            @endif
 
                                             @can('view_toko')
                                             <x-dropdown-link :href="route('toko.index')" class="text-sm {{  request()->routeIs('toko.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : ''  }}">
@@ -391,6 +397,12 @@
                 <span>🔑</span> Roles
                 </x-responsive-nav-link>
             @endcan
+
+            @if(auth()->user()->hasAnyRole(['superadmin', 'admin']))
+            <x-responsive-nav-link :href="route('category-spv.index')" :active="request()->routeIs('category-spv.index')">
+                <span>✍️</span> SPV Kategori
+                </x-responsive-nav-link>
+            @endif
 
             @can('view_toko')
                 <x-responsive-nav-link :href="route('toko.index')" :active="request()->routeIs('toko.index')">🏪 Toko</x-responsive-nav-link>
