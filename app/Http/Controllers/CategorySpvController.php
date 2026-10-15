@@ -16,7 +16,7 @@ class CategorySpvController extends Controller
         // ke AR" dan tampil tanda tangannya di dokumen cetak -- cuma admin/superadmin
         // yang boleh ubah, bukan sembarang user dengan permission can_update biasa.
         $this->middleware(function ($request, $next) {
-            if (! auth()->user()?->hasAnyRole(['superadmin', 'admin'])) {
+            if (! auth()->user()->hasAnyRole(['superadmin', 'admin'])) {
                 abort(403, 'Hanya admin/superadmin yang bisa mengatur SPV kategori.');
             }
 
