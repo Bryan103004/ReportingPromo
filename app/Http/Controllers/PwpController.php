@@ -997,6 +997,8 @@ class PwpController extends Controller
 
         $pwp->update([
             'status_email' => 'aktif',
+            'status_email_updated_by' => auth()->id(),
+            'status_email_updated_at' => now(),
         ]);
 
         ActivityLogger::logUpdate(
@@ -1016,8 +1018,10 @@ class PwpController extends Controller
 
         $pwp->update([
             'status_email' => 'tidak_aktif',
+            'status_email_updated_by' => auth()->id(),
+            'status_email_updated_at' => now(),
         ]);
-        
+
         ActivityLogger::logUpdate(
             $pwp,
             $pwp->id,

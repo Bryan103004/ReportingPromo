@@ -1045,6 +1045,8 @@ class RafaksiController extends Controller
 
         $rafaksi->update([
             'status_email' => 'aktif',
+            'status_email_updated_by' => auth()->id(),
+            'status_email_updated_at' => now(),
         ]);
 
         ActivityLogger::logUpdate(
@@ -1064,8 +1066,10 @@ class RafaksiController extends Controller
 
         $rafaksi->update([
             'status_email' => 'tidak_aktif',
+            'status_email_updated_by' => auth()->id(),
+            'status_email_updated_at' => now(),
         ]);
-        
+
         ActivityLogger::logUpdate(
             $rafaksi,
             $rafaksi->id,

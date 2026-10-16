@@ -61,7 +61,7 @@ class UtilityController extends Controller
             return [null, null];
         }
 
-        return CategorySpvService::resolveSignatories($category, auth()->id());
+        return CategorySpvService::resolveSignatories($category, $document);
     }
 
     public function selectStoresForPrint($type, $id)
