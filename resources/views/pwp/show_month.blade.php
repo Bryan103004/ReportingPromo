@@ -146,7 +146,7 @@
 
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $pwp->tokos->count() > 1 ? ($pwp->store ?: $pwp->tokos->pluck('nama_toko')->implode(', ')) : (optional($pwp->tokos->first())->nama_toko ?? $pwp->store ?? '-') }}
+                                    {{ $pwp->daftar_toko_formatted }}
                                 </span>
                             </td>
 

@@ -56,16 +56,23 @@ class Pwp extends Model
             return '-';
         }
 
-        // Ambil region_id dari toko pertama yang diceklis
-        $regionId = $this->tokos->first()->region_id;
+        // Kalau cuma 1 toko yang dipilih, tampilkan nama toko itu sendiri -- label
+        // MBA/LS cuma relevan kalau lagi ngegabungin beberapa toko sekaligus.
+        if ($this->tokos->count() === 1) {
+            return $this->tokos->first()->nama_toko;
+        }
 
-        // Hitung total seluruh toko di database yang berada di region tersebut
-        $totalTokoDiRegion = Toko::where('region_id', $regionId)->count();
+        // Klasifikasi klaim cuma ada 2: MBA (PT. Mitra Belanja Anda) atau LS (Lucky
+        // Strategis -- representasi SEMUA toko non-MBA, terlepas dari nama_pt
+        // aslinya masing-masing, karena yang nge-claim toko-toko itu memang LS).
+        $isMba = fn ($toko) => str_contains(strtoupper($toko->nama_pt ?? ''), 'MITRA BELANJA ANDA');
 
-        // Jika jumlah toko yang berelasi SAMA DENGAN total toko di region itu
-        if ($this->tokos->count() === $totalTokoDiRegion) {
-            // Tampilkan nama Region (karena kamu menyimpan nama region di kolom 'store')
-            return $this->store;
+        if ($this->tokos->every($isMba)) {
+            return 'MBA';
+        }
+
+        if ($this->tokos->every(fn ($toko) => ! $isMba($toko))) {
+            return 'LS';
         }
 
         // Jika hanya sebagian (tidak lengkap), kembalikan daftar nama toko pakai koma

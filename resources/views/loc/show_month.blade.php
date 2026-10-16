@@ -147,7 +147,7 @@
                             {{-- Store --}}
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $loc->tokos->count() > 1 ? ($loc->store ?: $loc->tokos->pluck('nama_toko')->implode(', ')) : (optional($loc->tokos->first())->nama_toko ?? $loc->store ?? '-') }}
+                                    {{ $loc->daftar_toko_formatted }}
                                 </span>
                             </td>
                             

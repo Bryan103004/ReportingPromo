@@ -157,7 +157,7 @@
                             {{-- Toko --}}
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $jsm->tokos->count() > 1 ? ($jsm->store ?: $jsm->tokos->pluck('nama_toko')->implode(', ')) : (optional($jsm->tokos->first())->nama_toko ?? $jsm->store ?? '-') }}
+                                    {{ $jsm->daftar_toko_formatted }}
                                 </span>
                             </td>
                             

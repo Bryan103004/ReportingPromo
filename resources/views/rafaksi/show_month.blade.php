@@ -158,7 +158,7 @@
                             {{-- Store --}}
                             <td class="px-6 py-4">
                                 <span class="bg-gray-100 text-gray-700 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
-                                    {{ $rafaksi->tokos->count() > 1 ? ($rafaksi->store ?: $rafaksi->tokos->pluck('nama_toko')->implode(', ')) : (optional($rafaksi->tokos->first())->nama_toko ?? $rafaksi->store ?? '-') }}
+                                    {{ $rafaksi->daftar_toko_formatted }}
                                 </span>
                             </td>
                             
