@@ -26,12 +26,16 @@ class ImportLocLog extends Model
      */
     public function getStatusLabelAttribute(): string
     {
-        return match ($this->status) {
-            'success'        => 'Sukses Semua',
-            'partial_failed' => 'Sebagian Gagal',
-            'failed'         => 'Gagal Total',
-            default          => ucfirst($this->status),
-        };
+        switch ($this->status) {
+            case 'success':
+                return 'Sukses Semua';
+            case 'partial_failed':
+                return 'Sebagian Gagal';
+            case 'failed':
+                return 'Gagal Total';
+            default:
+                return ucfirst((string) $this->status);
+        }
     }
 
     /**
@@ -39,12 +43,16 @@ class ImportLocLog extends Model
      */
     public function getStatusBadgeClassAttribute(): string
     {
-        return match ($this->status) {
-            'success'        => 'bg-green-100 text-green-800 border-green-200',
-            'partial_failed' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-            'failed'         => 'bg-red-100 text-red-800 border-red-200',
-            default          => 'bg-gray-100 text-gray-800 border-gray-200',
-        };
+        switch ($this->status) {
+            case 'success':
+                return 'bg-green-100 text-green-800 border-green-200';
+            case 'partial_failed':
+                return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+            case 'failed':
+                return 'bg-red-100 text-red-800 border-red-200';
+            default:
+                return 'bg-gray-100 text-gray-800 border-gray-200';
+        }
     }
 }
 

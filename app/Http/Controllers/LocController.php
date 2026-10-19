@@ -995,6 +995,10 @@ class LocController extends Controller
 
     public function importLogs(Request $request)
     {
+        if (! auth()->user() || ! auth()->user()->hasRole('superadmin')) {
+            abort(403, 'Akses ditolak. Riwayat log penarikan LOC hanya dapat diakses oleh Superadmin.');
+        }
+
         $logs = ImportLocLog::orderBy('started_at', 'desc')->paginate(20);
         return view('loc.import_logs', compact('logs'));
     }
