@@ -2,11 +2,15 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\ImportLocInfo;
+use App\Models\ImportLocLog;
+use App\Models\Loc;
+use App\Models\NotificationRecipient;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
-use App\Models\Loc;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ImportLocsCommand extends Command
 {
@@ -35,176 +39,239 @@ class ImportLocsCommand extends Command
             return 0;
         }
 
+        // Cache master data toko sekali di memori (menggunakan id_alias sebagai key)
+        // Menghindari ribuan query N+1 ke database pada saat iterasi data CSV
+        $tokoMap = DB::table('tokos')
+            ->join('regions', 'tokos.region_id', '=', 'regions.id')
+            ->whereNotNull('tokos.id_alias')
+            ->select('tokos.id as toko_id', 'tokos.id_alias', 'regions.nama_region')
+            ->get()
+            ->keyBy(function ($item) {
+                return trim($item->id_alias);
+            });
+
+        // Helper untuk merapikan format tanggal agar sesuai dengan tipe data date MySQL (Y-m-d)
+        $formatDate = function ($date) {
+            $date = trim((string) $date);
+            if (empty($date)) return null;
+            try {
+                // Format CSV adalah d/m/Y atau j/n/Y (misal: 30/4/2025)
+                return Carbon::createFromFormat('j/n/Y', $date)->format('Y-m-d');
+            } catch (\Exception $e) {
+                try {
+                    return Carbon::parse($date)->format('Y-m-d');
+                } catch (\Exception $ex) {
+                    return null;
+                }
+            }
+        };
+
         foreach ($csvFiles as $filePath) {
             $filename = basename($filePath);
+            $startedAt = now();
             $this->info("Memproses file: {$filename}...");
 
             $fileHandle = fopen($filePath, 'r');
 
             if (!$fileHandle) {
-                $this->error("Gagal membuka file: {$filename}");
+                $errorMsg = "Gagal membuka file: {$filename}";
+                $this->error($errorMsg);
+
+                ImportLocLog::create([
+                    'filename'      => $filename,
+                    'total_rows'    => 0,
+                    'success_count' => 0,
+                    'skipped_count' => 0,
+                    'failed_count'  => 0,
+                    'status'        => 'failed',
+                    'error_message' => $errorMsg,
+                    'failed_rows'   => null,
+                    'started_at'    => $startedAt,
+                    'finished_at'   => now(),
+                ]);
+
+                $this->sendAlertEmail($filename, 0, 0, 0, 0, null, $errorMsg);
                 continue;
             }
 
             // Lewati baris header jika ada
             fgetcsv($fileHandle, 0, ';');
-            
-            $batchData = [];
-            $rowCount = 0;
-            $failedRows = []; 
-            $lineNumber = 1;  
+
+            $stagingBatch = [];
+            $failedRows = [];
+            $totalRows = 0;
+            $successCount = 0;
+            $skippedCount = 0;
+            $lineNumber = 1; // Baris 1 adalah header
 
             // Kosongkan tabel staging (inbound) sebelum memproses file ini
             DB::table('inbound')->truncate();
 
-            // Fungsi helper untuk merapikan format tanggal agar sesuai dengan tipe data date MySQL (Y-m-d)
-            $formatDate = function($date) {
-                $date = trim($date);
-                if (empty($date)) return null;
-                try {
-                    // Karena format di CSV adalah d/m/Y (misal: 30/4/2025)
-                    return Carbon::createFromFormat('j/n/Y', $date)->format('Y-m-d');
-                } catch (\Exception $e) {
-                    try {
-                        return Carbon::parse($date)->format('Y-m-d');
-                    } catch (\Exception $ex) {
-                        return null;
-                    }
-                }
-            };
-
-            // 2. Masukkan SEMUA data mentah ke tabel staging
             while (($row = fgetcsv($fileHandle, 0, ';')) !== false) {
                 $lineNumber++;
+                $totalRows++;
 
-                // Validasi: Jika no_raf (index 7) atau supplier_code (index 0) kosong, catat sebagai data gagal
-                if (empty($row[7]) || empty($row[0])) {
+                $supplierCode = trim((string) ($row[0] ?? ''));
+                $supplierName = trim((string) ($row[3] ?? ''));
+                $noRaf        = trim((string) ($row[7] ?? ''));
+                $tokoAliasRaw = trim((string) ($row[10] ?? ''));
+
+                // Validasi 1: Jika no_raf atau supplier_code kosong, skip baris ini (sebagai error)
+                if (empty($noRaf) || empty($supplierCode)) {
                     $failedRows[] = [
-                        'line' => $lineNumber,
-                        'data' => implode(', ', $row),
-                        'reason' => 'Kolom utama (no_raf atau supplier_code) kosong'
+                        'line'       => $lineNumber,
+                        'no_raf'     => $noRaf ?: '(kosong)',
+                        'supplier'   => $supplierName ? "{$supplierName} ({$supplierCode})" : ($supplierCode ?: '(kosong)'),
+                        'toko_alias' => $tokoAliasRaw ?: '-',
+                        'reason'     => 'Kolom wajib (no_raf atau supplier_code) kosong',
                     ];
                     continue;
                 }
 
-                $batchData[] = [
-                    'supplier_code'    => $row[0] ?? null,
+                // Validasi 2: Jika data LOC dengan no_raf ini SUDAH ADA di database, SKIP (tidak ditimpa)
+                if (Loc::where('no_raf', $noRaf)->exists()) {
+                    $skippedCount++;
+                    $this->line(" -> SUDAH ADA: no_raf [{$noRaf}] sudah ada di database, dilewati (skip).");
+                    continue;
+                }
+
+                // Validasi 3: Jika toko_id (alias) kosong di CSV, skip baris ini (sebagai error)
+                if (empty($tokoAliasRaw)) {
+                    $failedRows[] = [
+                        'line'       => $lineNumber,
+                        'no_raf'     => $noRaf,
+                        'supplier'   => $supplierName ? "{$supplierName} ({$supplierCode})" : $supplierCode,
+                        'toko_alias' => '(kosong)',
+                        'reason'     => 'Kolom toko_id pada CSV kosong',
+                    ];
+                    continue;
+                }
+
+                // Validasi 4: Cek apakah id_alias toko ada di database master tokos
+                $matchedToko = $tokoMap->get($tokoAliasRaw);
+                if (!$matchedToko) {
+                    $failedRows[] = [
+                        'line'       => $lineNumber,
+                        'no_raf'     => $noRaf,
+                        'supplier'   => $supplierName ? "{$supplierName} ({$supplierCode})" : $supplierCode,
+                        'toko_alias' => $tokoAliasRaw,
+                        'reason'     => "Kode alias toko '{$tokoAliasRaw}' tidak terdaftar di database master toko",
+                    ];
+                    continue;
+                }
+
+                $tokoIdAsli = $matchedToko->toko_id;
+                $namaRegionStore = $matchedToko->nama_region;
+
+                // Masukkan data valid ke batch staging inbound
+                $stagingBatch[] = [
+                    'supplier_code'    => $supplierCode,
                     'category_id'      => $row[1] ?? null,
                     'reminder_id'      => $row[2] ?? null,
-                    'supplier_name'    => $row[3] ?? null,
-                    'periode_awal'     => $formatDate($row[4]),
-                    'periode_akhir'    => $formatDate($row[5]),
-                    'periode_bulan'    => $formatDate($row[6]),
-                    'no_raf'           => $row[7] ?? null,
+                    'supplier_name'    => $supplierName,
+                    'periode_awal'     => $formatDate($row[4] ?? null),
+                    'periode_akhir'    => $formatDate($row[5] ?? null),
+                    'periode_bulan'    => $formatDate($row[6] ?? null),
+                    'no_raf'           => $noRaf,
                     'no_raf_referensi' => $row[8] ?? null,
-                    'store'          => $row[9] ?? null,
-                    'toko_id'            => $row[10] ?? null,   
+                    'store'            => $namaRegionStore ?? ($row[9] ?? null),
+                    'toko_id'          => $tokoAliasRaw,
                     'nominal'          => $row[11] ?? null,
                     'remarks'          => $row[12] ?? null,
-                    'created_date'     => $formatDate($row[13]),
+                    'created_date'     => $formatDate($row[13] ?? null),
                     'created_time'     => $row[14] ?? null,
-                    'updated_date'     => $formatDate($row[15]),
+                    'updated_date'     => $formatDate($row[15] ?? null),
                     'updated_time'     => $row[16] ?? null,
                     'status_email'     => $row[17] ?? null,
                 ];
 
-                $rowCount++;
+                if (count($stagingBatch) >= 500) {
+                    DB::table('inbound')->insert($stagingBatch);
+                    $stagingBatch = [];
+                }
 
-                if (count($batchData) >= 500) {
-                    DB::table('inbound')->insert($batchData);
-                    $batchData = [];
+                // Simpan data BARU ke tabel utama `locs`
+                try {
+                    $loc = Loc::create([
+                        'supplier_code'    => $supplierCode,
+                        'category_id'      => $row[1] ?? null,
+                        'reminder_id'      => $row[2] ?? null,
+                        'supplier_name'    => $supplierName,
+                        'periode_awal'     => $formatDate($row[4] ?? null),
+                        'periode_akhir'    => $formatDate($row[5] ?? null),
+                        'periode_bulan'    => $formatDate($row[6] ?? null),
+                        'no_raf'           => $noRaf,
+                        'no_raf_referensi' => $row[8] ?? null,
+                        'status_email'     => $row[17] ?? null,
+                        'store'            => $namaRegionStore ?? ($row[9] ?? null),
+                        'nominal'          => $row[11] ?? null,
+                        'remarks'          => $row[12] ?? null,
+                        'created_date'     => $formatDate($row[13] ?? null),
+                        'created_time'     => $row[14] ?? null,
+                        'updated_date'     => $formatDate($row[15] ?? null),
+                        'updated_time'     => $row[16] ?? null,
+                    ]);
+
+                    // Hubungkan ke tabel pivot locs_toko
+                    $loc->tokos()->syncWithoutDetaching([$tokoIdAsli]);
+                    $successCount++;
+                } catch (\Exception $e) {
+                    $this->error("Gagal menyimpan no_raf {$noRaf}: " . $e->getMessage());
+                    $failedRows[] = [
+                        'line'       => $lineNumber,
+                        'no_raf'     => $noRaf,
+                        'supplier'   => $supplierName ? "{$supplierName} ({$supplierCode})" : $supplierCode,
+                        'toko_alias' => $tokoAliasRaw,
+                        'reason'     => 'Database error saat simpan: ' . $e->getMessage(),
+                    ];
                 }
             }
 
-            if (!empty($batchData)) {
-                DB::table('inbound')->insert($batchData);
+            if (!empty($stagingBatch)) {
+                DB::table('inbound')->insert($stagingBatch);
             }
 
             fclose($fileHandle);
-            $this->info("-> Berhasil memasukkan {$rowCount} baris ke staging.");
 
-            // Tampilkan laporan jika ada baris yang gagal masuk ke tabel inbound
-            if (!empty($failedRows)) {
-                $this->warn("Perhatian: Ada " . count($failedRows) . " baris yang TIDAK masuk ke tabel inbound:");
-                foreach ($failedRows as $fail) {
-                    $this->line(" - Baris ke-{$fail['line']} | Alasan: {$fail['reason']}");
-                    $this->line("   Isi Data: {$fail['data']}");
-                }
+            $failedCount = count($failedRows);
+            $this->info("-> Selesai membaca file. Total: {$totalRows} | Baru: {$successCount} | Sudah Ada (Skip): {$skippedCount} | Gagal/Error: {$failedCount}");
+
+            // Tentukan status import
+            if ($totalRows === 0) {
+                $status = 'failed';
+                $statusMessage = 'File kosong tanpa data';
+            } elseif ($failedCount === 0) {
+                $status = 'success';
+                $statusMessage = null;
+            } elseif ($successCount > 0 || $skippedCount > 0) {
+                $status = 'partial_failed';
+                $statusMessage = "Sebagian data ({$failedCount} baris) gagal diproses karena error";
+            } else {
+                $status = 'failed';
+                $statusMessage = "Seluruh baris ({$failedCount} baris) gagal diproses";
             }
 
-            // 3. Pindahkan data dari Inbound ke Tabel Utama (locs) & Hubungkan ke Pivot Toko
-            $inboundRows = DB::table('inbound')->get();
+            // Simpan riwayat eksekusi ke tabel log database
+            ImportLocLog::create([
+                'filename'      => $filename,
+                'total_rows'    => $totalRows,
+                'success_count' => $successCount,
+                'skipped_count' => $skippedCount,
+                'failed_count'  => $failedCount,
+                'status'        => $status,
+                'error_message' => $statusMessage,
+                'failed_rows'   => !empty($failedRows) ? $failedRows : null,
+                'started_at'    => $startedAt,
+                'finished_at'   => now(),
+            ]);
 
-            foreach ($inboundRows as $row) {
-                if (empty($row->no_raf)) {
-                    continue;
-                }
-
-                // ==========================================
-                // DEBUGGING TOKO_ID
-                // ==========================================
-                $this->info("Mengecek no_raf: {$row->no_raf} dengan toko_id di CSV: [{$row->toko_id}]");
-
-                // A. Terjemahkan ID Alias toko dari CSV menjadi Primary Key (id) asli tabel tokos
-                $tokoIdAsli = null;
-                $namaRegionStore = null;
-
-                if (!empty($row->toko_id)) {
-                    // Gunakan trim untuk menghindari masalah spasi tersembunyi
-                    $cleanTokoId = trim($row->toko_id);
-                    
-                    $tokoData = DB::table('tokos')
-                        ->join('regions', 'tokos.region_id', '=', 'regions.id')
-                        ->where('tokos.id_alias', $cleanTokoId)
-                        ->select('tokos.id as toko_id', 'regions.nama_region')
-                        ->first();
-                                        
-                    if ($tokoData) {
-                        $tokoIdAsli = $tokoData->toko_id;
-                        $namaRegionStore = $tokoData->nama_region; // Contoh: "Jakarta"
-                        $this->line(" -> DITEMUKAN: Toko ID {$tokoIdAsli}, Region/Store: {$namaRegionStore}");
-                    } else {
-                        $this->error(" -> TIDAK KETEMU: toko_id [{$cleanTokoId}] tidak ada di tabel tokos!");
-                    }
-                } else {
-                    $this->warn(" -> KOSONG: Kolom toko_id pada baris ini kosong.");
-                }
-
-                // B. Simpan atau Update data ke tabel utama `locs`
-                $loc = Loc::updateOrCreate(
-                    ['no_raf' => $row->no_raf],
-                    [
-                        'supplier_code'    => $row->supplier_code,
-                        'category_id'      => $row->category_id,
-                        'reminder_id'      => $row->reminder_id,
-                        'supplier_name'    => $row->supplier_name,
-                        'periode_awal'     => $formatDate($row->periode_awal),
-                        'periode_akhir'    => $formatDate($row->periode_akhir), // Pastikan ini menggunakan variabel dari data staging
-                        'periode_bulan'    => $formatDate($row->periode_bulan),
-                        'no_raf_referensi' => $row->no_raf_referensi,
-                        'status_email'     => $row->status_email,
-                        'store'            => $namaRegionStore ?? $row->store,
-                        'nominal'          => $row->nominal,
-                        'remarks'          => $row->remarks,
-                        'created_date'     => $row->created_date,
-                        'created_time'     => $row->created_time,
-                        'updated_date'     => $row->updated_date,
-                        'updated_time'     => $row->updated_time,
-                    ]
-                );
-
-                // C. Catat relasi ke tabel pivot menggunakan ID asli toko
-                if ($tokoIdAsli) {
-                    $loc->tokos()->syncWithoutDetaching([$tokoIdAsli]);
-                    $this->line(" -> Berhasil sync ke tabel pivot locs_toko.");
-                } else {
-                    $this->error(" -> Gagal sync karena \$tokoIdAsli bernilai null.");
-                }
+            // Jika ada baris yang gagal, kirimkan email laporan rekap ke daftar penerima dinamis
+            if ($failedCount > 0) {
+                $this->warn("Ada {$failedCount} baris yang gagal diproses. Mengirim email laporan...");
+                $this->sendAlertEmail($filename, $totalRows, $successCount, $skippedCount, $failedCount, $failedRows, $statusMessage);
             }
 
-            // 4. Cleanup: Kosongkan tabel inbound & pindahkan file fisik ke folder outbound
-            // DB::table('inbound')->truncate();
-            
+            // Pindahkan file CSV ke folder outbound dengan timestamp
             $destinationPath = $outboundFolder . '/' . date('Ymd_His') . '_' . $filename;
             rename($filePath, $destinationPath);
 
@@ -213,5 +280,59 @@ class ImportLocsCommand extends Command
 
         $this->info('Semua file CSV berhasil diproses!');
         return 0;
+    }
+
+    /**
+     * Kirim email pemberitahuan ke penerima yang dikonfigurasi secara dinamis
+     */
+    private function sendAlertEmail(
+        $filename,
+        $totalRows,
+        $successCount,
+        $skippedCount,
+        $failedCount,
+        $failedRows = null,
+        $errorMsg = null
+    ) {
+        // Ambil email dari menu Web "Email Tambahan" (modul: 'import_loc') yang aktif
+        $recipients = NotificationRecipient::active()
+            ->forModule('import_loc')
+            ->pluck('email')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+
+        // Fallback jika belum ada yang diset di database
+        if (empty($recipients)) {
+            $fallback = config('mail.from.address', 'it@grandlucky.co.id');
+            if ($fallback) {
+                $recipients = [$fallback];
+            }
+        }
+
+        if (empty($recipients)) {
+            $this->warn('Tidak ada alamat email penerima yang terdaftar untuk notifikasi import LOC.');
+            return;
+        }
+
+        try {
+            Mail::to($recipients)->send(new ImportLocInfo(
+                $filename,
+                $totalRows,
+                $successCount,
+                $skippedCount,
+                $failedCount,
+                $failedRows,
+                $errorMsg
+            ));
+            $this->info("-> Email laporan berhasil dikirim ke: " . implode(', ', $recipients));
+        } catch (\Exception $e) {
+            $this->error("-> Gagal mengirim email laporan: " . $e->getMessage());
+            Log::error("Gagal mengirim email notifikasi import LOC: " . $e->getMessage(), [
+                'filename'   => $filename,
+                'recipients' => $recipients,
+            ]);
+        }
     }
 }
