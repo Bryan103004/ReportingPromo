@@ -28,7 +28,7 @@
     </div>
 
     {{-- Info Card --}}
-    <div class="mb-6 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-xs text-blue-800 flex items-start gap-3">
+    <div style="background-color: white" class="mb-6 rounded-xl border border-blue-100 bg-blue-50/70 p-4 text-xs text-blue-800 flex items-start gap-3">
         <span class="text-lg">💡</span>
         <div>
             <span class="font-bold">Ketentuan Proses Import LOC:</span>
