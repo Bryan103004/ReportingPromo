@@ -128,6 +128,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/loc/{loc}/status-aktif', [LocController::class, 'statusAktif'])->name('loc.status-aktif');
     Route::get('/loc/{loc}/invoice-status', [LocController::class, 'updateStatusInvoice'])->name('loc.invoice-status');
     Route::get('/loc/search-no-raf', [LocController::class, 'searchNoRaf'])->name('loc.search-no-raf');
+    Route::get('/loc/import-logs', [LocController::class, 'importLogs'])->name('loc.import-logs');
     Route::get('/invoice-logs/{type}/{id}', [UtilityController::class, 'getInvoiceLogs'])->name('invoice.logs');
     Route::resource('loc', LocController::class);
 

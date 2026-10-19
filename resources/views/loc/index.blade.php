@@ -17,10 +17,10 @@
     </div>
 
     <div class="flex ms-auto m-4 gap-2">
-        <!-- <a href="{{ route('loc.export') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
-            Export Rekap CSV
-        </a> -->
-        <button type="button" onclick="openExportModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">
+        <a href="{{ route('loc.import-logs') }}" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-1.5 shadow-sm text-sm">
+            <span>📋</span> Log Penarikan LOC
+        </a>
+        <button type="button" onclick="openExportModal()" class="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition text-sm">
             Export Rekap XLS
         </button>
 

@@ -12,9 +12,10 @@ use Illuminate\Http\Request;
 class NotificationRecipientController extends Controller
 {
     const AVAILABLE_MODULES = [
-        'rafaksi' => 'Rafaksi',
-        'loc'  => 'Loc',
-        'jsm' => 'Jsm',
+        'rafaksi'    => 'Rafaksi',
+        'loc'        => 'Loc',
+        'jsm'        => 'Jsm',
+        'import_loc' => 'Log / Error Import LOC',
     ];
 
     // Helper untuk mengambil semua master data yang dibutuhkan filter

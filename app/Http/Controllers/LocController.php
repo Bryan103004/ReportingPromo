@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 use App\Exports\DetailLocReport;
 use App\Models\Category;
+use App\Models\ImportLocLog;
 use App\Models\InvoiceLog;
 use App\Models\Loc;
 use App\Models\LocDocument;
@@ -990,5 +991,11 @@ class LocController extends Controller
         }
 
         return redirect()->back()->with('success', 'Status invoice berhasil diperbarui');
+    }
+
+    public function importLogs(Request $request)
+    {
+        $logs = ImportLocLog::orderBy('started_at', 'desc')->paginate(20);
+        return view('loc.import_logs', compact('logs'));
     }
 }
