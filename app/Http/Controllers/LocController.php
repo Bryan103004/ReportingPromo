@@ -189,7 +189,7 @@ class LocController extends Controller
         $periodeStart = Carbon::createFromDate($year, $month, 1)->startOfDay();
         $periodeEnd = (clone $periodeStart)->addMonth();
 
-        $query = Loc::with(['tokos'])
+        $query = Loc::with(['tokos', 'documents', 'categories'])
             ->where('periode_bulan', '>=', $periodeStart)
             ->where('periode_bulan', '<', $periodeEnd)
             ->orderBy('created_at', 'desc');
@@ -884,6 +884,11 @@ class LocController extends Controller
         $document->delete();
 
         return redirect()->back()->with('success', 'Dokumen berhasil dihapus.');
+    }
+
+    public function deleteDocument(LocDocument $document)
+    {
+        return $this->deleteDocumentFile($document);
     }
 
     public function statusAktif(Loc $loc)

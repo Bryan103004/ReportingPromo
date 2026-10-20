@@ -89,15 +89,15 @@
                         @if (!auth()->user()->hasRole('AR OI'))
                             <th class="px-6 py-4 text-right">Status</th>
                         @endif
-                        @can('can_invoice')
-                            <th class="px-6 py-4 text-right">Status Invoice</th>
+                        <th class="px-6 py-4 text-right">Status Invoice</th>
+                        @if(auth()->user()->can('can_invoice') || auth()->user()->hasAnyRole(['superadmin', 'admin']))
                             <th class="px-6 py-4 text-right">Invoice Done Count</th>
                             <th class="px-6 py-4 text-right">Latest Done By</th>
                             <th class="px-6 py-4 text-right">Latest Done At</th>
                             <th class="px-6 py-4 text-right">Invoice Cancel Count</th>
                             <th class="px-6 py-4 text-right">Latest Cancel By</th>
                             <th class="px-6 py-4 text-right">Latest Cancel At</th>
-                        @endcan
+                        @endif
                         @canany(['can_edit', 'can_renew', 'can_delete', 'can_update', 'can_print'])
                             <th class="px-6 py-4 text-right">Aksi</th>
                         @endcanany
@@ -170,15 +170,15 @@
                             </td>
                             @endif
 
-                            @can('can_invoice')
-                                <td class="px-6 py-4">
-                                    <button type="button" onclick="showInvoiceLogs('pwp', {{ $pwp->id }}, '{{ addslashes($pwp->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
-                                        <span class="bg-gray-100 {{ $pwp->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
-                                            {{ $pwp->invoice_status === true ? 'Done' : 'Not Done' }} 📋
-                                        </span>
-                                    </button>
-                                </td>
+                            <td class="px-6 py-4">
+                                <button type="button" onclick="showInvoiceLogs('pwp', {{ $pwp->id }}, '{{ addslashes($pwp->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
+                                    <span class="bg-gray-100 {{ $pwp->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
+                                        {{ $pwp->invoice_status === true ? 'Done' : 'Not Done' }} 📋
+                                    </span>
+                                </button>
+                            </td>
 
+                            @if(auth()->user()->can('can_invoice') || auth()->user()->hasAnyRole(['superadmin', 'admin']))
                                 <td class="px-6 py-4">
                                     <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
                                         {{ $pwp->invoice_done_count ?? 0 }}
@@ -209,7 +209,7 @@
                                         {{ $pwp->invoice_cancel_at ?? '-' }}
                                     </span>
                                 </td>
-                            @endcan
+                            @endif
 
                             <td class="px-6 py-4 text-center">
                                 <div class="flex flex-row justify-center items-center gap-x-2">
@@ -220,6 +220,7 @@
                                         </a>
                                         @endcan
                                     @elseif($pwp->invoice_status == 1 && auth()->user()->hasAnyRole(['superadmin', 'admin'])) 
+                                        @can('can_edit')
                                         <a href="{{ route('pwp.edit', ['pwp' => $pwp->id, 'page' => request('page')]) }}" title="Edit Data">
                                             ✎
                                         </a>
@@ -245,14 +246,16 @@
 
                                     @can('can_update')
                                     @if(\App\Services\CategorySpvService::userCanToggleReadiness(auth()->user(), $pwp->categories))
-                                        @if($pwp->status_email == 'aktif')
+                                        @if($pwp->status_email == 'aktif' && $pwp->invoice_status == 0)
                                             <a href="{{ route('pwp.status-tidak-aktif', $pwp->id) }}" title="Tandai Sudah Siap ke AR">
                                                 ✅
                                             </a>
                                         @else
-                                            <a href="{{ route('pwp.status-aktif', $pwp->id) }}" title="Tandai Belum Siap ke AR">
-                                                ❌
-                                            </a>
+                                            @if ($pwp->invoice_status == 0)
+                                                                                <a href="{{ route('pwp.status-aktif', $pwp->id) }}" title="Tandai Belum Siap ke AR">
+                                                    ❌
+                                                </a>        
+                                            @endif
                                         @endif
                                     @endif
                                     @endcan
@@ -268,6 +271,11 @@
                                             </a>
                                         @endif
                                     @endcan
+
+                                    {{-- Tombol Lihat Riwayat Log Invoice --}}
+                                    <button type="button" onclick="showInvoiceLogs('pwp', {{ $pwp->id }}, '{{ addslashes($pwp->no_raf ?? '-') }}')" title="Lihat Riwayat Log Invoice (Done / Cancel Oleh & Tanggal/Jam)" class="hover:opacity-80 transition cursor-pointer">
+                                        📋
+                                    </button>
 
                                     @can('can_delete')
                                     <form action="{{ route('pwp.destroy', $pwp->id) }}" method="POST" class="inline">

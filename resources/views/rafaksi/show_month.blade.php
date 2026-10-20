@@ -92,15 +92,15 @@
                         @if (!auth()->user()->hasRole('AR OI'))
                             <th class="px-6 py-4 text-right">Status Kirim AR</th>
                         @endif
-                        @can('can_invoice')
-                            <th class="px-6 py-4 text-right">Status Invoice</th>
+                        <th class="px-6 py-4 text-right">Status Invoice</th>
+                        @if(auth()->user()->can('can_invoice') || auth()->user()->hasAnyRole(['superadmin', 'admin']))
                             <th class="px-6 py-4 text-right">Invoice Done Count</th>
                             <th class="px-6 py-4 text-right">Latest Done By</th>
                             <th class="px-6 py-4 text-right">Latest Done At</th>
                             <th class="px-6 py-4 text-right">Invoice Cancel Count</th>
                             <th class="px-6 py-4 text-right">Latest Cancel By</th>
                             <th class="px-6 py-4 text-right">Latest Cancel At</th>
-                        @endcan
+                        @endif
 
                         @canany(['can_edit', 'can_renew', 'can_delete', 'can_update', 'can_print'])
                             <th class="px-6 py-4 text-right">Aksi</th>
@@ -184,15 +184,15 @@
                             </td>
                             @endif
 
-                            @can('can_invoice')
-                                <td class="px-6 py-4">
-                                    <button type="button" onclick="showInvoiceLogs('rafaksi', {{ $rafaksi->id }}, '{{ addslashes($rafaksi->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
-                                        <span class="bg-gray-100 {{ $rafaksi->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
-                                            {{ $rafaksi->invoice_status === true ? 'Done' : 'Not Done' }} 📋
-                                        </span>
-                                    </button>
-                                </td>
+                            <td class="px-6 py-4">
+                                <button type="button" onclick="showInvoiceLogs('rafaksi', {{ $rafaksi->id }}, '{{ addslashes($rafaksi->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
+                                    <span class="bg-gray-100 {{ $rafaksi->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
+                                        {{ $rafaksi->invoice_status === true ? 'Done' : 'Not Done' }} 📋
+                                    </span>
+                                </button>
+                            </td>
 
+                            @if(auth()->user()->can('can_invoice') || auth()->user()->hasAnyRole(['superadmin', 'admin']))
                                 <td class="px-6 py-4">
                                     <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
                                         {{ $rafaksi->invoice_done_count ?? 0 }}
@@ -223,7 +223,7 @@
                                         {{ $rafaksi->invoice_cancel_at ?? '-' }}
                                     </span>
                                 </td>
-                            @endcan
+                            @endif
 
                             {{-- Aksi (Opsional) --}}
                             <td class="px-6 py-4 text-center">
@@ -279,14 +279,16 @@
                                     
                                     @can('can_update')
                                         @if(\App\Services\CategorySpvService::userCanToggleReadiness(auth()->user(), $rafaksi->categories))
-                                            @if($rafaksi->status_email == 'aktif')
+                                            @if($rafaksi->status_email == 'aktif' && $rafaksi->invoice_status == 0)
                                                 <a href="{{ route('rafaksi.status-tidak-aktif', $rafaksi->id) }}" title="Tandai Sudah Siap ke AR">
                                                     ✅
                                                 </a>
                                             @else
-                                                <a href="{{ route('rafaksi.status-aktif', $rafaksi->id) }}" title="Tandai Belum Siap ke AR">
-                                                    ❌
-                                                </a>
+                                                @if ($rafaksi->invoice_status == 0)
+                                                    <a href="{{ route('rafaksi.status-aktif', $rafaksi->id) }}" title="Tandai Belum Siap ke AR">
+                                                        ❌
+                                                    </a>        
+                                                @endif
                                             @endif
                                         @endif
                                     @endcan
@@ -302,6 +304,11 @@
                                             </a>
                                         @endif
                                     @endcan
+
+                                    {{-- Tombol Lihat Riwayat Log Invoice --}}
+                                    <button type="button" onclick="showInvoiceLogs('rafaksi', {{ $rafaksi->id }}, '{{ addslashes($rafaksi->no_raf ?? '-') }}')" title="Lihat Riwayat Log Invoice (Done / Cancel Oleh & Tanggal/Jam)" class="hover:opacity-80 transition cursor-pointer">
+                                        📋
+                                    </button>
 
 
                                     @can('can_delete')

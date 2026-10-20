@@ -57,15 +57,72 @@
             <div class="grid grid-cols-3 gap-4 px-6 py-4">
                 <dt class="text-sm font-semibold text-gray-500">Dokumen</dt>
                 <dd class="col-span-2 text-sm">
-                    @if($loc->document_path)
-                        <a href="{{ route('loc.download', $loc->id) }}" class="text-blue-600 hover:underline font-medium">
-                            {{ $loc->document_original_name ?? 'Download dokumen' }}
-                        </a>
+                    @if($loc->documents->isNotEmpty() || $loc->document_path)
+                        <ul class="space-y-2">
+                            @foreach($loc->documents as $doc)
+                                <li>
+                                    <a href="{{ route('loc.documents.download', $doc->id) }}" class="text-blue-600 hover:text-blue-800 hover:underline font-medium inline-flex items-center gap-1.5" target="_blank">
+                                        <span class="text-rose-500 font-bold text-[10px] uppercase px-1 py-0.5 rounded bg-rose-50 border border-rose-200">PDF</span>
+                                        {{ $doc->filename }}
+                                    </a>
+                                </li>
+                            @endforeach
+                            @if($loc->document_path)
+                                <li>
+                                    <a href="{{ route('loc.download', $loc->id) }}" class="text-blue-600 hover:text-blue-800 hover:underline font-medium inline-flex items-center gap-1.5" target="_blank">
+                                        <span class="text-amber-600 font-bold text-[10px] uppercase px-1 py-0.5 rounded bg-amber-50 border border-amber-200">UTAMA</span>
+                                        {{ $loc->document_original_name ?? basename($loc->document_path) }}
+                                    </a>
+                                </li>
+                            @endif
+                        </ul>
                     @else
                         <span class="text-gray-400">Belum ada dokumen diupload.</span>
                     @endif
                 </dd>
             </div>
+
+            <div class="grid grid-cols-3 gap-4 px-6 py-4">
+                <dt class="text-sm font-semibold text-gray-500">Status Invoice</dt>
+                <dd class="col-span-2 text-sm flex flex-wrap items-center gap-3">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold {{ $loc->invoice_status ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-gray-100 text-gray-700 border border-gray-200' }}">
+                        {{ $loc->invoice_status ? 'DONE' : 'NOT DONE' }}
+                    </span>
+                    <button type="button" onclick="showInvoiceLogs('loc', {{ $loc->id }}, '{{ addslashes($loc->no_raf ?? '-') }}')" class="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold transition shadow-xs" title="Lihat Riwayat Log Invoice">
+                        <span>📋</span> Lihat Riwayat Log Invoice
+                    </button>
+                </dd>
+            </div>
+
+            @if($loc->invoice_done_by || $loc->invoice_cancel_by)
+            <div class="grid grid-cols-3 gap-4 px-6 py-4 bg-gray-50/60">
+                <dt class="text-sm font-semibold text-gray-500">Info Terakhir Invoice</dt>
+                <dd class="col-span-2 text-xs space-y-1.5 text-gray-700">
+                    @if($loc->invoice_done_by)
+                        <div class="flex items-center gap-2">
+                            <span class="px-1.5 py-0.5 rounded bg-green-100 text-green-800 font-bold text-[10px]">LATEST DONE</span>
+                            <span class="font-semibold text-gray-800">{{ $loc->invoice_done_by }}</span>
+                            <span class="text-gray-400">pada</span>
+                            <span class="text-gray-600 font-mono">{{ $loc->invoice_done_at ?? '-' }}</span>
+                            @if($loc->invoice_done_count)
+                                <span class="text-[10px] text-gray-400 font-semibold">({{ $loc->invoice_done_count }}x Done)</span>
+                            @endif
+                        </div>
+                    @endif
+                    @if($loc->invoice_cancel_by)
+                        <div class="flex items-center gap-2">
+                            <span class="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-bold text-[10px]">LATEST CANCEL</span>
+                            <span class="font-semibold text-gray-800">{{ $loc->invoice_cancel_by }}</span>
+                            <span class="text-gray-400">pada</span>
+                            <span class="text-gray-600 font-mono">{{ $loc->invoice_cancel_at ?? '-' }}</span>
+                            @if($loc->invoice_cancel_count)
+                                <span class="text-[10px] text-gray-400 font-semibold">({{ $loc->invoice_cancel_count }}x Cancel)</span>
+                            @endif
+                        </div>
+                    @endif
+                </dd>
+            </div>
+            @endif
             <!-- <div class="grid grid-cols-3 gap-4 px-6 py-4">
                 <dt class="text-sm font-semibold text-gray-500">Status Approval</dt>
                 <dd class="col-span-2 text-sm">

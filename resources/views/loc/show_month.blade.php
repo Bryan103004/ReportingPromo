@@ -92,15 +92,17 @@
                         @if (!auth()->user()->hasRole('AR OI'))
                             <th class="px-6 py-4 text-right">Status</th>
                         @endif
-                        @can('can_invoice')
-                            <th class="px-6 py-4 text-right">Status Invoice</th>
+
+                        <th class="px-6 py-4 text-right">Status Invoice</th>
+
+                        @if(auth()->user()->can('can_invoice') || auth()->user()->hasAnyRole(['superadmin', 'admin']))
                             <th class="px-6 py-4 text-right">Invoice Done Count</th>
                             <th class="px-6 py-4 text-right">Latest Done By</th>
                             <th class="px-6 py-4 text-right">Latest Done At</th>
                             <th class="px-6 py-4 text-right">Invoice Cancel Count</th>
                             <th class="px-6 py-4 text-right">Latest Cancel By</th>
                             <th class="px-6 py-4 text-right">Latest Cancel At</th>
-                        @endcan
+                        @endif
                         @canany(['can_edit', 'can_renew', 'can_delete', 'can_update', 'can_print', 'can_invoice'])
                             <th class="px-6 py-4 text-right">Aksi</th>
                         @endcanany
@@ -141,7 +143,27 @@
                         
                             {{-- No RAF --}}
                             <td class="px-6 py-4 font-bold text-gray-800">
-                                {{ $loc->no_raf ?? '-' }}
+                                <div>{{ $loc->no_raf ?? '-' }}</div>
+                                @if($loc->documents->isNotEmpty() || $loc->document_path)
+                                    <div class="mt-1 flex flex-wrap gap-1">
+                                        @foreach($loc->documents as $doc)
+                                            <a href="{{ route('loc.documents.download', $doc->id) }}" 
+                                               target="_blank"
+                                               title="Download Dokumen: {{ $doc->filename }}"
+                                               class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-[10px] font-medium transition">
+                                                <span>📎</span> {{ Str::limit($doc->filename, 15) }}
+                                            </a>
+                                        @endforeach
+                                        @if($loc->document_path)
+                                            <a href="{{ route('loc.download', $loc->id) }}" 
+                                               target="_blank"
+                                               title="Download Dokumen Utama"
+                                               class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 text-[10px] font-medium transition">
+                                                <span>📎</span> Dokumen Utama
+                                            </a>
+                                        @endif
+                                    </div>
+                                @endif
                             </td>
 
                             {{-- Store --}}
@@ -173,15 +195,16 @@
                             </td>
                             @endif
 
-                            @can('can_invoice')
-                                <td class="px-6 py-4">
-                                    <button type="button" onclick="showInvoiceLogs('loc', {{ $loc->id }}, '{{ addslashes($loc->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Lihat Riwayat Log Invoice">
-                                        <span class="bg-gray-100 {{ $loc->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
-                                            {{ $loc->invoice_status === true ? 'Done' : 'Not Done' }} 📋
-                                        </span>
-                                    </button>
-                                </td>
+                            <td class="px-6 py-4">
+                                <button type="button" onclick="showInvoiceLogs('loc', {{ $loc->id }}, '{{ addslashes($loc->no_raf ?? '-') }}')" class="hover:opacity-80 transition cursor-pointer" title="Klik untuk Melihat Riwayat Log Invoice">
+                                    <span class="bg-gray-100 {{ $loc->invoice_status === true ? 'text-green-700' : 'text-gray-700' }} border border-gray-200 font-bold px-2 py-1 rounded text-xs inline-flex items-center gap-1">
+                                        {{ $loc->invoice_status === true ? 'Done' : 'Not Done' }} 📋
+                                    </span>
+                                </button>
+                            </td>
 
+
+                            @if(auth()->user()->can('can_invoice') || auth()->user()->hasAnyRole(['superadmin', 'admin']))
                                 <td class="px-6 py-4">
                                     <span class="bg-gray-100 text-green-600 border border-gray-200 font-semibold px-2 py-1 rounded text-xs">
                                         {{ $loc->invoice_done_count ?? 0 }}
@@ -212,7 +235,7 @@
                                         {{ $loc->invoice_cancel_at ?? '-' }}
                                     </span>
                                 </td>
-                            @endcan
+                            @endif
 
                             {{-- Aksi --}}
                             <td class="px-6 py-4 text-center">
@@ -252,29 +275,36 @@
 
                                     @can('can_update')
                                         @if(\App\Services\CategorySpvService::userCanToggleReadiness(auth()->user(), $loc->categories))
-                                            @if($loc->status_email == 'aktif')
+                                            @if($loc->status_email == 'aktif' && $loc->invoice_status == 0)
                                                 <a href="{{ route('loc.status-tidak-aktif', $loc->id) }}" title="Tandai Sudah Siap ke AR">
                                                     ✅
                                                 </a>
                                             @else
-                                                <a href="{{ route('loc.status-aktif', $loc->id) }}" title="Tandai Belum Siap ke AR">
-                                                    ❌
-                                                </a>
+                                                @if ($loc->invoice_status == 0)
+                                                    <a href="{{ route('loc.status-aktif', $loc->id) }}" title="Tandai Belum Siap ke AR">
+                                                        ❌
+                                                    </a>
+                                                @endif
                                             @endif
                                         @endif
                                     @endcan
 
                                     @can('can_invoice')
                                         @if($loc->invoice_status == 1)
-                                            <a href="{{ route('loc.invoice-status', $rafaksi->id) }}" title="Tandai Belum Invoicing">
+                                            <a href="{{ route('loc.invoice-status', $loc->id) }}" title="Tandai Belum Invoicing">
                                                 📑
                                             </a>
                                         @else
-                                            <a href="{{ route('loc.invoice-status', $rafaksi->id) }}" title="Tandai Sudah Invoicing">
+                                            <a href="{{ route('loc.invoice-status', $loc->id) }}" title="Tandai Sudah Invoicing">
                                                 📑
                                             </a>
                                         @endif
                                     @endcan
+
+                                    {{-- Tombol Lihat Riwayat Log Invoice --}}
+                                    <button type="button" onclick="showInvoiceLogs('loc', {{ $loc->id }}, '{{ addslashes($loc->no_raf ?? '-') }}')" title="Lihat Riwayat Log Invoice (Done / Cancel Oleh & Tanggal/Jam)" class="hover:opacity-80 transition cursor-pointer">
+                                        📋
+                                    </button>
 
                                     @can('can_delete')
                                     {{-- Tombol Hapus --}}

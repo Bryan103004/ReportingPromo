@@ -78,7 +78,7 @@
         content.classList.add('hidden');
         empty.classList.add('hidden');
 
-        fetch(`/invoice-logs/${type}/${id}`)
+        fetch(`{{  url('/invoice-logs') }}/${type}/${id}`)
             .then(res => {
                 if (!res.ok) throw new Error('Gagal mengambil data');
                 return res.json();

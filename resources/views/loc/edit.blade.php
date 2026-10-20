@@ -172,27 +172,53 @@
             </div> 
 
             <div class="mb-8 mx-6">
-                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Dokumen (PDF)</label>
+                <label class="block text-sm font-semibold text-gray-700 mb-1.5">Dokumen Terlampir (PDF)</label>
 
-                @if ($loc->documents->isNotEmpty())
-                    <ul class="mb-3 divide-y divide-gray-200 rounded-md border border-gray-200">
-                        @foreach ($loc->documents as $doc)
-                            <li class="flex items-center justify-between gap-3 px-4 py-2 text-sm">
-                                <a href="{{ route('loc.documents.download', $doc->id) }}" class="text-blue-600 hover:underline truncate" target="_blank">
-                                    {{ $doc->filename }}
-                                </a>
-                                <button type="button" onclick="submitDocumentDelete('{{ route('loc.documents.destroy', $doc->id) }}')" class="text-red-500 hover:text-red-700 text-xs font-semibold shrink-0">Hapus</button>
-                            </li>
-                        @endforeach
-                    </ul>
+                @if ($loc->documents->isNotEmpty() || $loc->document_path)
+                    <div class="mb-4">
+                        <ul class="divide-y divide-gray-200 rounded-lg border border-gray-200 bg-gray-50/50">
+                            @foreach ($loc->documents as $doc)
+                                <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-white transition-colors">
+                                    <div class="flex items-center gap-2 truncate">
+                                        <span class="text-rose-500 font-bold text-xs uppercase px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200">PDF</span>
+                                        <a href="{{ route('loc.documents.download', $doc->id) }}" class="text-blue-600 hover:text-blue-800 hover:underline font-medium truncate" target="_blank" title="Klik untuk membuka/mengunduh">
+                                            {{ $doc->filename }}
+                                        </a>
+                                    </div>
+                                    <button type="button" onclick="submitDocumentDelete('{{ route('loc.documents.destroy', $doc->id) }}')" class="text-red-500 hover:text-red-700 hover:bg-red-50 px-2.5 py-1 rounded-md text-xs font-semibold shrink-0 transition border border-transparent hover:border-red-200">
+                                        🗑️ Hapus
+                                    </button>
+                                </li>
+                            @endforeach
+                            @if($loc->document_path)
+                                <li class="flex items-center justify-between gap-3 px-4 py-2.5 text-sm bg-yellow-50/40">
+                                    <div class="flex items-center gap-2 truncate">
+                                        <span class="text-amber-600 font-bold text-xs uppercase px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200">UTAMA</span>
+                                        <a href="{{ route('loc.download', $loc->id) }}" class="text-blue-600 hover:underline font-medium truncate" target="_blank">
+                                            {{ $loc->document_original_name ?? basename($loc->document_path) }}
+                                        </a>
+                                    </div>
+                                    <span class="text-[11px] text-gray-400 italic">Dokumen Utama</span>
+                                </li>
+                            @endif
+                        </ul>
+                    </div>
+                @else
+                    <div class="mb-4 flex items-center gap-2 p-3 text-xs text-amber-700 bg-amber-50 rounded-lg border border-amber-200">
+                        <span>ℹ️</span> Belum ada dokumen PDF yang terlampir pada LOC ini.
+                    </div>
                 @endif
 
-                <label for="document_file" class="block text-xs font-medium text-gray-500 mb-1.5">Tambah Dokumen Baru</label>
-                <input type="file" name="document_file[]" id="document_file" accept="application/pdf" multiple class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('document_file.*') border-red-500 @enderror">
-                <p class="text-xs text-gray-500 mt-2">Format PDF, maksimal 10MB per file. Bisa pilih lebih dari satu file.</p>
-                @error('document_file.*')
-                    <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
-                @enderror
+                <div class="rounded-lg border border-dashed border-gray-300 p-4 bg-gray-50/30">
+                    <label for="document_file" class="block text-xs font-bold text-gray-700 mb-1">
+                        + Unggah Dokumen Tambahan
+                    </label>
+                    <input type="file" name="document_file[]" id="document_file" accept="application/pdf" multiple class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors @error('document_file.*') border-red-500 @enderror">
+                    <p class="text-xs text-gray-500 mt-1.5">Format PDF, maksimal 10MB per file. Bisa memilih lebih dari satu file sekaligus.</p>
+                    @error('document_file.*')
+                        <p class="text-xs text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
             </div>
 
             {{-- approve button moved below to avoid nested form --}}

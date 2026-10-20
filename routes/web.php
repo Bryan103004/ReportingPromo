@@ -124,6 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/loc/{loc}/approve', [LocController::class, 'approve'])->name('loc.approve');
     Route::get('/loc/{loc}/download', [LocController::class, 'downloadDocument'])->name('loc.download');
     Route::get('/loc/documents/{document}/download', [LocController::class, 'downloadDocumentFile'])->name('loc.documents.download');
+    Route::delete('/loc/documents/{document}', [LocController::class, 'deleteDocumentFile'])->name('loc.documents.destroy');
     Route::get('/loc/{loc}/status-tidak-aktif', [LocController::class, 'statusTidakAktif'])->name('loc.status-tidak-aktif');
     Route::get('/loc/{loc}/status-aktif', [LocController::class, 'statusAktif'])->name('loc.status-aktif');
     Route::get('/loc/{loc}/invoice-status', [LocController::class, 'updateStatusInvoice'])->name('loc.invoice-status');
