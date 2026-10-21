@@ -96,9 +96,13 @@
                     <div class="stat-number" style="color: #16a34a;">{{ number_format($successCount) }}</div>
                     <div class="stat-label">Data Baru (Masuk)</div>
                 </div>
+                <div class="stat-card" style="background-color: #f5f3ff; border-color: #ddd6fe;">
+                    <div class="stat-number" style="color: #7c3aed;">{{ number_format($updatedCount ?? 0) }}</div>
+                    <div class="stat-label">Data Diupdate</div>
+                </div>
                 <div class="stat-card skipped">
                     <div class="stat-number" style="color: #64748b;">{{ number_format($skippedCount) }}</div>
-                    <div class="stat-label">Sudah Ada (Dilewati)</div>
+                    <div class="stat-label">Sudah Ada (Sama)</div>
                 </div>
                 <div class="stat-card failed">
                     <div class="stat-number" style="color: #dc2626;">{{ number_format($failedCount) }}</div>
@@ -107,7 +111,7 @@
             </div>
 
             <div class="alert-box alert-info">
-                💡 <strong>Catatan:</strong> Data yang sudah pernah ada di database (<strong>{{ number_format($skippedCount) }}</strong> baris) sengaja <strong>dilewati (tidak ditimpa)</strong> agar tidak mengubah data/status yang sudah diproses di website.
+                💡 <strong>Catatan:</strong> Data yang nomor RAF-nya sudah ada di database namun nilai <strong>Nominal, PPN, atau Amount Incl PPN</strong> berubah/berbeda (<strong>{{ number_format($updatedCount ?? 0) }}</strong> baris) otomatis <strong>ditimpa (diperbarui)</strong> dengan data promo terbaru tanpa mengubah status invoice, status email, approval, maupun dokumen lainnya. Data yang nilainya sama (<strong>{{ number_format($skippedCount) }}</strong> baris) dilewati (skip).
             </div>
 
             {{-- Tabel Baris yang Gagal --}}

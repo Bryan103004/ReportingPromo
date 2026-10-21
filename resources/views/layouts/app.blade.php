@@ -155,6 +155,7 @@
             </footer>
         </div>
         <x-invoice-log-modal />
+        <x-goodwill-payment-modal />
         @livewireScripts
     </body>
     <script>

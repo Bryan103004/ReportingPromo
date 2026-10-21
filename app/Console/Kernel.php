@@ -25,6 +25,11 @@ class Kernel extends ConsoleKernel
             ->everyThreeHours()
             ->withoutOverlapping()
             ->runInBackground();
+
+        $schedule->command('import:goodwill')
+            ->everyThreeHours()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**

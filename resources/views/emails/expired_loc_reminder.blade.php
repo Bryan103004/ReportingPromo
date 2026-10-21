@@ -43,7 +43,7 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $loc->no_raf ?? '-' }}</td>
                         <td>{{ $loc->periode_akhir ? \Carbon\Carbon::parse($loc->periode_akhir)->format('d M Y') : '-' }}</td>
-                        <td>{{ $loc->tokos->pluck('nama_toko')->implode(', ') ?: '-' }}</td>                        <td>
+                        <td>{{ $loc->tokos->pluck('nama_toko')->implode(', ') ?: '-' }}</td>
                         <td>
                             <a href="{{ route('loc.renew.index', ['id' => $loc->id]) }}">
                                 Lihat Detail

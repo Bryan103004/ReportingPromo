@@ -34,9 +34,10 @@
             <span class="font-bold">Ketentuan Proses Import LOC:</span>
             Sistem menggunakan pendekatan <em>Best-Effort & Skip</em>:
             <ul class="list-disc list-inside mt-1 space-y-0.5 text-blue-900">
-                <li><strong>Sudah Ada (Skip)</strong>: Data LOC yang nomor RAF-nya sudah pernah terdaftar di database akan <em>dilewati secara otomatis dan TIDAK DITIMPA</em> agar status invoice & email yang sudah ada tetap aman terjaga.</li>
+                <li><strong>Data Baru</strong>: Baris valid yang nomor RAF-nya belum ada di database akan langsung disimpan dan diasosiasikan dengan toko terkait.</li>
+                <li><strong>Data Diupdate (Nimpa)</strong>: Jika nomor RAF sudah ada di database namun nilai <em>Nominal, PPN, atau Amount Incl PPN</em> di file CSV berbeda/berubah, sistem otomatis <strong>menimpa data lama</strong> dengan data terbaru tanpa mengubah status invoice, status email, approval, maupun dokumen lampiran.</li>
+                <li><strong>Sudah Ada (Sama)</strong>: Jika nomor RAF sudah ada dan nilai nominal/PPN-nya sudah sama persis, data dilewati (skip).</li>
                 <li><strong>Gagal / Error</strong>: Baris CSV yang kolom wajibnya (No RAF/Supplier) kosong atau alias tokonya tidak dikenali akan di-skip sebagai error dan dikirimkan email alert ke daftar <strong>Email Tambahan</strong>.</li>
-                <li><strong>Data Baru</strong>: Baris valid yang belum ada di database akan langsung disimpan dan diasosiasikan dengan toko terkait.</li>
             </ul>
         </div>
     </div>
@@ -52,7 +53,8 @@
                         <th class="px-6 py-4">Nama File CSV</th>
                         <th class="px-6 py-4 text-center">Total Baris</th>
                         <th class="px-6 py-4 text-center">Data Baru</th>
-                        <th class="px-6 py-4 text-center">Sudah Ada (Skip)</th>
+                        <th class="px-6 py-4 text-center">Data Diupdate</th>
+                        <th class="px-6 py-4 text-center">Sudah Ada (Sama)</th>
                         <th class="px-6 py-4 text-center">Gagal / Error</th>
                         <th class="px-6 py-4 text-center">Status</th>
                         <th class="px-6 py-4 text-right">Rincian</th>
@@ -82,6 +84,9 @@
                             </td>
                             <td class="px-6 py-4 text-center font-bold text-green-600 text-xs">
                                 {{ number_format($log->success_count) }}
+                            </td>
+                            <td class="px-6 py-4 text-center font-bold text-indigo-600 text-xs">
+                                {{ number_format($log->updated_count ?? 0) }}
                             </td>
                             <td class="px-6 py-4 text-center font-bold text-gray-500 text-xs">
                                 {{ number_format($log->skipped_count) }}

@@ -8,6 +8,7 @@
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">No</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Category</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">No. RAF</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">No. Invoice</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Kode Supplier</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Nama Supplier</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">PT</th>
@@ -24,6 +25,7 @@
                 <td>{{ $index + 1 }}</td>
                 <td>{{ $row->categories->nama_kategori ?? 'Tanpa Kategori' }}</td>
                 <td>{{ $row->no_raf }}</td>
+                <td>{{ $row->invoiceGoodwills ? $row->invoiceGoodwills->pluck('inv_no')->filter()->implode(', ') : '-' }}</td>
                 <td>{{ $row->supplier_code }}</td>
                 <td>{{ $row->supplier_name }}</td>
                 <td>{{ $row->tokos()->pluck('nama_pt')->unique()->implode(', ') ?: '-' }}</td>
@@ -39,7 +41,7 @@
         @if($data->count() > 0)
         <tfoot>
             <tr>
-                <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="10" align="right"><b>Grand Total:</b></td>
+                <td style="background-color: #FF4E73DF; color: #FFFFFF;" colspan="11" align="right"><b>Grand Total:</b></td>
                 <td style="background-color: #FF4E73DF; color: #FFFFFF;" align="right"><b>{{ $data->sum('nominal') }}</b></td>
             </tr>
         </tfoot>

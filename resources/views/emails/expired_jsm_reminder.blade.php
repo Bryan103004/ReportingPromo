@@ -43,7 +43,7 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $jsm->no_raf ?? '-' }}</td>
                         <td>{{ $jsm->periode_akhir ? \Carbon\Carbon::parse($jsm->periode_akhir)->format('d M Y') : '-' }}</td>
-                        <td>{{ $jsm->tokos->pluck('nama_toko')->implode(', ') ?: '-' }}</td>                        <td>
+                        <td>{{ $jsm->tokos->pluck('nama_toko')->implode(', ') ?: '-' }}</td>
                         <td>
                             <a href="{{ route('jsm.renew.index', ['id' => $jsm->id]) }}">
                                 Lihat Detail

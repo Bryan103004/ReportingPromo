@@ -17,6 +17,7 @@ class ImportLocLog extends Model
         'finished_at'   => 'datetime',
         'total_rows'    => 'integer',
         'success_count' => 'integer',
+        'updated_count' => 'integer',
         'skipped_count' => 'integer',
         'failed_count'  => 'integer',
     ];

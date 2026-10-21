@@ -79,4 +79,19 @@ class Loc extends Model
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
+
+    public function invoiceGoodwills()
+    {
+        return $this->hasMany(InvoiceGoodwill::class, 'so_no', 'no_raf');
+    }
+
+    public function latestInvoiceGoodwill()
+    {
+        return $this->hasOne(InvoiceGoodwill::class, 'so_no', 'no_raf')->latestOfMany();
+    }
+
+    public function paymentGoodwills()
+    {
+        return $this->hasMany(PaymentGoodwill::class, 'so_no', 'no_raf');
+    }
 }

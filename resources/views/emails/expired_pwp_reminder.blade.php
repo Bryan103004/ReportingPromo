@@ -43,7 +43,8 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $pwp->no_raf ?? '-' }}</td>
                         <td>{{ $pwp->periode_akhir ? \Carbon\Carbon::parse($pwp->periode_akhir)->format('d M Y') : '-' }}</td>
-                        <td>{{ $pwp->tokos->pluck('nama_toko')->implode(', ') ?: '-' }}</td>                        <td>
+                        <td>{{ $pwp->tokos->pluck('nama_toko')->implode(', ') ?: '-' }}</td>
+                        <td>
                             <a href="{{ route('pwp.renew.index', ['id' => $pwp->id]) }}">
                                 Lihat Detail
                             </a>

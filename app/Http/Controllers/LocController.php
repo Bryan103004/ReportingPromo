@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 use App\Exports\DetailLocReport;
 use App\Models\Category;
 use App\Models\ImportLocLog;
+use App\Models\InvoiceGoodwill;
 use App\Models\InvoiceLog;
 use App\Models\Loc;
 use App\Models\LocDocument;
+use App\Models\PaymentGoodwill;
 use App\Models\Region;
 use App\Models\SupplierRafaksi;
 use App\Models\Toko;
@@ -189,7 +191,7 @@ class LocController extends Controller
         $periodeStart = Carbon::createFromDate($year, $month, 1)->startOfDay();
         $periodeEnd = (clone $periodeStart)->addMonth();
 
-        $query = Loc::with(['tokos', 'documents', 'categories'])
+        $query = Loc::with(['tokos', 'documents', 'categories', 'invoiceGoodwills.payments'])
             ->where('periode_bulan', '>=', $periodeStart)
             ->where('periode_bulan', '<', $periodeEnd)
             ->orderBy('created_at', 'desc');
@@ -240,6 +242,12 @@ class LocController extends Controller
 
         if ($request->filled('no_raf')) {
             $query->where('no_raf', $request->no_raf);
+        }
+
+        if ($request->filled('no_invoice')) {
+            $query->whereHas('invoiceGoodwills', function ($q) use ($request) {
+                $q->where('inv_no', 'like', '%' . $request->no_invoice . '%');
+            });
         }
 
         // If user has limited toko access, restrict query
@@ -309,6 +317,13 @@ class LocController extends Controller
     }
 
     public function edit(Request $request, Loc $loc){
+        if ($loc->invoice_status == 1 && !auth()->user()->hasAnyRole(['superadmin', 'admin'])) {
+            return redirect()->route('loc.show_month', [
+                'year'  => Carbon::parse($loc->periode_bulan)->year,
+                'month' => Carbon::parse($loc->periode_bulan)->month,
+            ])->with('error', 'Data LOC tidak dapat diedit karena sudah berstatus Invoice (Done).');
+        }
+
         $year = Carbon::parse($loc->periode_bulan)->year;
         $month = Carbon::parse($loc->periode_bulan)->month;
         $supplierRafaksi = SupplierRafaksi::all();
@@ -321,6 +336,12 @@ class LocController extends Controller
     }
 
     public function update(Request $request, Loc $loc){
+        if ($loc->invoice_status == 1 && !auth()->user()->hasAnyRole(['superadmin', 'admin'])) {
+            return redirect()->route('loc.show_month', [
+                'year'  => Carbon::parse($loc->periode_bulan)->year,
+                'month' => Carbon::parse($loc->periode_bulan)->month,
+            ])->with('error', 'Data LOC tidak dapat diedit karena sudah berstatus Invoice (Done).');
+        }
         $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
@@ -1006,5 +1027,81 @@ class LocController extends Controller
 
         $logs = ImportLocLog::orderBy('started_at', 'desc')->paginate(20);
         return view('loc.import_logs', compact('logs'));
+    }
+
+    /**
+     * Mengambil detail invoice dan daftar alokasi payment Goodwill untuk ditampilkan di modal.
+     */
+    public function getGoodwillPayments(Request $request)
+    {
+        $invNo = $request->query('inv_no');
+        $soNo  = $request->query('so_no');
+
+        if (!$invNo && !$soNo) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter inv_no atau so_no harus disertakan.',
+            ], 400);
+        }
+
+        $invoiceQuery = InvoiceGoodwill::with('payments');
+        if ($invNo) {
+            $invoiceQuery->where('inv_no', $invNo);
+        } else {
+            $invoiceQuery->where('so_no', $soNo);
+        }
+
+        $invoice = $invoiceQuery->first();
+
+        // Cari payment yang mungkin ada
+        $payments = [];
+        if ($invoice && $invoice->payments->isNotEmpty()) {
+            $payments = $invoice->payments;
+        } else {
+            $payQuery = PaymentGoodwill::query();
+            if ($invNo) {
+                $payQuery->where('inv_no', $invNo);
+            } elseif ($soNo) {
+                $payQuery->where('so_no', $soNo);
+            }
+            $payments = $payQuery->orderBy('allocation_date', 'asc')->get();
+        }
+
+        return response()->json([
+            'success' => true,
+            'invoice' => $invoice ? [
+                'client'            => $invoice->client ?? '-',
+                'inv_no'            => $invoice->inv_no,
+                'inv_date'          => $invoice->inv_date ? $invoice->inv_date->format('d/m/Y') : '-',
+                'inv_time'          => $invoice->inv_time ?? '-',
+                'grand_total'       => (float) $invoice->grand_total,
+                'grand_total_fmt'   => 'Rp ' . number_format($invoice->grand_total, 2, ',', '.'),
+                'last_updated_date' => $invoice->last_updated_date ? $invoice->last_updated_date->format('d/m/Y') : '-',
+                'last_updated_time' => $invoice->last_updated_time ?? '-',
+                'status'            => $invoice->status ?? '-',
+                'so_no'             => $invoice->so_no ?? '-',
+                'bill_date'         => $invoice->bill_date ? $invoice->bill_date->format('d/m/Y') : '-',
+                'bill_time'         => $invoice->bill_time ?? '-',
+                'paid'              => $invoice->paid ?? '-',
+            ] : null,
+            'payments' => collect($payments)->map(function ($p) {
+                return [
+                    'id'                 => $p->id,
+                    'client'             => $p->client,
+                    'inv_no'             => $p->inv_no,
+                    'so_no'              => $p->so_no,
+                    'allocation_no'      => $p->allocation_no,
+                    'allocation_date'    => $p->allocation_date ? \Carbon\Carbon::parse($p->allocation_date)->format('d/m/Y') : '-',
+                    'allocation_time'    => $p->allocation_time ?? '-',
+                    'allocation_amt'     => (float) $p->allocation_amt,
+                    'allocation_amt_fmt' => 'Rp ' . number_format($p->allocation_amt, 2, ',', '.'),
+                    'payment_no'         => $p->payment_no ?: '-',
+                    'payment_date'       => $p->payment_date ? \Carbon\Carbon::parse($p->payment_date)->format('d/m/Y') : '-',
+                    'payment_time'       => $p->payment_time ?: '-',
+                    'paid'               => $p->paid ?? '-',
+                    'status'             => $p->status ?? '-',
+                ];
+            }),
+        ]);
     }
 }

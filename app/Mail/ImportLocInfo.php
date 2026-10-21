@@ -13,6 +13,7 @@ class ImportLocInfo extends Mailable
     public $filename;
     public $totalRows;
     public $successCount;
+    public $updatedCount;
     public $skippedCount;
     public $failedCount;
     public $failedRows;
@@ -22,6 +23,7 @@ class ImportLocInfo extends Mailable
         $filename = '-',
         $totalRows = 0,
         $successCount = 0,
+        $updatedCount = 0,
         $skippedCount = 0,
         $failedCount = 0,
         $failedRows = null,
@@ -30,6 +32,7 @@ class ImportLocInfo extends Mailable
         $this->filename = $filename;
         $this->totalRows = (int) $totalRows;
         $this->successCount = (int) $successCount;
+        $this->updatedCount = (int) $updatedCount;
         $this->skippedCount = (int) $skippedCount;
         $this->failedCount = (int) $failedCount;
         $this->failedRows = $failedRows;

@@ -36,10 +36,10 @@ class DetailLocReport implements FromView, ShouldAutoSize, WithStyles, WithStric
 
     public function columnFormats(): array
     {
-        // MODE 1 (Export Detail): kolom Nominal ada di K (gak ada kolom Documents
-        // kayak Rafaksi/Jsm/Pwp). Biarkan Excel yang nge-format angka mentahnya.
+        // MODE 1 (Export Detail): kolom Nominal ada di L (karena ada kolom No. Invoice).
+        // Biarkan Excel yang nge-format angka mentahnya.
         if ($this->year && $this->month) {
-            return ['K' => '#,##0'];
+            return ['L' => '#,##0'];
         }
 
         // MODE 2 (Export Rekap All): kolom toko mulai dari index C (3) sampai sebelum kolom TOTAL
@@ -63,7 +63,7 @@ class DetailLocReport implements FromView, ShouldAutoSize, WithStyles, WithStric
             $periodeStart = Carbon::createFromDate($this->year, $this->month, 1)->startOfDay();
             $periodeEnd = (clone $periodeStart)->addMonth();
 
-            $query = Loc::with(['tokos','categories'])
+            $query = Loc::with(['tokos','categories', 'invoiceGoodwills'])
                 ->where('periode_bulan', '>=', $periodeStart)
                 ->where('periode_bulan', '<', $periodeEnd)
                 ->orderBy('category_id')

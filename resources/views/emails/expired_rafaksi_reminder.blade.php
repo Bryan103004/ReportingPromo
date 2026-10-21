@@ -43,7 +43,8 @@
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $rafaksi->no_raf ?? '-' }}</td>
                         <td>{{ $rafaksi->periode_akhir ? \Carbon\Carbon::parse($rafaksi->periode_akhir)->format('d M Y') : '-' }}</td>
-                        <td>{{ $rafaksi->tokos->pluck('nama_toko')->implode(', ') ?: '-' }}</td>                        <td>
+                        <td>{{ $rafaksi->tokos->pluck('nama_toko')->implode(', ') ?: '-' }}</td>
+                        <td>
                             <a href="{{ route('rafaksi.renew.index', ['id' => $rafaksi->id]) }}">
                                 Lihat Detail
                             </a>

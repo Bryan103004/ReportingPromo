@@ -83,6 +83,7 @@
                         <th class="px-6 py-4">Category</th>                        
                         <th class="px-6 py-4">Periode Promo</th>
                         <th class="px-6 py-4">No. RAF</th>
+                        <th class="px-6 py-4">No. Invoice</th>
                         <!-- <th class="px-6 py-4">Region</th> -->
                         <th class="px-6 py-4">Store</th>
                         <th class="px-6 py-4 text-right">Remarks</th>
@@ -163,6 +164,27 @@
                                             </a>
                                         @endif
                                     </div>
+                                @endif
+                            </td>
+
+                            {{-- No. Invoice Goodwill --}}
+                            <td class="px-6 py-4">
+                                @if($loc->invoiceGoodwills->isNotEmpty())
+                                    <div class="flex flex-col gap-1.5">
+                                        @foreach($loc->invoiceGoodwills as $inv)
+                                            <button type="button" 
+                                                    onclick="showGoodwillPayments('{{ addslashes($inv->inv_no) }}', '{{ addslashes($loc->no_raf ?? '') }}')" 
+                                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 hover:text-indigo-900 border border-indigo-200 transition text-left cursor-pointer shadow-xs group"
+                                                    title="Klik untuk melihat detail payment Goodwill: {{ $inv->inv_no }}">
+                                                <svg class="w-3.5 h-3.5 text-indigo-500 group-hover:scale-110 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                                </svg>
+                                                <span>{{ $inv->inv_no }}</span>
+                                            </button>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <span class="text-xs text-gray-400 font-medium italic">-</span>
                                 @endif
                             </td>
 
@@ -321,7 +343,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="20" class="px-6 py-12 text-center">
+                            <td colspan="25" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center text-gray-400">
                                     <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
                                     <span class="font-medium text-gray-500">Tidak ada data transaksi di bulan ini.</span>
@@ -334,7 +356,7 @@
                 @if($locs->count() > 0)
                 <tfoot class="bg-gray-50 border-t border-gray-200">
                     <tr>
-                        <td colspan="8" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
+                        <td colspan="9" class="px-6 py-4 text-right font-bold text-gray-800 uppercase tracking-wider text-xs">
                             Grand Total:
                         </td>
                         <td class="px-6 py-4 text-right font-bold text-blue-700 text-base">
