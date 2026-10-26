@@ -1052,6 +1052,24 @@ class LocController extends Controller
         }
 
         $invoice = $invoiceQuery->first();
+        $actualSoNo = $invoice ? $invoice->so_no : $soNo;
+
+        // Ambil semua invoice lain yang memiliki No. RAF (SO) yang sama
+        $siblingInvoices = [];
+        if ($actualSoNo) {
+            $siblingInvoices = InvoiceGoodwill::where('so_no', $actualSoNo)
+                ->orderBy('inv_date', 'asc')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'inv_no'          => $item->inv_no,
+                        'grand_total'     => (float) $item->grand_total,
+                        'grand_total_fmt' => 'Rp ' . number_format($item->grand_total, 2, ',', '.'),
+                        'paid'            => $item->paid,
+                        'inv_date'        => $item->inv_date ? $item->inv_date->format('d/m/Y') : '-',
+                    ];
+                });
+        }
 
         // Cari payment yang mungkin ada
         $payments = [];
@@ -1100,8 +1118,10 @@ class LocController extends Controller
                     'payment_time'       => $p->payment_time ?: '-',
                     'paid'               => $p->paid ?? '-',
                     'status'             => $p->status ?? '-',
+
                 ];
             }),
+            'sibling_invoices'   => $siblingInvoices,
         ]);
     }
 }

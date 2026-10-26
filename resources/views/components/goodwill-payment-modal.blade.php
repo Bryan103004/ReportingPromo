@@ -28,6 +28,17 @@
 
             {{-- Main Content --}}
             <div id="goodwillPaymentContent" class="hidden space-y-5">
+                {{-- Tab Pemilih Invoice jika 1 RAF memiliki banyak Invoice --}}
+                <div id="goodwillSiblingInvoicesWrap" class="hidden p-3 bg-indigo-50/70 border border-indigo-200 rounded-lg">
+                    <div class="text-xs font-bold text-indigo-900 mb-2 flex items-center justify-between flex-wrap gap-1">
+                        <span class="flex items-center gap-1.5">
+                            <span>📑</span> No. RAF ini memiliki <span id="goodwillSiblingCount" class="underline font-extrabold"></span> Invoice:
+                        </span>
+                        <span class="text-[11px] font-normal text-indigo-700">Pilih invoice untuk melihat rincian alokasinya</span>
+                    </div>
+                    <div id="goodwillSiblingTabs" class="flex flex-wrap gap-2"></div>
+                </div>
+
                 {{-- Info Invoice Cards --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div class="p-3.5 bg-gray-50 rounded-lg border border-gray-200">
@@ -136,6 +147,40 @@
 
                 const inv = data.invoice;
                 const payments = data.payments || [];
+                const siblings = data.sibling_invoices || [];
+
+                // Render Tab Sibling Invoices jika 1 No. RAF punya lebih dari 1 invoice
+                const siblingWrap = document.getElementById('goodwillSiblingInvoicesWrap');
+                const siblingCount = document.getElementById('goodwillSiblingCount');
+                const siblingTabs = document.getElementById('goodwillSiblingTabs');
+                if (siblingWrap && siblingTabs) {
+                    if (siblings.length > 1) {
+                        siblingWrap.classList.remove('hidden');
+                        siblingCount.textContent = siblings.length;
+                        siblingTabs.innerHTML = '';
+                        siblings.forEach(sib => {
+                            const isCurrent = (inv && sib.inv_no === inv.inv_no);
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = isCurrent
+                                ? 'px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-xs flex items-center gap-1.5 cursor-default'
+                                : 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-white text-indigo-700 hover:bg-indigo-100 border border-indigo-200 transition flex items-center gap-1.5 cursor-pointer';
+
+                            const isPaid = (sib.paid || '').toUpperCase() === 'Y';
+                            const paidBadge = isPaid
+                                ? '<span class="px-1.5 py-0.5 rounded text-[9px] bg-green-100 text-green-800 font-bold">PAID</span>'
+                                : '<span class="px-1.5 py-0.5 rounded text-[9px] bg-amber-100 text-amber-800 font-bold">UNPAID</span>';
+
+                            btn.innerHTML = `<span>${sib.inv_no}</span> <span class="opacity-80 text-[11px]">(${sib.grand_total_fmt})</span> ${paidBadge}`;
+                            if (!isCurrent) {
+                                btn.onclick = () => window.showGoodwillPayments(sib.inv_no, noRaf);
+                            }
+                            siblingTabs.appendChild(btn);
+                        });
+                    } else {
+                        siblingWrap.classList.add('hidden');
+                    }
+                }
 
                 // Render Info Invoice
                 if (inv) {
