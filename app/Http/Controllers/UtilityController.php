@@ -11,6 +11,11 @@ use Illuminate\Http\Request;
 use App\Models\Rafaksi;
 use App\Models\Jsm;
 use App\Models\Pwp;
+use App\Models\RafaksiDocument;
+use App\Models\JsmDocument;
+use App\Models\PwpDocument;
+use App\Models\LocDocument;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use setasign\Fpdi\Fpdi;
@@ -133,31 +138,146 @@ class UtilityController extends Controller
             return redirect()->back()->with('error', 'Dokumen lampiran tidak tersedia.');
         }
 
+        $existingAttachments = $document->documents->filter(function ($attachment) {
+            return Storage::exists($attachment->filepath);
+        });
+
+        if ($existingAttachments->isEmpty()) {
+            return redirect()->back()->with('error', 'File dokumen lampiran tidak ditemukan di storage.');
+        }
+
+        $noRafClean = $document->no_raf ? str_replace(['/', '\\'], '_', $document->no_raf) : 'lampiran';
+
+        // KASUS 1: Jika hanya ada 1 lampiran, langsung stream file asli ke browser
+        // Cara ini tidak memerlukan FPDI sehingga mendukung semua versi PDF (1.5, 1.6, 1.7, compressed xref) tanpa error
+        if ($existingAttachments->count() === 1) {
+            $single = $existingAttachments->first();
+            $fullPath = Storage::path($single->filepath);
+
+            return response()->file($fullPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $noRafClean . '_lampiran.pdf"',
+            ]);
+        }
+
+        // KASUS 2: Jika ada lebih dari 1 lampiran, coba gabungkan dengan FPDI
         $pdf = new Fpdi();
-        foreach ($document->documents as $attachment) {
-            if (! Storage::exists($attachment->filepath)) {
-                continue;
+        $tempConvertedFiles = [];
+
+        try {
+            foreach ($existingAttachments as $attachment) {
+                $filePath = Storage::path($attachment->filepath);
+                $effectivePath = $this->preparePdfForFpdi($filePath, $tempConvertedFiles);
+
+                $pageCount = $pdf->setSourceFile($effectivePath);
+                for ($page = 1; $page <= $pageCount; $page++) {
+                    $template = $pdf->importPage($page);
+                    $size = $pdf->getTemplateSize($template);
+                    $orientation = $size['width'] > $size['height'] ? 'L' : 'P';
+
+                    $pdf->AddPage($orientation, [$size['width'], $size['height']]);
+                    $pdf->useTemplate($template);
+                }
             }
 
-            $pageCount = $pdf->setSourceFile(Storage::path($attachment->filepath));
-            for ($page = 1; $page <= $pageCount; $page++) {
-                $template = $pdf->importPage($page);
-                $size = $pdf->getTemplateSize($template);
-                $orientation = $size['width'] > $size['height'] ? 'L' : 'P';
+            $this->cleanupTempFiles($tempConvertedFiles);
 
-                $pdf->AddPage($orientation, [$size['width'], $size['height']]);
-                $pdf->useTemplate($template);
+            if ($pdf->PageNo() === 0) {
+                return redirect()->back()->with('error', 'File dokumen lampiran tidak dapat dibaca.');
             }
+
+            return response($pdf->Output('S'), 200, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $noRafClean . '_lampiran.pdf"',
+            ]);
+        } catch (\Throwable $e) {
+            $this->cleanupTempFiles($tempConvertedFiles);
+
+            Log::warning("Gagal merge PDF lampiran untuk {$type} #{$id}: " . $e->getMessage());
+
+            return response()->view('layouts.print-attachments-fallback', [
+                'document' => $document,
+                'type' => $type,
+                'attachments' => $existingAttachments,
+                'errorMessage' => 'Dokumen memiliki beberapa file lampiran yang menggunakan format kompresi modern (PDF 1.5+) sehingga tidak dapat digabungkan otomatis menjadi 1 file. Anda dapat langsung membuka atau mencetak masing-masing lampiran di bawah ini:',
+            ]);
+        }
+    }
+
+    public function viewAttachment($type, $attachmentId)
+    {
+        $type = strtolower($type);
+        switch ($type) {
+            case 'jsm':
+                $attachment = JsmDocument::findOrFail($attachmentId);
+                break;
+            case 'pwp':
+                $attachment = PwpDocument::findOrFail($attachmentId);
+                break;
+            case 'loc':
+                $attachment = LocDocument::findOrFail($attachmentId);
+                break;
+            default:
+                $attachment = RafaksiDocument::findOrFail($attachmentId);
+                break;
         }
 
-        if ($pdf->PageNo() === 0) {
-            return redirect()->back()->with('error', 'File dokumen lampiran tidak ditemukan.');
+        if (! Storage::exists($attachment->filepath)) {
+            abort(404, 'File lampiran tidak ditemukan di storage.');
         }
 
-        return response($pdf->Output('S'), 200, [
+        $filename = $attachment->filename ?? basename($attachment->filepath);
+
+        return response()->file(Storage::path($attachment->filepath), [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="' . $document->no_raf . '_lampiran.pdf"',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
         ]);
+    }
+
+    protected function preparePdfForFpdi(string $filePath, array &$tempFiles): string
+    {
+        static $tool = null;
+        if ($tool === null) {
+            $tool = false;
+            $qpdfCheck = @shell_exec('qpdf --version 2>&1');
+            if ($qpdfCheck && stripos($qpdfCheck, 'qpdf version') !== false) {
+                $tool = 'qpdf';
+            } else {
+                $gsCheck = @shell_exec('gs --version 2>&1');
+                if ($gsCheck && preg_match('/^\d+\.\d+/', trim($gsCheck))) {
+                    $tool = 'gs';
+                }
+            }
+        }
+
+        if ($tool === 'qpdf') {
+            $tempPath = tempnam(sys_get_temp_dir(), 'pdf_norm_') . '.pdf';
+            $cmd = sprintf('qpdf --qdf %s %s 2>&1', escapeshellarg($filePath), escapeshellarg($tempPath));
+            @exec($cmd, $output, $returnVar);
+            if ($returnVar === 0 && file_exists($tempPath) && filesize($tempPath) > 0) {
+                $tempFiles[] = $tempPath;
+                return $tempPath;
+            }
+        } elseif ($tool === 'gs') {
+            $tempPath = tempnam(sys_get_temp_dir(), 'pdf_norm_') . '.pdf';
+            $cmd = sprintf('gs -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 -dNOPAUSE -dQUIET -dBATCH -sOutputFile=%s %s 2>&1', escapeshellarg($tempPath), escapeshellarg($filePath));
+            @exec($cmd, $output, $returnVar);
+            if ($returnVar === 0 && file_exists($tempPath) && filesize($tempPath) > 0) {
+                $tempFiles[] = $tempPath;
+                return $tempPath;
+            }
+        }
+
+        return $filePath;
+    }
+
+    protected function cleanupTempFiles(array $tempFiles): void
+    {
+        foreach ($tempFiles as $file) {
+            if (file_exists($file)) {
+                @unlink($file);
+            }
+        }
     }
 
     public function printDocument(Request $request, $type, $id)
