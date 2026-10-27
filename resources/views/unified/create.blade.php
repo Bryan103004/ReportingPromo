@@ -446,7 +446,7 @@
             data.forEach(t => {
                 const id = 'toko_cb_' + t.id;
                 const checked = window.checkedTokoIds.has(String(t.id)) ? 'checked' : '';
-                const html = `<label class="flex items-center gap-2 p-2 bg-white rounded shadow-sm border"><input type="checkbox" name="toko_id[]" value="${t.id}" id="${id}" ${checked} /> <span class="text-sm">${t.nama_toko}</span></label>`;
+                const html = `<label class="flex items-center gap-2 p-2 bg-white rounded shadow-sm border"><input type="checkbox" name="toko_id[]" value="${t.id}" id="${id}" class="toko-checkbox" ${checked} /> <span class="text-sm">${t.nama_toko}</span></label>`;
                 container.insertAdjacentHTML('beforeend', html);
             });
         } catch (e) {
@@ -628,6 +628,11 @@
     // Toggle toko checkbox (bukan cuma ganti region) juga harus update kolom per-toko di tabel item
     document.getElementById('toko_container').addEventListener('change', function(e){
         if (e.target.matches('input[type=checkbox]')) {
+            if (e.target.checked) {
+                window.checkedTokoIds.add(String(e.target.value));
+            } else {
+                window.checkedTokoIds.delete(String(e.target.value));
+            }
             renderItemsTable();
         }
     });
@@ -768,8 +773,9 @@
         }
 
         // Validasi 5: Toko dipilih
-        const checkedTokos = document.querySelectorAll('.toko-checkbox:checked');
-        if (checkedTokos.length === 0) {
+        const checkedTokos = document.querySelectorAll('input[name="toko_id[]"]:checked, #toko_container input[type=checkbox]:checked');
+        const hasCheckedInSet = window.checkedTokoIds && window.checkedTokoIds.size > 0;
+        if (checkedTokos.length === 0 && !hasCheckedInSet) {
             e.preventDefault();
             btn.disabled = false;
             btn.textContent = 'Simpan Data';
