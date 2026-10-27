@@ -915,7 +915,7 @@ class LocController extends Controller
     public function statusAktif(Loc $loc)
     {
         if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($loc->category_id))) {
-            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengubah status kesiapan dokumen ke AR.');
         }
 
         $loc->update([
@@ -937,7 +937,7 @@ class LocController extends Controller
     public function statusTidakAktif(Loc $loc)
     {
         if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($loc->category_id))) {
-            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengubah status kesiapan dokumen ke AR.');
         }
 
         $loc->update([

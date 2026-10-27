@@ -68,14 +68,11 @@ class CategorySpvService
     }
 
     /**
-     * Dipakai buat batasi tombol "Sudah Siap / Belum Siap Kirim ke AR" -- cuma SPV
-     * buyer (prepared_by) kategori yang bersangkutan yang boleh klik, kecuali
-     * admin/superadmin yang selalu boleh. Kalau kategori ini belum ada SPV-nya sama
-     * sekali di pengaturan (belum pernah diatur admin), gak usah dibatasi dulu --
-     * daripada keyword semua orang ke-lock out dari dokumen yang categorinya belum
-     * sempat di-setup.
+     * Pengecekan hak akses untuk tombol "Sudah Siap / Belum Siap Kirim ke AR".
+     * User yang memiliki permission 'can_update' (termasuk role Buyer) atau role admin/superadmin
+     * memiliki wewenang untuk mengubah status kesiapan dokumen ke AR.
      */
-    public static function userCanToggleReadiness(?User $user, ?Category $category): bool
+    public static function userCanToggleReadiness(?User $user, ?Category $category = null): bool
     {
         if (! $user) {
             return false;
@@ -85,19 +82,6 @@ class CategorySpvService
             return true;
         }
 
-        if (! $category) {
-            return true;
-        }
-
-        $preparedIds = CategorySignatory::where('category_id', $category->id)
-            ->where('role', 'prepared_by')
-            ->pluck('user_id')
-            ->all();
-
-        if (empty($preparedIds)) {
-            return true;
-        }
-
-        return in_array($user->id, $preparedIds, true);
+        return $user->can('can_update');
     }
 }

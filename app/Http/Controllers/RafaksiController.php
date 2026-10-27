@@ -1040,7 +1040,7 @@ class RafaksiController extends Controller
 
     public function statusAktif(Rafaksi $rafaksi){
         if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($rafaksi->category_id))) {
-            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengubah status kesiapan dokumen ke AR.');
         }
 
         $rafaksi->update([
@@ -1061,7 +1061,7 @@ class RafaksiController extends Controller
 
     public function statusTidakAktif(Rafaksi $rafaksi){
         if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($rafaksi->category_id))) {
-            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengubah status kesiapan dokumen ke AR.');
         }
 
         $rafaksi->update([

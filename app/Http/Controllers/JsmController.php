@@ -963,7 +963,7 @@ class JsmController extends Controller
 
     public function statusAktif(Jsm $jsm){
         if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($jsm->category_id))) {
-            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengubah status kesiapan dokumen ke AR.');
         }
 
         $jsm->update([
@@ -984,7 +984,7 @@ class JsmController extends Controller
 
     public function statusTidakAktif(Jsm $jsm){
         if (! CategorySpvService::userCanToggleReadiness(auth()->user(), Category::find($jsm->category_id))) {
-            return redirect()->back()->with('error', 'Anda bukan SPV buyer untuk kategori dokumen ini, tidak bisa mengubah status kesiapan kirim ke AR.');
+            return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk mengubah status kesiapan dokumen ke AR.');
         }
 
         $jsm->update([

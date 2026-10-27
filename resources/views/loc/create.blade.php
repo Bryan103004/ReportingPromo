@@ -145,12 +145,13 @@
 
             {{-- Nominal (Full Width di bawah) --}}
             <div class="mb-8 mx-6">
-                <label for="nominal" class="block text-sm font-semibold text-gray-700 mb-1.5">Nominal <span class="text-red-500">*</span></label>
+                <label for="nominal_display" class="block text-sm font-semibold text-gray-700 mb-1.5">Nominal <span class="text-red-500">*</span></label>
                 <div class="relative">
                     <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
                         <span class="text-gray-500 text-sm font-medium">Rp</span>
                     </div>
-                    <input type="number" name="nominal" id="nominal" class="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="0" required>
+                    <input type="text" id="nominal_display" value="{{ old('nominal') ? number_format((float) old('nominal'), 0, ',', '.') : '' }}" class="w-full rounded-md border border-gray-300 pl-10 pr-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-colors" placeholder="0" required>
+                    <input type="hidden" name="nominal" id="nominal" value="{{ old('nominal', 0) }}">
                 </div>
             </div> 
 
@@ -391,5 +392,17 @@
                 container.innerHTML = '<div class="col-span-full text-center text-red-500 text-sm py-4">Gagal memuat data.</div>';
             });
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const nominalDisplay = document.getElementById('nominal_display');
+        const nominalHidden = document.getElementById('nominal');
+        if (nominalDisplay && nominalHidden) {
+            nominalDisplay.addEventListener('input', function () {
+                let rawValue = this.value.replace(/\D/g, '');
+                nominalHidden.value = rawValue ? rawValue : 0;
+                this.value = rawValue ? new Intl.NumberFormat('id-ID').format(rawValue) : '';
+            });
+        }
+    });
 </script>
 @endsection
