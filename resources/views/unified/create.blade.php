@@ -69,7 +69,7 @@
                 {{-- Nama Supplier --}}
                 <div>
                     <label for="supplier_name" class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Supplier <span class="text-red-500">*</span></label>
-                    <input type="text" name="supplier_name" id="supplier_name" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" readonly required>
+                    <input type="text" name="supplier_name" id="supplier_name" value="{{ old('supplier_name') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" readonly required>
                 </div>    
                 
                 {{-- Category --}}
@@ -92,37 +92,37 @@
                 {{-- Periode Awal --}}
                 <div>
                     <label for="periode_awal" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Awal<span class="text-red-500">*</span></label>
-                    <input type="text" name="periode_awal" id="periode_awal" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
+                    <input type="text" name="periode_awal" id="periode_awal" value="{{ old('periode_awal') }}" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
                 </div>
 
                 {{-- Periode Akhir --}}
                 <div>
                     <label for="periode_akhir" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Akhir<span class="text-red-500">*</span></label>
-                    <input type="text" name="periode_akhir" id="periode_akhir" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
+                    <input type="text" name="periode_akhir" id="periode_akhir" value="{{ old('periode_akhir') }}" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
                 </div> 
 
                 {{-- No. RAF --}}
                 <div>
                     <label for="no_raf" class="block text-sm font-semibold text-gray-700 mb-1.5">No Dokumen<span class="text-red-500">*</span></label>
-                    <input type="text" name="no_raf" id="no_raf" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" readonly placeholder="Otomatis terisi" required>
+                    <input type="text" name="no_raf" id="no_raf" value="{{ old('no_raf') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" readonly placeholder="Otomatis terisi" required>
                 </div>
 
                 {{-- No. Shiji --}}
                 <div>
                     <label for="no_shiji" class="block text-sm font-semibold text-gray-700 mb-1.5">No. Shiji</label>
-                    <input type="text" name="no_shiji" id="no_shiji" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" placeholder="Nomor dokumen Shiji (opsional)">
+                    <input type="text" name="no_shiji" id="no_shiji" value="{{ old('no_shiji') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" placeholder="Nomor dokumen Shiji (opsional)">
                 </div>
 
                 {{-- No. Shiji Promotion --}}
                 <div>
                     <label for="no_shiji_promotion" class="block text-sm font-semibold text-gray-700 mb-1.5">No. Shiji Promotion</label>
-                    <input type="text" name="no_shiji_promotion" id="no_shiji_promotion" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" placeholder="Nomor dokumen Shiji Promotion (opsional)">
+                    <input type="text" name="no_shiji_promotion" id="no_shiji_promotion" value="{{ old('no_shiji_promotion') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" placeholder="Nomor dokumen Shiji Promotion (opsional)">
                 </div>
 
                 {{-- Periode Bulan --}}
                 <div>
                     <label for="periode_bulan" class="block text-sm font-semibold text-gray-700 mb-1.5">Periode Rekap<span class="text-red-500">*</span></label>
-                    <input type="text" name="periode_bulan" id="periode_bulan" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
+                    <input type="text" name="periode_bulan" id="periode_bulan" value="{{ old('periode_bulan') }}" class="date-dmy w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" required>
                 </div>
 
                 <div class="md:col-span-2 text-lg font-semibold text-gray-700 border-b pb-2 mt-4">Pemilihan Toko (Store)</div>
@@ -702,19 +702,87 @@
     // sebelum halaman sempat pindah (misal koneksi lambat) — tanpa ini bisa kebuat 2 dokumen.
     document.getElementById('unifiedForm').addEventListener('submit', function(e){
         const btn = document.getElementById('btnSubmitUnifiedForm');
+
+        // Validasi 1: Supplier
+        const supplierSelect = document.getElementById('choices-supplier');
+        if (!supplierSelect || !supplierSelect.value) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data';
+            if (window.showToast) window.showToast('Silakan pilih Kode Supplier terlebih dahulu!', 'error');
+            return false;
+        }
+
+        // Validasi 2: Category
+        const categoryId = document.getElementById('category_id');
+        if (!categoryId || !categoryId.value) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data';
+            if (window.showToast) window.showToast('Silakan pilih Category terlebih dahulu!', 'error');
+            categoryId.focus();
+            return false;
+        }
+
+        // Validasi 3: Periode Awal & Periode Akhir (Periode akhir tidak boleh < periode awal)
+        const tAwal = document.getElementById('periode_awal').value;
+        const tAkhir = document.getElementById('periode_akhir').value;
+        if (!tAwal) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data';
+            if (window.showToast) window.showToast('Periode Awal wajib diisi!', 'error');
+            return false;
+        }
+        if (!tAkhir) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data';
+            if (window.showToast) window.showToast('Periode Akhir wajib diisi!', 'error');
+            return false;
+        }
+        if (tAwal && tAkhir && new Date(tAkhir) < new Date(tAwal)) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data';
+            if (window.showToast) {
+                window.showToast('Periode Akhir tidak boleh lebih awal dari Periode Awal!', 'error');
+            } else {
+                alert('Periode Akhir tidak boleh lebih awal dari Periode Awal!');
+            }
+            const altInput = document.getElementById('periode_akhir')._flatpickr?.altInput || document.getElementById('periode_akhir');
+            altInput.focus();
+            return false;
+        }
+
+        // Validasi 4: Periode Rekap
+        const periodeBulan = document.getElementById('periode_bulan').value;
+        if (!periodeBulan) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data';
+            if (window.showToast) window.showToast('Periode Rekap wajib diisi!', 'error');
+            const altInput = document.getElementById('periode_bulan')._flatpickr?.altInput || document.getElementById('periode_bulan');
+            altInput.focus();
+            return false;
+        }
+
+        // Validasi 5: Toko dipilih
+        const checkedTokos = document.querySelectorAll('.toko-checkbox:checked');
+        if (checkedTokos.length === 0) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data';
+            if (window.showToast) window.showToast('Pilih minimal satu Toko!', 'error');
+            return false;
+        }
+
         if (btn.disabled) {
             e.preventDefault();
             return;
         }
-        // Safety net terakhir -- pastikan form.action beneran sesuai tipe dokumen
-        // yang lagi kepilih SAAT SUBMIT, bukan cuma waktu terakhir kali event
-        // 'change' sempat nyala.
-        syncFormAction();
 
-        // Baris item dikirim sebagai 1 field JSON (bukan ratusan field items[i][...]
-        // terpisah) -- dokumen gede (banyak baris x banyak toko) bisa nembus limit
-        // max_input_vars PHP (default 1000) dan datanya kepotong diam-diam tanpa
-        // ada error apapun kalau masih pakai field per-baris.
+        syncFormAction();
         document.getElementById('items_json_input').value = JSON.stringify(window.itemRows);
 
         btn.disabled = true;
@@ -811,6 +879,18 @@
         const h = data.header || {};
         if (h.periode_awal) window.setDateFieldValue('periode_awal', h.periode_awal);
         if (h.periode_akhir) window.setDateFieldValue('periode_akhir', h.periode_akhir);
+
+        // Auto-default Periode Rekap jika kosong
+        if (!document.getElementById('periode_bulan').value && h.periode_awal) {
+            window.setDateFieldValue('periode_bulan', h.periode_awal);
+            refreshNoRaf();
+        }
+
+        if (h.periode_awal && h.periode_akhir && new Date(h.periode_akhir) < new Date(h.periode_awal)) {
+            if (window.showToast) {
+                window.showToast('Perhatian: Periode Akhir pada file Excel lebih awal dari Periode Awal. Harap perbaiki tanggal sebelum menyimpan!', 'warning', 8000);
+            }
+        }
         if (h.no_shiji) document.getElementById('no_shiji').value = h.no_shiji;
         if (h.no_shiji_promotion) document.getElementById('no_shiji_promotion').value = h.no_shiji_promotion;
 

@@ -295,6 +295,17 @@ class LocController extends Controller
             'toko_id' => 'exists:tokos,id',
             'category_id' => 'exists:categories,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:10240',
+        ], [
+            'periode_akhir.after_or_equal' => 'Periode Akhir tidak boleh lebih awal dari Periode Awal.',
+            'periode_awal.required' => 'Periode Awal wajib diisi.',
+            'periode_akhir.required' => 'Periode Akhir wajib diisi.',
+            'periode_bulan.required' => 'Periode Rekap wajib diisi.',
+            'supplier_code.required' => 'Kode Supplier wajib dipilih.',
+            'supplier_name.required' => 'Nama Supplier wajib diisi.',
+            'store.required' => 'Toko wajib dipilih.',
+            'category_id.required' => 'Category wajib dipilih.',
+            'no_raf.required' => 'No. Dokumen wajib diisi.',
+            'nominal.required' => 'Nominal wajib diisi.',
         ]);
 
         $loc = Loc::create($request->except(['toko_id', 'document_file']));

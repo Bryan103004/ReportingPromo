@@ -112,6 +112,12 @@ class RafaksiExcelImportParser
         if (isset($labelRows['periode_akhir'])) {
             $result['periode_akhir'] = $this->readHeaderDate($sheet, $labelRows['periode_akhir'], 'Periode Akhir');
         }
+
+        if (! empty($result['periode_awal']) && ! empty($result['periode_akhir'])) {
+            if ($result['periode_akhir'] < $result['periode_awal']) {
+                $this->warnings[] = "Periode Akhir (" . $result['periode_akhir'] . ") lebih awal dari Periode Awal (" . $result['periode_awal'] . "). Harap periksa kembali tanggal di dokumen.";
+            }
+        }
         if (isset($labelRows['no_raf'])) {
             $result['no_raf'] = $this->readHeaderText($sheet, $labelRows['no_raf']);
         }

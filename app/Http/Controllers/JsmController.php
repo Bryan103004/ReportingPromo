@@ -300,6 +300,17 @@ class JsmController extends Controller
             'toko_id.*' => 'exists:tokos,id',
             'document_file.*' => 'nullable|file|mimes:pdf|max:10240',
             'category_id' => 'exists:categories,id',
+        ], [
+            'periode_akhir.after_or_equal' => 'Periode Akhir tidak boleh lebih awal dari Periode Awal.',
+            'periode_awal.required' => 'Periode Awal wajib diisi.',
+            'periode_akhir.required' => 'Periode Akhir wajib diisi.',
+            'periode_bulan.required' => 'Periode Rekap wajib diisi.',
+            'supplier_code.required' => 'Kode Supplier wajib dipilih.',
+            'supplier_name.required' => 'Nama Supplier wajib diisi.',
+            'store.required' => 'Toko wajib dipilih.',
+            'toko_id.required' => 'Pilih minimal satu toko.',
+            'category_id.required' => 'Category wajib dipilih.',
+            'no_raf.required' => 'No. Dokumen wajib diisi.',
         ]);
 
         $items = $this->decodeAndValidateItems($request);
