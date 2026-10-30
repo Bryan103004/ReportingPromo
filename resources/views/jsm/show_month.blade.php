@@ -85,7 +85,7 @@
                         <th class="px-6 py-4">Periode Promo</th>
                         <th class="px-6 py-4">No. RAF</th>
                         <!-- <th class="px-6 py-4">Region</th> -->
-                        <th class="px-6 py-4">Store</th>
+                        <th class="px-6 py-4">Claim By</th>
                         <th class="px-6 py-4 text-right">Remarks</th>
                         @can('see_nominal')
                         <th class="px-6 py-4 text-right">Nominal</th>

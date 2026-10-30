@@ -176,14 +176,7 @@ class PwpController extends Controller
         }
 
         if ($request->filled('toko_id') || $request->filled('filter_pt')) {
-            $query->whereHas('tokos', function($q) use ($request) {
-                if ($request->filled('toko_id')) {
-                    $q->where('tokos.id', $request->toko_id);
-                }
-                if ($request->filled('filter_pt')) {
-                    $q->where('tokos.nama_pt', $request->filter_pt);
-                }
-            });
+            $query->applyStoreAndPtFilter($request->toko_id, $request->filter_pt);
         }
         
         $query->when($request->filled('invoice_status'), function ($q) use ($request) {
@@ -620,10 +613,8 @@ class PwpController extends Controller
                 $query->where('category_id', $request->category_id);
             }
 
-            if ($request->filled('toko_id')) {
-                $query->whereHas('tokos', function($q) use ($request) {
-                    $q->where('tokos.id', $request->toko_id);
-                });
+            if ($request->filled('toko_id') || $request->filled('filter_pt')) {
+                $query->applyStoreAndPtFilter($request->toko_id, $request->filter_pt);
             }
 
             if (! auth()->user()->hasGlobalCompanyAccess()) {
@@ -835,10 +826,8 @@ class PwpController extends Controller
                 $query->where('category_id', $request->category_id);
             }
 
-            if ($request->filled('toko_id')) {
-                $query->whereHas('tokos', function($q) use ($request) {
-                    $q->where('tokos.id', $request->toko_id);
-                });
+            if ($request->filled('toko_id') || $request->filled('filter_pt')) {
+                $query->applyStoreAndPtFilter($request->toko_id, $request->filter_pt);
             }
 
             if (! auth()->user()->hasGlobalCompanyAccess()) {
