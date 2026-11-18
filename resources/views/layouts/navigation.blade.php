@@ -127,6 +127,12 @@
                                             </x-dropdown-link>
                                             @endcanany
 
+                                            @canany(['view_jsm', 'view_rafaksi', 'create_document'])
+                                            <x-dropdown-link :href="route('biltu.index')" class="text-sm {{ request()->routeIs('biltu.*') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
+                                                <span class="text-base">📑</span> Master Biltu
+                                            </x-dropdown-link>
+                                            @endcanany
+
                                             @can('email_tambahan')
                                                 <x-dropdown-link :href="route('notification-recipients.index')" class="text-sm {{ request()->routeIs('notification-recipients.index') ? 'bg-indigo-50 text-indigo-700 font-medium' : '' }}">
                                                     <span>📧</span> Email Tambahan
@@ -415,6 +421,12 @@
             @canany(['view_jsm', 'view_rafaksi', 'create_document'])
                 <x-responsive-nav-link :href="route('supplier_rafaksi.index')" :active="request()->routeIs('supplier_rafaksi.index')">
                     <span class="text-base">🤝</span> Supplier Rafaksi
+                </x-responsive-nav-link>
+            @endcanany
+
+            @canany(['view_jsm', 'view_rafaksi', 'create_document'])
+                <x-responsive-nav-link :href="route('biltu.index')" :active="request()->routeIs('biltu.*')">
+                    <span class="text-base">📑</span> Master Biltu
                 </x-responsive-nav-link>
             @endcanany
 

@@ -74,6 +74,7 @@ class RafaksiExcelImportParser
                 'alias' => $alias,
                 'toko_id' => $t->id,
                 'nama_toko' => $t->nama_toko,
+                'nama_pt' => $t->nama_pt,
                 'region_id' => $t->region_id,
             ])->values()->all(),
             'warnings' => $this->warnings,

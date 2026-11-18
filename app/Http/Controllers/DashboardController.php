@@ -8,6 +8,12 @@ use App\Models\Toko;
 
 class DashboardController extends Controller
 {
+
+    public function rootRedirect()
+    {
+        return redirect()->route('login');
+    }
+    
     //
     public function index()
     {

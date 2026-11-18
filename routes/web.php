@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\BiltuController;
 use App\Http\Controllers\CategorySpvController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\JsmController;
@@ -31,9 +32,8 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', [DashboardController::class, 'rootRedirect']);
+
 
 // Route::get('/dashboard', function () {
 //     return view('dashboard');
@@ -144,7 +144,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::resource('toko', TokoController::class);
 
+    Route::get('/supplier_rafaksi/{kode_supplier}/biltus', [SupplierRafaksiController::class, 'getBiltus'])->name('supplier_rafaksi.biltus');
     Route::resource('supplier_rafaksi', SupplierRafaksiController::class);
+
+    Route::get('/biltu/import-logs', [BiltuController::class, 'importLogs'])->name('biltu.import-logs');
+    Route::resource('biltu', BiltuController::class);
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

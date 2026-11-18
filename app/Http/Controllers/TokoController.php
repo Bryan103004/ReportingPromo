@@ -101,7 +101,7 @@ class TokoController extends Controller
             $query->whereIn('id', $ids);
         }
 
-        $tokos = $query->get(['id', 'nama_toko']);
+        $tokos = $query->get(['id', 'nama_toko', 'nama_pt']);
         return response()->json($tokos);
     }
 
@@ -119,7 +119,7 @@ class TokoController extends Controller
             $query->whereIn('id', $ids);
         }
 
-        $tokos = $query->get(['id', 'nama_toko']);
+        $tokos = $query->get(['id', 'nama_toko', 'nama_pt']);
         return response()->json($tokos);
     }
 

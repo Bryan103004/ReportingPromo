@@ -23,9 +23,9 @@
                 <div class="w-56">
                     <label class="block text-sm font-medium text-gray-700">Tipe Dokumen</label>
                     <select id="category" name="category" class="mt-1 block w-full rounded-md border-gray-300" required>
-                        <option value="RAF">Rafaksi</option>
-                        <option value="JSM">JSM</option>
-                        <option value="PWP">PWP</option>
+                        <option value="RAF" {{ request('type') == 'RAF' ? 'selected' : '' }}>Rafaksi</option>
+                        <option value="JSM" {{ request('type') == 'JSM' ? 'selected' : '' }}>JSM</option>
+                        <option value="PWP" {{ request('type') == 'PWP' ? 'selected' : '' }}>PWP</option>
                     </select>
                 </div>
             </div>
@@ -70,6 +70,20 @@
                 <div>
                     <label for="supplier_name" class="block text-sm font-semibold text-gray-700 mb-1.5">Nama Supplier <span class="text-red-500">*</span></label>
                     <input type="text" name="supplier_name" id="supplier_name" value="{{ old('supplier_name') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" readonly required>
+                </div>    
+
+                {{-- C_BPartner_ID (BP) --}}
+                <div>
+                    <label for="choices-bp" class="block text-sm font-semibold text-gray-700 mb-1.5">
+                        C_BPartner_ID (BP) <span class="text-red-500">*</span>
+                    </label>
+                    <div class="relative">
+                        <select name="bp" id="choices-bp" data-old-value="{{ old('bp') }}"
+                            class="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 shadow-sm" required>
+                            <option value="" disabled selected class="text-gray-400">Pilih Supplier terlebih dahulu...</option>
+                        </select>
+                    </div>
+                    <p id="bp_status_text" class="text-xs text-gray-500 mt-1"></p>
                 </div>    
                 
                 {{-- Category --}}
@@ -306,6 +320,130 @@
 
 <script>
     let supplierList = @json($supplierRafaksi);
+    window.allTokos = @json($allTokos ?? []);
+    window.tokoMetaMap = new Map();
+    if (Array.isArray(window.allTokos)) {
+        window.allTokos.forEach(t => window.tokoMetaMap.set(String(t.id), t));
+    }
+
+    function getSelectedTokoPtStatus() {
+        let checkedIds = Array.from(window.checkedTokoIds || []);
+        if (checkedIds.length === 0) {
+            checkedIds = Array.from(document.querySelectorAll('#toko_container input[type=checkbox]:checked')).map(cb => cb.value);
+        }
+        if (checkedIds.length === 0) {
+            return 'none';
+        }
+
+        let hasMba = false;
+        let hasNonMba = false;
+        checkedIds.forEach(id => {
+            const meta = (window.tokoMetaMap && window.tokoMetaMap.get(String(id))) || {};
+            const namaPt = (meta.nama_pt || '').toUpperCase();
+            if (namaPt.includes('MITRA BELANJA ANDA') || namaPt.includes('MBA')) {
+                hasMba = true;
+            } else {
+                hasNonMba = true;
+            }
+        });
+
+        if (hasMba && !hasNonMba) return 'mba';
+        if (!hasMba && hasNonMba) return 'non_mba';
+        if (hasMba && hasNonMba) return 'mixed';
+        return 'none';
+    }
+
+    async function loadBiltuOptions(savedBpValue = null) {
+        const supplierSelect = document.getElementById('choices-supplier');
+        const bpSelect = document.getElementById('choices-bp');
+        const bpHint = document.getElementById('bp_status_text');
+        if (!bpSelect) return;
+
+        const supplierCode = supplierSelect ? supplierSelect.value : '';
+        if (!supplierCode) {
+            bpSelect.disabled = true;
+            bpSelect.innerHTML = '<option value="" disabled selected class="text-gray-400">Pilih Supplier terlebih dahulu...</option>';
+            if (bpHint) bpHint.textContent = '';
+            return;
+        }
+
+        const ptStatus = getSelectedTokoPtStatus();
+        let url = '{{ url('/supplier_rafaksi') }}/' + encodeURIComponent(supplierCode) + '/biltus';
+        if (ptStatus === 'mba') {
+            url += '?is_mba=1';
+        } else if (ptStatus === 'non_mba') {
+            url += '?is_mba=0';
+        }
+
+        bpSelect.disabled = true;
+        bpSelect.innerHTML = '<option value="" disabled selected class="text-gray-400">Memuat data BP...</option>';
+        if (bpHint) bpHint.textContent = 'Memuat C_BPartner_ID...';
+
+        try {
+            const res = await fetch(url);
+            const json = await res.json();
+            const list = (json && json.data) ? json.data : [];
+
+            bpSelect.disabled = false;
+            bpSelect.innerHTML = '';
+
+            if (list.length === 0) {
+                let msg = 'Tidak ada C_BPartner_ID untuk supplier ini';
+                if (ptStatus === 'mba') msg += ' (PT MBA)';
+                else if (ptStatus === 'non_mba') msg += ' (Non-MBA)';
+                bpSelect.innerHTML = `<option value="" disabled selected class="text-gray-400">${msg}</option>`;
+                if (bpHint) bpHint.innerHTML = `<span class="text-amber-600 font-medium">${msg}. Silakan cek Master Biltu.</span>`;
+                return;
+            }
+
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = '';
+            defaultOpt.disabled = true;
+            defaultOpt.className = 'text-gray-400';
+            defaultOpt.textContent = '-- Pilih C_BPartner_ID (BP) --';
+            bpSelect.appendChild(defaultOpt);
+
+            let preselected = false;
+            const targetVal = savedBpValue || bpSelect.dataset.oldValue || bpSelect.value || '';
+
+            list.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.C_BPartner_ID;
+                opt.textContent = item.label || `${item.C_BPartner_ID} - ${item.value} (${item.name})`;
+                opt.className = 'text-gray-900';
+                opt.dataset.value = item.value || '';
+                opt.dataset.isMba = item.is_mba ? '1' : '0';
+
+                if (targetVal && (String(item.C_BPartner_ID) === String(targetVal) || String(item.value) === String(targetVal))) {
+                    opt.selected = true;
+                    preselected = true;
+                }
+                bpSelect.appendChild(opt);
+            });
+
+            // Jika hanya ada 1 pilihan, langsung pilih otomatis
+            if (!preselected && list.length === 1) {
+                bpSelect.options[1].selected = true;
+                preselected = true;
+            }
+
+            if (!preselected) {
+                defaultOpt.selected = true;
+            }
+
+            bpSelect.dataset.oldValue = '';
+
+            if (bpHint) {
+                let filterInfo = ptStatus === 'mba' ? 'Filter: PT MBA' : (ptStatus === 'non_mba' ? 'Filter: Non-MBA' : 'Semua (Belum pilih toko)');
+                bpHint.innerHTML = `<span class="text-emerald-600 font-medium">${list.length} BP tersedia (${filterInfo})</span>`;
+            }
+        } catch (err) {
+            console.error('Error fetching biltus:', err);
+            bpSelect.disabled = false;
+            bpSelect.innerHTML = '<option value="" disabled selected class="text-rose-500">Gagal memuat BP</option>';
+            if (bpHint) bpHint.innerHTML = '<span class="text-rose-500">Gagal mengambil data C_BPartner_ID.</span>';
+        }
+    }
 
     document.getElementById('choices-supplier').addEventListener('change', function() {
         var selectedSupplierCode = this.value;
@@ -318,7 +456,8 @@
         } else {
             supplierNameInput.value = '';
         }
-    })
+        loadBiltuOptions();
+    });
 
     function openModal() {
         document.getElementById('supplierModal').classList.remove('hidden');
@@ -382,6 +521,7 @@
             select.appendChild(option);
             document.getElementById('supplier_name').value = namaSupplier;
             closeModal();
+            loadBiltuOptions();
         })
         .catch(err => {
             alert('Gagal menyimpan supplier: ' + err.message);
@@ -444,9 +584,10 @@
 
             container.innerHTML = '';
             data.forEach(t => {
+                if (window.tokoMetaMap) window.tokoMetaMap.set(String(t.id), t);
                 const id = 'toko_cb_' + t.id;
                 const checked = window.checkedTokoIds.has(String(t.id)) ? 'checked' : '';
-                const html = `<label class="flex items-center gap-2 p-2 bg-white rounded shadow-sm border"><input type="checkbox" name="toko_id[]" value="${t.id}" id="${id}" class="toko-checkbox" ${checked} /> <span class="text-sm">${t.nama_toko}</span></label>`;
+                const html = `<label class="flex items-center gap-2 p-2 bg-white rounded shadow-sm border"><input type="checkbox" name="toko_id[]" value="${t.id}" id="${id}" data-nama-pt="${escAttr(t.nama_pt || '')}" class="toko-checkbox" ${checked} /> <span class="text-sm">${t.nama_toko}</span></label>`;
                 container.insertAdjacentHTML('beforeend', html);
             });
         } catch (e) {
@@ -455,6 +596,7 @@
         }
 
         renderItemsTable();
+        loadBiltuOptions();
     }
 
     // ===================== BARIS ITEM (DETAIL PER ARTIKEL) =====================
@@ -634,6 +776,7 @@
                 window.checkedTokoIds.delete(String(e.target.value));
             }
             renderItemsTable();
+            loadBiltuOptions();
         }
     });
 
@@ -715,6 +858,21 @@
             btn.disabled = false;
             btn.textContent = 'Simpan Data';
             if (window.showToast) window.showToast('Silakan pilih Kode Supplier terlebih dahulu!', 'error');
+            return false;
+        }
+
+        // Validasi 1b: C_BPartner_ID (BP)
+        const bpSelect = document.getElementById('choices-bp');
+        if (!bpSelect || !bpSelect.value) {
+            e.preventDefault();
+            btn.disabled = false;
+            btn.textContent = 'Simpan Data';
+            if (window.showToast) {
+                window.showToast('Silakan pilih C_BPartner_ID (BP) terlebih dahulu!', 'error');
+            } else {
+                alert('Silakan pilih C_BPartner_ID (BP) terlebih dahulu!');
+            }
+            if (bpSelect) bpSelect.focus();
             return false;
         }
 
@@ -922,6 +1080,11 @@
             };
         });
 
+        (data.stores || []).forEach(s => {
+            if (window.tokoMetaMap) {
+                window.tokoMetaMap.set(String(s.toko_id), { id: s.toko_id, nama_toko: s.nama_toko, nama_pt: s.nama_pt || '' });
+            }
+        });
         window.checkedTokoIds = new Set((data.stores || []).map(s => String(s.toko_id)));
 
         const regionIds = [...new Set((data.stores || []).map(s => String(s.region_id)))];
@@ -931,9 +1094,17 @@
 
         await fetchTokos(true);
         renderItemsTable();
+        loadBiltuOptions(h.bp || null);
 
         closeImportPreview();
     }
+
+    document.addEventListener('DOMContentLoaded', function(){
+        const supplierSelect = document.getElementById('choices-supplier');
+        if (supplierSelect && supplierSelect.value) {
+            loadBiltuOptions();
+        }
+    });
 </script>
 
 @endsection

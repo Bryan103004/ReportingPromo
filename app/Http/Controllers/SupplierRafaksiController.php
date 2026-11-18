@@ -45,6 +45,7 @@ class SupplierRafaksiController extends Controller
     }
 
     public function edit(SupplierRafaksi $supplier_rafaksi){
+        $supplier_rafaksi->load('biltus');
         return view('supplier_rafaksi.edit', compact('supplier_rafaksi'));
     }
 
@@ -77,5 +78,37 @@ class SupplierRafaksiController extends Controller
         );
 
         return redirect()->route('supplier_rafaksi.index')->with('success', 'Data Supplier Rafaksi berhasil dihapus.');
+    }
+
+    /**
+     * Endpoint API untuk mengambil daftar Biltu milik supplier tertentu.
+     * Mendukung filter is_mba (1 atau 0) berdasarkan pilihan toko.
+     */
+    public function getBiltus(Request $request, $kode_supplier)
+    {
+        $query = \App\Models\Biltu::where('vendor_no', $kode_supplier);
+
+        if ($request->has('is_mba') && $request->is_mba !== null && $request->is_mba !== '') {
+            $isMba = filter_var($request->is_mba, FILTER_VALIDATE_BOOLEAN);
+            $query->where('is_mba', $isMba);
+        }
+
+        $biltus = $query->orderBy('name')->get();
+
+        $data = $biltus->map(function ($b) {
+            return [
+                'id'            => $b->id,
+                'C_BPartner_ID' => $b->C_BPartner_ID,
+                'value'         => $b->value,
+                'name'          => $b->name,
+                'is_mba'        => (bool) $b->is_mba,
+                'label'         => $b->dropdown_label,
+            ];
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => $data,
+        ]);
     }
 }

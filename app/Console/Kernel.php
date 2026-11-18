@@ -30,6 +30,11 @@ class Kernel extends ConsoleKernel
             ->everyThreeHours()
             ->withoutOverlapping()
             ->runInBackground();
+
+        $schedule->command('import:biltu')
+            ->everyThreeHours()
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 
     /**

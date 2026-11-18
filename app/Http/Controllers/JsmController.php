@@ -269,16 +269,14 @@ class JsmController extends Controller
     }
 
     public function create(){
-        $supplierRafaksi = SupplierRafaksi::all();
-        $regions = Region::whereNotIn('status',['nonaktif'])->get();
-        $categories = Category::all();
-        return view('jsm.create', compact('supplierRafaksi','regions','categories'));
+        return redirect()->route('create.document', ['type' => 'JSM']);
     }
 
     public function store(Request $request){
         $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
+            'bp' => 'string|required',
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',
@@ -304,6 +302,7 @@ class JsmController extends Controller
             'toko_id.required' => 'Pilih minimal satu toko.',
             'category_id.required' => 'Category wajib dipilih.',
             'no_raf.required' => 'No. Dokumen wajib diisi.',
+            'bp.required' => 'C_BPartner_ID (BP) wajib dipilih.',
         ]);
 
         $items = $this->decodeAndValidateItems($request);
@@ -545,6 +544,7 @@ class JsmController extends Controller
         $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
+            'bp' => 'nullable|string',
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',

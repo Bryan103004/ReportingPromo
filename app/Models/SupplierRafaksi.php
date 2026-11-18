@@ -31,4 +31,9 @@ class SupplierRafaksi extends Model
     {
         return $this->hasMany(Inbound::class, 'supplier_code', 'kode_supplier');
     }
+
+    public function biltus()
+    {
+        return $this->hasMany(Biltu::class, 'vendor_no', 'kode_supplier');
+    }
 }

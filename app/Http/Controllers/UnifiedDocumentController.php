@@ -17,8 +17,9 @@ class UnifiedDocumentController extends Controller
         $regions = Region::whereNotIn('status', ['nonaktif'])->get();
         $categories = Category::all();
         $ptOptions = Toko::whereNotNull('nama_pt')->where('nama_pt', '!=', '')->distinct()->orderBy('nama_pt')->pluck('nama_pt');
+        $allTokos = Toko::whereNotIn('status', ['nonaktif'])->get(['id', 'nama_toko', 'nama_pt', 'region_id']);
 
-        return view('unified.create', compact('supplierRafaksi', 'regions', 'categories', 'ptOptions'));
+        return view('unified.create', compact('supplierRafaksi', 'regions', 'categories', 'ptOptions', 'allTokos'));
     }
 
     /**
