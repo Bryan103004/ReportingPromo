@@ -302,7 +302,7 @@ class JsmController extends Controller
             'toko_id.required' => 'Pilih minimal satu toko.',
             'category_id.required' => 'Category wajib dipilih.',
             'no_raf.required' => 'No. Dokumen wajib diisi.',
-            'bp.required' => 'C_BPartner_ID (BP) wajib dipilih.',
+            'bp.required' => 'Business Partner ID wajib dipilih.',
         ]);
 
         $items = $this->decodeAndValidateItems($request);

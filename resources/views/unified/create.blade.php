@@ -72,10 +72,10 @@
                     <input type="text" name="supplier_name" id="supplier_name" value="{{ old('supplier_name') }}" class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm" readonly required>
                 </div>    
 
-                {{-- C_BPartner_ID (BP) --}}
+                {{-- Business Partner ID --}}
                 <div>
                     <label for="choices-bp" class="block text-sm font-semibold text-gray-700 mb-1.5">
-                        C_BPartner_ID (BP) <span class="text-red-500">*</span>
+                        Business Partner ID <span class="text-red-500">*</span>
                     </label>
                     <div class="relative">
                         <select name="bp" id="choices-bp" data-old-value="{{ old('bp') }}"
@@ -400,7 +400,7 @@
             defaultOpt.value = '';
             defaultOpt.disabled = true;
             defaultOpt.className = 'text-gray-400';
-            defaultOpt.textContent = '-- Pilih C_BPartner_ID (BP) --';
+            defaultOpt.textContent = '-- Pilih Business Partner ID --';
             bpSelect.appendChild(defaultOpt);
 
             let preselected = false;
@@ -861,16 +861,16 @@
             return false;
         }
 
-        // Validasi 1b: C_BPartner_ID (BP)
+        // Validasi 1b: Business Partner ID
         const bpSelect = document.getElementById('choices-bp');
         if (!bpSelect || !bpSelect.value) {
             e.preventDefault();
             btn.disabled = false;
             btn.textContent = 'Simpan Data';
             if (window.showToast) {
-                window.showToast('Silakan pilih C_BPartner_ID (BP) terlebih dahulu!', 'error');
+                window.showToast('Silakan pilih Business Partner ID terlebih dahulu!', 'error');
             } else {
-                alert('Silakan pilih C_BPartner_ID (BP) terlebih dahulu!');
+                alert('Silakan pilih Business Partner ID terlebih dahulu!');
             }
             if (bpSelect) bpSelect.focus();
             return false;
