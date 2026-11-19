@@ -9,6 +9,8 @@
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Category</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">No. RAF</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">No. Invoice</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Billed To Code</th>
+                <th style="background-color: #FF4E73DF; color: #FFFFFF;">Billed To Name</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Kode Supplier</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">Nama Supplier</th>
                 <th style="background-color: #FF4E73DF; color: #FFFFFF;">PT</th>
@@ -26,6 +28,8 @@
                 <td>{{ $row->categories->nama_kategori ?? 'Tanpa Kategori' }}</td>
                 <td>{{ $row->no_raf }}</td>
                 <td>{{ $row->invoiceGoodwills ? $row->invoiceGoodwills->pluck('inv_no')->filter()->implode(', ') : '-' }}</td>
+                <td>{{ $row->bill_to_code }}</td>
+                <td>{{ $row->bill_to_name }}</td>
                 <td>{{ $row->supplier_code }}</td>
                 <td>{{ $row->supplier_name }}</td>
                 <td>{{ $row->tokos()->pluck('nama_pt')->unique()->implode(', ') ?: '-' }}</td>

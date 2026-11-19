@@ -79,6 +79,8 @@
                     <tr>
                         <th class="px-6 py-4 w-16 text-center">No</th>
                         <th class="px-6 py-4">Supplier Code</th>
+                        <th class="px-6 py-4">Billed To</th>
+                        <th class="px-6 py-4">Billed To Name</th>
                         <th class="px-6 py-4">Supplier Name</th>
                         <th class="px-6 py-4">Category</th>                        
                         <th class="px-6 py-4">Periode Promo</th>
@@ -122,6 +124,14 @@
                             
                             <td class="px-6 py-4">
                                 <div class="font-semibold text-gray-800">{{ $loc->supplier_code }}</div>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-800">{{ $loc->bill_to_code }}</div>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-800">{{ $loc->bill_to_name }}</div>
                             </td>
 
                             {{-- Supplier (Kode & Nama) --}}

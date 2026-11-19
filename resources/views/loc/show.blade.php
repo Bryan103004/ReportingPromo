@@ -25,6 +25,14 @@
                 <dd class="col-span-2 text-sm text-gray-900">{{ $loc->supplier_code }}</dd>
             </div>
             <div class="grid grid-cols-3 gap-4 px-6 py-4">
+                <dt class="text-sm font-semibold text-gray-500">Billed To</dt>
+                <dd class="col-span-2 text-sm text-gray-900">{{ $loc->bill_to_code }}</dd>
+            </div>
+            <div class="grid grid-cols-3 gap-4 px-6 py-4">
+                <dt class="text-sm font-semibold text-gray-500">Billed To Name</dt>
+                <dd class="col-span-2 text-sm text-gray-900">{{ $loc->bill_to_name }}</dd>
+            </div>
+            <div class="grid grid-cols-3 gap-4 px-6 py-4">
                 <dt class="text-sm font-semibold text-gray-500">Nama Supplier</dt>
                 <dd class="col-span-2 text-sm text-gray-900">{{ $loc->supplier_name }}</dd>
             </div>

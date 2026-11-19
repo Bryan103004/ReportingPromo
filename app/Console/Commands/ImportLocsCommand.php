@@ -136,9 +136,9 @@ class ImportLocsCommand extends Command
                 $totalRows++;
 
                 $supplierCode = trim((string) ($row[0] ?? ''));
-                $supplierName = trim((string) ($row[3] ?? ''));
-                $noRaf        = trim((string) ($row[7] ?? ''));
-                $tokoAliasRaw = trim((string) ($row[10] ?? ''));
+                $supplierName = trim((string) ($row[5] ?? ''));
+                $noRaf        = trim((string) ($row[9] ?? ''));
+                $tokoAliasRaw = trim((string) ($row[12] ?? ''));
 
                 // Validasi 1: Jika no_raf atau supplier_code kosong, skip baris ini (sebagai error)
                 if (empty($noRaf) || empty($supplierCode)) {
@@ -183,36 +183,38 @@ class ImportLocsCommand extends Command
                 // Normalisasi status_email dari CSV:
                 // Tabel `inbound` menggunakan enum ('aktif', 'nonaktif')
                 // Tabel `locs` menggunakan enum ('aktif', 'tidak_aktif')
-                $statusEmailRaw = strtolower(trim((string) ($row[19] ?? '')));
+                $statusEmailRaw = strtolower(trim((string) ($row[20] ?? '')));
                 $isInactive = in_array($statusEmailRaw, ['nonaktif', 'tidak_aktif', 'tidak aktif', '0']);
                 $statusEmailInbound = $isInactive ? 'nonaktif' : 'aktif';
                 $statusEmailLoc     = $isInactive ? 'tidak_aktif' : 'aktif';
 
-                $nominal       = $cleanDecimal($row[11] ?? null);
-                $ppn           = $cleanDecimal($row[12] ?? null);
-                $amountInclPpn = $cleanDecimal($row[13] ?? null);
+                $nominal       = $cleanDecimal($row[13] ?? null);
+                $ppn           = $cleanDecimal($row[14] ?? null);
+                $amountInclPpn = $cleanDecimal($row[15] ?? null);
 
                 // Masukkan data valid ke batch staging inbound
                 $stagingBatch[] = [
                     'supplier_code'    => $supplierCode,
-                    'category_id'      => $row[1] ?? null,
-                    'reminder_id'      => $row[2] ?? null,
+                    'bill_to_code'     => $row[1] ?? null,
+                    'bill_to_name'     => $row[2] ??null,
+                    'category_id'      => $row[3] ?? null,
+                    'reminder_id'      => $row[4] ?? null,
                     'supplier_name'    => $supplierName,
-                    'periode_awal'     => $formatDate($row[4] ?? null),
-                    'periode_akhir'    => $formatDate($row[5] ?? null),
-                    'periode_bulan'    => $formatDate($row[6] ?? null),
+                    'periode_awal'     => $formatDate($row[6] ?? null),
+                    'periode_akhir'    => $formatDate($row[7] ?? null),
+                    'periode_bulan'    => $formatDate($row[8] ?? null),
                     'no_raf'           => $noRaf,
-                    'no_raf_referensi' => $row[8] ?? null,
-                    'store'            => $namaRegionStore ?? ($row[9] ?? null),
+                    'no_raf_referensi' => $row[10] ?? null,
+                    'store'            => $namaRegionStore ?? ($row[11] ?? null),
                     'toko_id'          => $tokoAliasRaw,
                     'nominal'          => $nominal,
                     'ppn'              => $ppn,
                     'amount_incl_ppn'  => $amountInclPpn,
-                    'remarks'          => $row[14] ?? null,
-                    'created_date'     => $formatDate($row[15] ?? null),
-                    'created_time'     => $row[16] ?? null,
-                    'updated_date'     => $formatDate($row[17] ?? null),
-                    'updated_time'     => $row[18] ?? null,
+                    'remarks'          => $row[16] ?? null,
+                    'created_date'     => $formatDate($row[17] ?? null),
+                    'created_time'     => $row[18] ?? null,
+                    'updated_date'     => $formatDate($row[19] ?? null),
+                    'updated_time'     => $row[20] ?? null,
                     'status_email'     => $statusEmailInbound,
                 ];
 
@@ -224,6 +226,10 @@ class ImportLocsCommand extends Command
                 // Cek apakah data LOC dengan no_raf ini SUDAH ADA di database
                 if (isset($existingLocs[$noRaf])) {
                     $existing = $existingLocs[$noRaf];
+                    $currentBillToCode     = trim((string) ($existing['bill_to_code'] ?? ''));
+                    $currentBillToName     = trim((string) ($existing['bill_to_name'] ?? ''));
+                    $newBillToCode        = trim((string) ($row[1] ?? ''));
+                    $newBillToName        = trim((string) ($row[2] ?? ''));
                     $currentNominal       = (float) ($existing['nominal'] ?? 0);
                     $currentPpn           = (float) ($existing['ppn'] ?? 0);
                     $currentAmountInclPpn = (float) ($existing['amount_incl_ppn'] ?? 0);
@@ -239,20 +245,22 @@ class ImportLocsCommand extends Command
                             // (Tetap mempertahankan status invoice, status email, approval, dan dokumen lampiran)
                             DB::table('locs')->where('id', $existing['id'])->update([
                                 'supplier_code'    => $supplierCode,
-                                'category_id'      => $row[1] ?? null,
-                                'reminder_id'      => $row[2] ?? null,
+                                'bill_to_code'     => $row[1] ?? null,
+                                'bill_to_name'     => $row[2] ??null,
+                                'category_id'      => $row[3] ?? null,
+                                'reminder_id'      => $row[4] ?? null,
                                 'supplier_name'    => $supplierName,
-                                'periode_awal'     => $formatDate($row[4] ?? null),
-                                'periode_akhir'    => $formatDate($row[5] ?? null),
-                                'periode_bulan'    => $formatDate($row[6] ?? null),
-                                'no_raf_referensi' => $row[8] ?? null,
-                                'store'            => $namaRegionStore ?? ($row[9] ?? null),
+                                'periode_awal'     => $formatDate($row[6] ?? null),
+                                'periode_akhir'    => $formatDate($row[7] ?? null),
+                                'periode_bulan'    => $formatDate($row[8] ?? null),
+                                'no_raf_referensi' => $row[10] ?? null,
+                                'store'            => $namaRegionStore ?? ($row[11] ?? null),
                                 'nominal'          => $nominal,
                                 'ppn'              => $ppn,
                                 'amount_incl_ppn'  => $amountInclPpn,
-                                'remarks'          => $row[14] ?? null,
-                                'updated_date'     => $formatDate($row[17] ?? null),
-                                'updated_time'     => $row[18] ?? null,
+                                'remarks'          => $row[16] ?? null,
+                                'updated_date'     => $formatDate($row[19] ?? null),
+                                'updated_time'     => $row[20] ?? null,
                                 'updated_at'       => now(),
                             ]);
 
@@ -263,6 +271,8 @@ class ImportLocsCommand extends Command
                             );
 
                             // Perbarui cache di memori
+                            $existingLocs[$noRaf]['bill_to_code']    = $newBillToCode;
+                            $existingLocs[$noRaf]['bill_to_name']    = $newBillToName;
                             $existingLocs[$noRaf]['nominal']         = (float) $nominal;
                             $existingLocs[$noRaf]['ppn']             = (float) $ppn;
                             $existingLocs[$noRaf]['amount_incl_ppn'] = (float) $amountInclPpn;
@@ -279,8 +289,21 @@ class ImportLocsCommand extends Command
                             ];
                         }
                     } else {
-                        // Nilai sama persis, dilewati (skip)
-                        $skippedCount++;
+                        // Nominal sama persis, TAPI tetap pastikan bill_to_code ter-update jika berbeda
+                        if ($currentBillToCode !== $newBillToCode && $newBillToCode !== '') {
+                            DB::table('locs')->where('id', $existing['id'])->update([
+                                'bill_to_code' => $row[1] ?? null,
+                                'bill_to_name' => $row[2] ?? null,
+                                'updated_at'   => now(),
+                            ]);
+
+                            // Perbarui cache di memori
+                            $existingLocs[$noRaf]['bill_to_code'] = $newBillToCode;
+                            $existingLocs[$noRaf]['bill_to_name'] = $newBillToName;
+                            $updatedCount++;
+                        } else {
+                            $skippedCount++;
+                        }
                     }
 
                     continue;
@@ -290,24 +313,26 @@ class ImportLocsCommand extends Command
                 try {
                     $loc = Loc::create([
                         'supplier_code'    => $supplierCode,
-                        'category_id'      => $row[1] ?? null,
-                        'reminder_id'      => $row[2] ?? null,
+                        'bill_to_code'     => $row[1] ?? null,
+                        'bill_to_name'     => $row[2] ??null,
+                        'category_id'      => $row[3] ?? null,
+                        'reminder_id'      => $row[4] ?? null,
                         'supplier_name'    => $supplierName,
-                        'periode_awal'     => $formatDate($row[4] ?? null),
-                        'periode_akhir'    => $formatDate($row[5] ?? null),
-                        'periode_bulan'    => $formatDate($row[6] ?? null),
+                        'periode_awal'     => $formatDate($row[6] ?? null),
+                        'periode_akhir'    => $formatDate($row[7] ?? null),
+                        'periode_bulan'    => $formatDate($row[8] ?? null),
                         'no_raf'           => $noRaf,
-                        'no_raf_referensi' => $row[8] ?? null,
+                        'no_raf_referensi' => $row[10] ?? null,
                         'status_email'     => $statusEmailLoc,
-                        'store'            => $namaRegionStore ?? ($row[9] ?? null),
+                        'store'            => $namaRegionStore ?? ($row[11] ?? null),
                         'nominal'          => $nominal,
                         'ppn'              => $ppn,
                         'amount_incl_ppn'  => $amountInclPpn,
-                        'remarks'          => $row[14] ?? null,
-                        'created_date'     => $formatDate($row[15] ?? null),
-                        'created_time'     => $row[16] ?? null,
-                        'updated_date'     => $formatDate($row[17] ?? null),
-                        'updated_time'     => $row[18] ?? null,
+                        'remarks'          => $row[16] ?? null,
+                        'created_date'     => $formatDate($row[17] ?? null),
+                        'created_time'     => $row[18] ?? null,
+                        'updated_date'     => $formatDate($row[19] ?? null),
+                        'updated_time'     => $row[20] ?? null,
                     ]);
 
                     // Hubungkan ke tabel pivot locs_toko
@@ -427,16 +452,9 @@ class ImportLocsCommand extends Command
             ->values()
             ->toArray();
 
-        // Fallback jika belum ada yang diset di database
+        // Jika belum ada email penerima yang diset di database
         if (empty($recipients)) {
-            $fallback = config('mail.from.address', 'it@grandlucky.co.id');
-            if ($fallback) {
-                $recipients = [$fallback];
-            }
-        }
-
-        if (empty($recipients)) {
-            $this->warn('Tidak ada alamat email penerima yang terdaftar untuk notifikasi import LOC.');
+            $this->warn('Tidak ada alamat email penerima yang terdaftar di menu Email Tambahan (modul import_loc). Email laporan dilewati.');
             return;
         }
 
