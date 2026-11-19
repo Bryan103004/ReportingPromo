@@ -73,7 +73,7 @@
                 </div>    
 
                 {{-- Business Partner ID --}}
-                <div>
+                <!-- <div>
                     <label for="choices-bp" class="block text-sm font-semibold text-gray-700 mb-1.5">
                         Business Partner ID <span class="text-red-500">*</span>
                     </label>
@@ -84,7 +84,7 @@
                         </select>
                     </div>
                     <p id="bp_status_text" class="text-xs text-gray-500 mt-1"></p>
-                </div>    
+                </div>     -->
                 
                 {{-- Category --}}
                 <div>
@@ -862,19 +862,19 @@
         }
 
         // Validasi 1b: Business Partner ID
-        const bpSelect = document.getElementById('choices-bp');
-        if (!bpSelect || !bpSelect.value) {
-            e.preventDefault();
-            btn.disabled = false;
-            btn.textContent = 'Simpan Data';
-            if (window.showToast) {
-                window.showToast('Silakan pilih Business Partner ID terlebih dahulu!', 'error');
-            } else {
-                alert('Silakan pilih Business Partner ID terlebih dahulu!');
-            }
-            if (bpSelect) bpSelect.focus();
-            return false;
-        }
+        // const bpSelect = document.getElementById('choices-bp');
+        // if (!bpSelect || !bpSelect.value) {
+        //     e.preventDefault();
+        //     btn.disabled = false;
+        //     btn.textContent = 'Simpan Data';
+        //     if (window.showToast) {
+        //         window.showToast('Silakan pilih Business Partner ID terlebih dahulu!', 'error');
+        //     } else {
+        //         alert('Silakan pilih Business Partner ID terlebih dahulu!');
+        //     }
+        //     if (bpSelect) bpSelect.focus();
+        //     return false;
+        // }
 
         // Validasi 2: Category
         const categoryId = document.getElementById('category_id');

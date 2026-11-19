@@ -276,7 +276,7 @@ class RafaksiController extends Controller
         $request->validate([
             'supplier_code' => 'string|required',
             'supplier_name' => 'string|required',
-            'bp' => 'string|required',
+            'bp' => 'string|nullable',
             'periode_awal' => 'date|required',
             'periode_akhir' => 'date|required|after_or_equal:periode_awal',
             'no_raf' => 'string|required',
