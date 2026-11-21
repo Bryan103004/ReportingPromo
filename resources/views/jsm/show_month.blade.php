@@ -79,6 +79,8 @@
                 <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500 tracking-wider">
                     <tr>
                         <th class="px-6 py-4 w-16 text-center">No</th>
+                        <th class="px-6 py-4">Billed To Code</th>
+                        <th class="px-6 py-4">Billed To Name</th>
                         <th class="px-6 py-4">Supplier Code</th>
                         <th class="px-6 py-4">Supplier Name</th>
                         <th class="px-6 py-4">Category</th>
@@ -122,7 +124,15 @@
                                 {{ $loop->iteration }}
                             </td>
             
-                            
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-800">{{ $jsm->bill_to_code }}</div>
+                            </td>
+
+                            {{-- Supplier (Kode & Nama) --}}
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-800">{{ $jsm->bill_to_name }}</div>
+                            </td>
+
                             <td class="px-6 py-4">
                                 <div class="font-semibold text-gray-800">{{ $jsm->supplier_code }}</div>
                             </td>

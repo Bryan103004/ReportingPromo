@@ -75,6 +75,8 @@
                 <thead class="bg-gray-50 border-b border-gray-200 text-xs uppercase font-bold text-gray-500 tracking-wider">
                     <tr>
                         <th class="px-6 py-4 w-16 text-center">No</th>
+                        <th class="px-6 py-4">Billed To Code</th>
+                        <th class="px-6 py-4">Billed To Name</th>
                         <th class="px-6 py-4">Supplier Code</th>
                         <th class="px-6 py-4">Supplier Name</th>
                         <th class="px-6 py-4">Category</th>
@@ -111,6 +113,14 @@
                         <tr class="hover:bg-gray-50 transition-colors" data-nominal="{{ $pwp->nominal_formatted }}">
                             <td class="px-6 py-4 text-center font-medium text-gray-500">
                                 {{ $loop->iteration }}
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-800">{{ $pwp->bill_to_code }}</div>
+                            </td>
+
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-800">{{ $pwp->bill_to_name }}</div>
                             </td>
 
                             <td class="px-6 py-4">
